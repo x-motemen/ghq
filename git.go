@@ -6,10 +6,12 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+
+	"github.com/motemen/ghq/utils"
 )
 
 func Git(command ...string) {
-	logInfo("git", strings.Join(command, " "))
+	utils.Log("git", strings.Join(command, " "))
 
 	cmd := exec.Command("git", command...)
 	cmd.Stdout = os.Stdout
@@ -17,7 +19,7 @@ func Git(command ...string) {
 
 	err := cmd.Run()
 	if err != nil {
-		logInfo("error", fmt.Sprintf("git: %s", err))
+		utils.Log("error", fmt.Sprintf("git: %s", err))
 		os.Exit(1)
 	}
 }

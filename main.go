@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
+	"github.com/motemen/ghq/pocket"
+	"github.com/motemen/ghq/utils"
 )
 
 func main() {
@@ -34,6 +36,21 @@ func main() {
 				cli.BoolFlag{"exact, e", "Exact match"},
 			},
 		},
+		{
+			Name: "pocket",
+			Action: func(c *cli.Context) {
+				receiverURL, ch, _ := pocket.StartAccessTokenReceiver()
+				requestToken, _ := pocket.ObtainRequestToken(receiverURL)
+				url := pocket.GenerateAuthorizationURL(requestToken, receiverURL)
+				utils.Log("open", url)
+
+				<-ch
+
+				accessToken, _, _ := pocket.ObtainAccessToken(requestToken)
+
+				Git("config", "ghq.pocket.token", accessToken)
+			},
+		},
 	}
 
 	app.Run(os.Args)
@@ -42,7 +59,7 @@ func main() {
 func mustBeOkay(err error) {
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
-		logInfo("error", fmt.Sprintf("Got unexpected error at %s line %d: %s", file, line, err))
+		utils.Log("error", fmt.Sprintf("Got unexpected error at %s line %d: %s", file, line, err))
 		os.Exit(1)
 	}
 }
@@ -72,13 +89,13 @@ func CommandGet(c *cli.Context) {
 	}
 
 	if newPath {
-		logInfo("clone", fmt.Sprintf("%s -> %s", u, path))
+		utils.Log("clone", fmt.Sprintf("%s -> %s", u, path))
 
 		dir, _ := filepath.Split(path)
 		mustBeOkay(os.MkdirAll(dir, 0755))
 		Git("clone", u.String(), path)
 	} else {
-		logInfo("update", path)
+		utils.Log("update", path)
 
 		mustBeOkay(os.Chdir(path))
 		Git("remote", "update")

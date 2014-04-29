@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"fmt"
@@ -6,15 +6,19 @@ import (
 	"github.com/daviddengcn/go-colortext"
 )
 
-func logInfo(prefix string, message string) {
+func Log(prefix string, message string) {
 	if prefix == "git" {
 		ct.ChangeColor(ct.White, false, ct.None, false)
 	} else if prefix == "error" {
 		ct.ChangeColor(ct.Red, false, ct.None, false)
+	} else if prefix == "open" {
+		ct.ChangeColor(ct.Blue, true, ct.None, false)
+	} else if prefix == "authorized" {
+		ct.ChangeColor(ct.Blue, false, ct.None, false)
 	} else {
 		ct.ChangeColor(ct.Green, true, ct.None, false)
 	}
-	fmt.Printf("%8s", prefix)
+	fmt.Printf("%10s", prefix)
 	ct.ResetColor()
 	fmt.Printf(" %s\n", message)
 }
