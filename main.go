@@ -2,16 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"os"
-	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/codegangsta/cli"
 )
@@ -45,43 +42,9 @@ func main() {
 func mustBeOkay(err error) {
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
-		log.Fatalf("Got unexpected error at %s line %d: %s", file, line, err)
+		logInfo("error", fmt.Sprintf("Got unexpected error at %s line %d: %s", file, line, err))
+		os.Exit(1)
 	}
-}
-
-func Git(command ...string) {
-	log.Printf("Running 'git %s'\n", strings.Join(command, " "))
-	cmd := exec.Command("git", command...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Run()
-	if err != nil {
-		log.Fatalf("git %s: %s", strings.Join(command, " "), err)
-	}
-}
-
-func GitConfig(key string) (string, error) {
-	defaultValue := ""
-
-	cmd := exec.Command("git", "config", "--path", "--null", "--get", key)
-	cmd.Stderr = os.Stderr
-
-	buf, err := cmd.Output()
-
-	if exitError, ok := err.(*exec.ExitError); ok {
-		if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
-			if waitStatus.ExitStatus() == 1 {
-				return defaultValue, nil
-			} else {
-				return "", err
-			}
-		} else {
-			return "", err
-		}
-	}
-
-	return strings.TrimRight(string(buf), "\000"), nil
 }
 
 func CommandGet(c *cli.Context) {
@@ -93,14 +56,9 @@ func CommandGet(c *cli.Context) {
 	}
 
 	u, err := ParseGitHubURL(argUrl)
-	if err != nil {
-		log.Fatalf("While parsing URL: %s", err)
-	}
+	mustBeOkay(err)
 
 	path := pathForRepository(u)
-	if err != nil {
-		log.Fatalf("Could not obtain path for repository %s: %s", u, err)
-	}
 
 	newPath := false
 
@@ -114,10 +72,14 @@ func CommandGet(c *cli.Context) {
 	}
 
 	if newPath {
+		logInfo("clone", fmt.Sprintf("%s -> %s", u, path))
+
 		dir, _ := filepath.Split(path)
 		mustBeOkay(os.MkdirAll(dir, 0755))
 		Git("clone", u.String(), path)
 	} else {
+		logInfo("update", path)
+
 		mustBeOkay(os.Chdir(path))
 		Git("remote", "update")
 	}
@@ -131,12 +93,12 @@ func CommandList(c *cli.Context) {
 	if query == "" {
 		filterFn = func(_, _, _ string) bool { return true }
 	} else if exact {
-		filterFn = func(path, user, repo string) bool { return path == query || repo == query }
+		filterFn = func(relPath, user, repo string) bool { return relPath == query || repo == query }
 	} else {
-		filterFn = func(path, user, repo string) bool { return strings.Contains(path, query) }
+		filterFn = func(relPath, user, repo string) bool { return strings.Contains(relPath, query) }
 	}
 
-	walkLocalRepositories(func(relPath string, user string, repo string) {
+	walkLocalRepositories(func(relPath, user, repo string) {
 		if filterFn(relPath, user, repo) == false {
 			return
 		}
