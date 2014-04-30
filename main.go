@@ -39,16 +39,37 @@ func main() {
 		{
 			Name: "pocket",
 			Action: func(c *cli.Context) {
-				receiverURL, ch, _ := pocket.StartAccessTokenReceiver()
-				requestToken, _ := pocket.ObtainRequestToken(receiverURL)
-				url := pocket.GenerateAuthorizationURL(requestToken, receiverURL)
-				utils.Log("open", url)
+				accessToken, err := GitConfig("ghq.pocket.token")
+				mustBeOkay(err)
 
-				<-ch
+				if accessToken == "" {
+					receiverURL, ch, _ := pocket.StartAccessTokenReceiver()
+					requestToken, _ := pocket.ObtainRequestToken(receiverURL)
+					url := pocket.GenerateAuthorizationURL(requestToken, receiverURL)
+					utils.Log("open", url)
 
-				accessToken, _, _ := pocket.ObtainAccessToken(requestToken)
+					<-ch
 
-				Git("config", "ghq.pocket.token", accessToken)
+					accessToken, _, _ := pocket.ObtainAccessToken(requestToken)
+
+					Git("config", "ghq.pocket.token", accessToken)
+				}
+
+				res, err := pocket.RetrieveGitHubEntries(accessToken)
+				mustBeOkay(err)
+
+				for _, item := range res.List {
+					u, err := ParseGitHubURL(item.ResolvedURL)
+					if err != nil {
+						utils.Log("error", err.Error())
+						continue
+					} else if u.User == "blog" {
+						utils.Log("pocket", fmt.Sprintf("Skip %s because this is not a repository", u))
+						continue
+					}
+
+					GetGitHubRepository(u)
+				}
 			},
 		},
 	}
@@ -75,11 +96,15 @@ func CommandGet(c *cli.Context) {
 	u, err := ParseGitHubURL(argUrl)
 	mustBeOkay(err)
 
+	GetGitHubRepository(u)
+}
+
+func GetGitHubRepository(u *GitHubURL) {
 	path := pathForRepository(u)
 
 	newPath := false
 
-	_, err = os.Stat(path)
+	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			newPath = true
@@ -89,7 +114,7 @@ func CommandGet(c *cli.Context) {
 	}
 
 	if newPath {
-		utils.Log("clone", fmt.Sprintf("%s -> %s", u, path))
+		utils.Log("clone", fmt.Sprintf("%s/%s -> %s", u.User, u.Repo, path))
 
 		dir, _ := filepath.Split(path)
 		mustBeOkay(os.MkdirAll(dir, 0755))

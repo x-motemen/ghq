@@ -19,7 +19,7 @@ func TestObtainRequestToken(t *testing.T) {
 
 	apiOrigin = ts.URL
 
-	token, err := ObtainRequestToken()
+	token, err := ObtainRequestToken("http://www.example.com/")
 
 	Expect(err).To(BeNil())
 	Expect(token).To(Equal(theCode))
