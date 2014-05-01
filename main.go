@@ -112,9 +112,13 @@ func CommandList(c *cli.Context) {
 	if query == "" {
 		filterFn = func(_, _, _ string) bool { return true }
 	} else if exact {
-		filterFn = func(relPath, user, repo string) bool { return relPath == query || repo == query }
+		filterFn = func(relPath, user, repo string) bool {
+			return user+"/"+repo == query || repo == query
+		}
 	} else {
-		filterFn = func(relPath, user, repo string) bool { return strings.Contains(relPath, query) }
+		filterFn = func(relPath, user, repo string) bool {
+			return strings.Contains(user+"/"+repo, query)
+		}
 	}
 
 	walkLocalRepositories(func(fullPath, relPath, user, repo string) {
@@ -185,10 +189,14 @@ func walkLocalRepositories(callback func(string, string, string, string)) {
 		rel, err := filepath.Rel(root, path)
 		mustBeOkay(err)
 
-		user, repo := filepath.Split(rel)
-		if user == "" || repo == "" {
+		paths := strings.Split(rel, string(filepath.Separator))
+		if len(paths) != 3 {
 			return nil
 		}
+
+		// host := paths[0]
+		user := paths[1]
+		repo := paths[2]
 
 		callback(path, rel, user, repo)
 
@@ -206,12 +214,12 @@ func reposRoot() string {
 		usr, err := user.Current()
 		mustBeOkay(err)
 
-		reposRoot = path.Join(usr.HomeDir, ".ghq", "repos")
+		reposRoot = path.Join(usr.HomeDir, ".ghq")
 	}
 
 	return reposRoot
 }
 
 func pathForRepository(u *GitHubURL) string {
-	return path.Join(reposRoot(), "@"+u.User, u.Repo)
+	return path.Join(reposRoot(), "github.com", u.User, u.Repo)
 }
