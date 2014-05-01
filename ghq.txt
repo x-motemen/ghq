@@ -1,0 +1,65 @@
+ghq(1)
+======
+
+NAME
+----
+ghq - Manage GitHub repository clones
+
+SYNOPSIS
+--------
+[verse]
+'ghq' get [-u] <GitHub respository URL> | <user>/<repo>
+'ghq' list [-p] [-e] [<query>]
+'ghq' pocket
+
+COMMANDS
+--------
+
+get::
+    Clones a GitHub repository under ghq root direcotry. See DIRECTORY
+    STRUCTURES below.  If the repository is already cloned to local, nothing
+    will be happen unless '-u' ('--update') flag is supplied, in which case
+    'git remote update' will be performed.
+
+list::
+    List locally cloned repositories. If query are given, only repositories
+    whose names contain that query text are listed. '-e' ('--exact') forces
+    the match to be an exact one (i.e. the whole repository name or the path
+    equals to the query). If '-p' is given, the full paths to the repository
+    root are printed instead of relative ones.
+
+pocket::
+    Retrieves Pocket <http://getpocket.com/> entries of github.com and
+    performs 'get' for each of them.
+
+CONFIGURATION
+-------------
+
+Configuration uses 'git-config' variables.
+
+ghq.root::
+    The path to directory under which cloned repositories are placed. See
+    DIRECTORY STRUCTURES below. Defaults to "~/.ghq/repos".
+
+DIRECTORY STRUCTURES
+--------------------
+
+Local repositories are placed under 'ghq.root' with a name @user/repo.
+
+------------
+~/.ghq/repos/
+|-- @codegangsta/
+|   `-- cli/
+|-- @cookpad/
+|   `-- styleguide/
+|-- @google/
+|   `-- vroom/
+`-- @purescript/
+    `-- purescript/
+------------
+
+
+AUTHOR
+------
+
+motemen <motemen@gmail.com>
