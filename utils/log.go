@@ -12,8 +12,8 @@ func Log(prefix string, message string) {
 	} else if prefix == "error" {
 		ct.ChangeColor(ct.Red, false, ct.None, false)
 	} else if prefix == "open" {
-		ct.ChangeColor(ct.Blue, true, ct.None, false)
-	} else if prefix == "authorized" {
+		ct.ChangeColor(ct.Yellow, true, ct.None, false)
+	} else if prefix == "authorized" || prefix == "skip" {
 		ct.ChangeColor(ct.Blue, false, ct.None, false)
 	} else {
 		ct.ChangeColor(ct.Green, true, ct.None, false)

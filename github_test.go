@@ -15,11 +15,13 @@ func TestParseGitHubURL(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(u.User).To(Equal("motemen"))
 	Expect(u.Repo).To(Equal("pusheen-explorer"))
+	Expect(u.Extra).To(Equal(""))
 
 	u, err = ParseGitHubURL("https://github.com/motemen/pusheen-explorer/blob/master/README.md")
 	Expect(err).To(BeNil())
 	Expect(u.User).To(Equal("motemen"))
 	Expect(u.Repo).To(Equal("pusheen-explorer"))
+	Expect(u.Extra).To(Equal("blob/master/README.md"))
 
 	u, err = ParseGitHubURL("motemen/pusheen-explorer")
 	Expect(err).To(BeNil())

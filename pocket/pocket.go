@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/motemen/ghq/utils"
 )
@@ -16,34 +16,28 @@ var consumerKey = "27000-330870baad7ffbb5ab2fa6b2"
 
 var apiOrigin = "https://getpocket.com"
 
-func requestApiReader(action string, params url.Values) (io.Reader, error) {
-	resp, err := http.PostForm(apiOrigin+action, params)
+func requestAPIRaw(action string, params url.Values) (io.Reader, error) {
+	req, err := http.NewRequest("POST", apiOrigin+action, strings.NewReader(params.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("X-Accept", "application/json")
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Got response %d", resp.StatusCode)
+		return nil, fmt.Errorf("Got response %d; X-Error=[%s]", resp.StatusCode, resp.Header.Get("X-Error"))
 	}
 
 	return resp.Body, nil
 }
 
-func requestAPIContent(action string, params url.Values) (string, error) {
-	buf, err := requestApiReader(action, params)
-	if err != nil {
-		return "", err
-	}
-
-	content, err := ioutil.ReadAll(buf)
-	if err != nil {
-		return "", err
-	}
-
-	return string(content), nil
-}
-
-type RetrieveApiResponse struct {
+type RetrieveAPIResponse struct {
 	Status int             `json:"status"`
 	List   map[string]Item `json:"list"`
 }
@@ -53,44 +47,42 @@ type Item struct {
 	ResolvedURL string `json:"resolved_url"`
 }
 
-func requestAPIJSON(action string, params url.Values, v interface{}) error {
-	r, err := requestApiReader(action, params)
+type OAuthRequestAPIResponse struct {
+	Code string `json:"code"`
+}
+
+type OAuthAuthorizeAPIResponse struct {
+	AccessToken string `json:"access_token"`
+	Username    string `json:"username"`
+}
+
+func requestAPI(action string, params url.Values, v interface{}) error {
+	r, err := requestAPIRaw(action, params)
 	if err != nil {
 		return err
 	}
+
 	d := json.NewDecoder(r)
 	return d.Decode(v)
 }
 
-func requestAPI(action string, params url.Values) (url.Values, error) {
-	content, err := requestAPIContent(action, params)
-	if err != nil {
-		return nil, err
-	}
-
-	values, err := url.ParseQuery(content)
-	if err != nil {
-		return nil, err
-	}
-
-	return values, nil
-}
-
-func ObtainRequestToken(redirectURL string) (string, error) {
+func ObtainRequestToken(redirectURL string) (*OAuthRequestAPIResponse, error) {
 	utils.Log("pocket", "Obtaining request token")
 
-	data, err := requestAPI(
+	res := &OAuthRequestAPIResponse{}
+	err := requestAPI(
 		"/v3/oauth/request",
 		url.Values{
 			"consumer_key": {consumerKey},
 			"redirect_uri": {redirectURL},
 		},
+		res,
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return data.Get("code"), nil
+	return res, nil
 }
 
 func StartAccessTokenReceiver() (string, <-chan bool, error) {
@@ -116,26 +108,25 @@ func StartAccessTokenReceiver() (string, <-chan bool, error) {
 	return url, ch, nil
 }
 
-func ObtainAccessToken(requestToken string) (string, string, error) {
+func ObtainAccessToken(requestToken string) (*OAuthAuthorizeAPIResponse, error) {
 	utils.Log("pocket", "Obtaining access token")
 
-	data, err := requestAPI(
+	res := &OAuthAuthorizeAPIResponse{}
+	err := requestAPI(
 		"/v3/oauth/authorize",
 		url.Values{
 			"consumer_key": {consumerKey},
 			"code":         {requestToken},
 		},
+		res,
 	)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
-	accessToken := data.Get("access_token")
-	username := data.Get("username")
+	utils.Log("authorized", res.Username)
 
-	utils.Log("authorized", username)
-
-	return accessToken, username, nil
+	return res, nil
 }
 
 func GenerateAuthorizationURL(token, redirectURL string) string {
@@ -143,23 +134,22 @@ func GenerateAuthorizationURL(token, redirectURL string) string {
 	return fmt.Sprintf("%s/auth/authorize?%s", apiOrigin, values.Encode())
 }
 
-func RetrieveGitHubEntries(accessToken string) (*RetrieveApiResponse, error) {
+func RetrieveGitHubEntries(accessToken string) (*RetrieveAPIResponse, error) {
 	utils.Log("pocket", "Retrieving github.com entries")
 
-	var res RetrieveApiResponse
-
-	err := requestAPIJSON(
+	res := &RetrieveAPIResponse{}
+	err := requestAPI(
 		"/v3/get",
 		url.Values{
 			"consumer_key": {consumerKey},
 			"access_token": {accessToken},
 			"domain":       {"github.com"},
 		},
-		&res,
+		res,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &res, nil
+	return res, nil
 }

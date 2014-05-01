@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"os/user"
 	"path"
@@ -33,7 +32,7 @@ func main() {
 			Usage:  "List local repositories",
 			Action: CommandList,
 			Flags: []cli.Flag{
-				cli.BoolFlag{"exact, e", "Exact match"},
+				cli.BoolFlag{"exact, e", "Perform an exact match"},
 			},
 		},
 		{
@@ -43,16 +42,22 @@ func main() {
 				mustBeOkay(err)
 
 				if accessToken == "" {
-					receiverURL, ch, _ := pocket.StartAccessTokenReceiver()
-					requestToken, _ := pocket.ObtainRequestToken(receiverURL)
-					url := pocket.GenerateAuthorizationURL(requestToken, receiverURL)
+					receiverURL, ch, err := pocket.StartAccessTokenReceiver()
+					mustBeOkay(err)
+
+					authRequest, err := pocket.ObtainRequestToken(receiverURL)
+					mustBeOkay(err)
+
+					url := pocket.GenerateAuthorizationURL(authRequest.Code, receiverURL)
 					utils.Log("open", url)
 
 					<-ch
 
-					accessToken, _, _ := pocket.ObtainAccessToken(requestToken)
+					authorized, err := pocket.ObtainAccessToken(authRequest.Code)
+					mustBeOkay(err)
 
-					Git("config", "ghq.pocket.token", accessToken)
+					accessToken = authorized.AccessToken
+					Git("config", "ghq.pocket.token", authorized.AccessToken)
 				}
 
 				res, err := pocket.RetrieveGitHubEntries(accessToken)
@@ -64,7 +69,10 @@ func main() {
 						utils.Log("error", err.Error())
 						continue
 					} else if u.User == "blog" {
-						utils.Log("pocket", fmt.Sprintf("Skip %s because this is not a repository", u))
+						utils.Log("skip", fmt.Sprintf("%s: is not a repository", u))
+						continue
+					} else if u.Extra != "" {
+						utils.Log("skip", fmt.Sprintf("%s: is not project home", u))
 						continue
 					}
 
@@ -80,7 +88,7 @@ func main() {
 func mustBeOkay(err error) {
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
-		utils.Log("error", fmt.Sprintf("Got unexpected error at %s line %d: %s", file, line, err))
+		utils.Log("error", fmt.Sprintf("at %s line %d: %s", file, line, err))
 		os.Exit(1)
 	}
 }
@@ -184,37 +192,4 @@ func reposRoot() string {
 
 func pathForRepository(u *GitHubURL) string {
 	return path.Join(reposRoot(), "@"+u.User, u.Repo)
-}
-
-type GitHubURL struct {
-	*url.URL
-	User string
-	Repo string
-}
-
-func ParseGitHubURL(urlString string) (*GitHubURL, error) {
-	u, err := url.Parse(urlString)
-	if err != nil {
-		return nil, err
-	}
-
-	if !u.IsAbs() {
-		u.Scheme = "https"
-		u.Host = "github.com"
-		if u.Path[0] != '/' {
-			u.Path = "/" + u.Path
-		}
-	}
-
-	if u.Host != "github.com" {
-		return nil, fmt.Errorf("URL is not of github.com: %s", u)
-	}
-
-	components := strings.Split(u.Path, "/")
-	if len(components) < 3 {
-		return nil, fmt.Errorf("URL does not contain user and repo: %s %v", u, components)
-	}
-	user, repo := components[1], components[2]
-
-	return &GitHubURL{u, user, repo}, nil
 }
