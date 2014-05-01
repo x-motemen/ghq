@@ -3,33 +3,34 @@ ghq(1)
 
 NAME
 ----
+
 ghq - Manage GitHub repository clones
 
 SYNOPSIS
 --------
 [verse]
-'ghq' get [-u] <GitHub respository URL> | <user>/<repo>
+'ghq' get [-u] <GitHub repository URL> | <user>/<repo>
 'ghq' list [-p] [-e] [<query>]
-'ghq' pocket
+'ghq' pocket [-u]
 
 COMMANDS
 --------
 
 get::
-    Clones a GitHub repository under ghq root direcotry. See DIRECTORY
-    STRUCTURES below.  If the repository is already cloned to local, nothing
-    will be happen unless '-u' ('--update') flag is supplied, in which case
-    'git remote update' will be performed.
+    Clone a GitHub repository under ghq root direcotry. See
+    <<directory-structures,DIRECTORY STRUCTURES>> below.  If the repository is
+    already cloned to local, nothing will happen unless '-u' ('--update')
+    flag is supplied, in which case 'git remote update' is executed.
 
 list::
-    List locally cloned repositories. If query are given, only repositories
-    whose names contain that query text are listed. '-e' ('--exact') forces
-    the match to be an exact one (i.e. the whole repository name or the path
-    equals to the query). If '-p' is given, the full paths to the repository
-    root are printed instead of relative ones.
+    List locally cloned repositories. If a query argument is given, only
+    repositories whose names contain that query text are listed. '-e'
+    ('--exact') forces the match to be an exact one (i.e. the query equals to
+    _repo_ or _user_/_repo_) If '-p' is given, the full paths to
+    the repository root are printed instead of relative ones.
 
 pocket::
-    Retrieves Pocket <http://getpocket.com/> entries of github.com and
+    Retrieves http://getpocket.com/[Pocket] entries of github.com and
     performs 'get' for each of them.
 
 CONFIGURATION
@@ -39,24 +40,23 @@ Configuration uses 'git-config' variables.
 
 ghq.root::
     The path to directory under which cloned repositories are placed. See
-    DIRECTORY STRUCTURES below. Defaults to "~/.ghq/repos".
+    <<directory-structures,DIRECTORY STRUCTURES>> below. Defaults to "~/.ghq".
 
-DIRECTORY STRUCTURES
---------------------
+anchor:directory-structures[] DIRECTORY STRUCTURES
+--------------------------------------------------
 
-Local repositories are placed under 'ghq.root' with a name @user/repo.
+Local repositories are placed under 'ghq.root' with named github.com/_user_/_repo_.
 
-------------
-~/.ghq/repos/
-|-- @codegangsta/
-|   `-- cli/
-|-- @cookpad/
-|   `-- styleguide/
-|-- @google/
-|   `-- vroom/
-`-- @purescript/
-    `-- purescript/
-------------
+----
+~/.ghq
+`-- github.com
+    |-- codegangsta/
+    |   `-- cli/
+    |-- google/
+    |   `-- go-github/
+    `-- motemen/
+        `-- ghq/
+----
 
 
 AUTHOR
