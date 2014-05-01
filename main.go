@@ -26,6 +26,9 @@ func main() {
 			Name:   "get",
 			Usage:  "Clone/sync with a remote repository",
 			Action: CommandGet,
+			Flags: []cli.Flag{
+				cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+			},
 		},
 		{
 			Name:   "list",
@@ -33,51 +36,15 @@ func main() {
 			Action: CommandList,
 			Flags: []cli.Flag{
 				cli.BoolFlag{"exact, e", "Perform an exact match"},
+				cli.BoolFlag{"full-path, p", "Show full paths"},
 			},
 		},
 		{
-			Name: "pocket",
-			Action: func(c *cli.Context) {
-				accessToken, err := GitConfig("ghq.pocket.token")
-				mustBeOkay(err)
-
-				if accessToken == "" {
-					receiverURL, ch, err := pocket.StartAccessTokenReceiver()
-					mustBeOkay(err)
-
-					authRequest, err := pocket.ObtainRequestToken(receiverURL)
-					mustBeOkay(err)
-
-					url := pocket.GenerateAuthorizationURL(authRequest.Code, receiverURL)
-					utils.Log("open", url)
-
-					<-ch
-
-					authorized, err := pocket.ObtainAccessToken(authRequest.Code)
-					mustBeOkay(err)
-
-					accessToken = authorized.AccessToken
-					Git("config", "ghq.pocket.token", authorized.AccessToken)
-				}
-
-				res, err := pocket.RetrieveGitHubEntries(accessToken)
-				mustBeOkay(err)
-
-				for _, item := range res.List {
-					u, err := ParseGitHubURL(item.ResolvedURL)
-					if err != nil {
-						utils.Log("error", err.Error())
-						continue
-					} else if u.User == "blog" {
-						utils.Log("skip", fmt.Sprintf("%s: is not a repository", u))
-						continue
-					} else if u.Extra != "" {
-						utils.Log("skip", fmt.Sprintf("%s: is not project home", u))
-						continue
-					}
-
-					GetGitHubRepository(u)
-				}
+			Name:   "pocket",
+			Usage:  "Does get for all github entries in Pocket",
+			Action: CommandPocket,
+			Flags: []cli.Flag{
+				cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 			},
 		},
 	}
@@ -95,6 +62,7 @@ func mustBeOkay(err error) {
 
 func CommandGet(c *cli.Context) {
 	argUrl := c.Args().Get(0)
+	doUpdate := c.Bool("update")
 
 	if argUrl == "" {
 		cli.ShowCommandHelp(c, "get")
@@ -104,10 +72,10 @@ func CommandGet(c *cli.Context) {
 	u, err := ParseGitHubURL(argUrl)
 	mustBeOkay(err)
 
-	GetGitHubRepository(u)
+	GetGitHubRepository(u, doUpdate)
 }
 
-func GetGitHubRepository(u *GitHubURL) {
+func GetGitHubRepository(u *GitHubURL, doUpdate bool) {
 	path := pathForRepository(u)
 
 	newPath := false
@@ -127,7 +95,7 @@ func GetGitHubRepository(u *GitHubURL) {
 		dir, _ := filepath.Split(path)
 		mustBeOkay(os.MkdirAll(dir, 0755))
 		Git("clone", u.String(), path)
-	} else {
+	} else if doUpdate {
 		utils.Log("update", path)
 
 		mustBeOkay(os.Chdir(path))
@@ -138,6 +106,7 @@ func GetGitHubRepository(u *GitHubURL) {
 func CommandList(c *cli.Context) {
 	query := c.Args().First()
 	exact := c.Bool("exact")
+	showFullPath := c.Bool("full-path")
 
 	var filterFn func(string, string, string) bool
 	if query == "" {
@@ -148,16 +117,69 @@ func CommandList(c *cli.Context) {
 		filterFn = func(relPath, user, repo string) bool { return strings.Contains(relPath, query) }
 	}
 
-	walkLocalRepositories(func(relPath, user, repo string) {
+	walkLocalRepositories(func(fullPath, relPath, user, repo string) {
 		if filterFn(relPath, user, repo) == false {
 			return
 		}
 
-		fmt.Println(relPath)
+		if showFullPath {
+			fmt.Println(fullPath)
+		} else {
+			fmt.Println(relPath)
+		}
 	})
 }
 
-func walkLocalRepositories(callback func(string, string, string)) {
+func CommandPocket(c *cli.Context) {
+	accessToken, err := GitConfig("ghq.pocket.token")
+	mustBeOkay(err)
+
+	if accessToken == "" {
+		receiverURL, ch, err := pocket.StartAccessTokenReceiver()
+		mustBeOkay(err)
+		utils.Log("pocket", "Waiting for Pocket authentication callback at "+receiverURL)
+
+		utils.Log("pocket", "Obtaining request token")
+		authRequest, err := pocket.ObtainRequestToken(receiverURL)
+		mustBeOkay(err)
+
+		url := pocket.GenerateAuthorizationURL(authRequest.Code, receiverURL)
+		utils.Log("open", url)
+
+		<-ch
+
+		utils.Log("pocket", "Obtaining access token")
+		authorized, err := pocket.ObtainAccessToken(authRequest.Code)
+		mustBeOkay(err)
+
+		utils.Log("authorized", authorized.Username)
+
+		accessToken = authorized.AccessToken
+		Git("config", "ghq.pocket.token", authorized.AccessToken)
+	}
+
+	utils.Log("pocket", "Retrieving github.com entries")
+	res, err := pocket.RetrieveGitHubEntries(accessToken)
+	mustBeOkay(err)
+
+	for _, item := range res.List {
+		u, err := ParseGitHubURL(item.ResolvedURL)
+		if err != nil {
+			utils.Log("error", err.Error())
+			continue
+		} else if u.User == "blog" {
+			utils.Log("skip", fmt.Sprintf("%s: is not a repository", u))
+			continue
+		} else if u.Extra != "" {
+			utils.Log("skip", fmt.Sprintf("%s: is not project home", u))
+			continue
+		}
+
+		GetGitHubRepository(u, c.Bool("update"))
+	}
+}
+
+func walkLocalRepositories(callback func(string, string, string, string)) {
 	root := reposRoot()
 	filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
 		rel, err := filepath.Rel(root, path)
@@ -168,7 +190,7 @@ func walkLocalRepositories(callback func(string, string, string)) {
 			return nil
 		}
 
-		callback(rel, user, repo)
+		callback(path, rel, user, repo)
 
 		return filepath.SkipDir
 	})

@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/motemen/ghq/utils"
 )
 
 var consumerKey = "27000-330870baad7ffbb5ab2fa6b2"
@@ -67,8 +65,6 @@ func requestAPI(action string, params url.Values, v interface{}) error {
 }
 
 func ObtainRequestToken(redirectURL string) (*OAuthRequestAPIResponse, error) {
-	utils.Log("pocket", "Obtaining request token")
-
 	res := &OAuthRequestAPIResponse{}
 	err := requestAPI(
 		"/v3/oauth/request",
@@ -103,14 +99,11 @@ func StartAccessTokenReceiver() (string, <-chan bool, error) {
 	}()
 
 	url := "http://" + listener.Addr().String()
-	utils.Log("pocket", "Waiting for Pocket authentication callback at "+url)
 
 	return url, ch, nil
 }
 
 func ObtainAccessToken(requestToken string) (*OAuthAuthorizeAPIResponse, error) {
-	utils.Log("pocket", "Obtaining access token")
-
 	res := &OAuthAuthorizeAPIResponse{}
 	err := requestAPI(
 		"/v3/oauth/authorize",
@@ -124,8 +117,6 @@ func ObtainAccessToken(requestToken string) (*OAuthAuthorizeAPIResponse, error) 
 		return nil, err
 	}
 
-	utils.Log("authorized", res.Username)
-
 	return res, nil
 }
 
@@ -135,8 +126,6 @@ func GenerateAuthorizationURL(token, redirectURL string) string {
 }
 
 func RetrieveGitHubEntries(accessToken string) (*RetrieveAPIResponse, error) {
-	utils.Log("pocket", "Retrieving github.com entries")
-
 	res := &RetrieveAPIResponse{}
 	err := requestAPI(
 		"/v3/get",

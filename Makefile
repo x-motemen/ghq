@@ -12,4 +12,7 @@ deps:
 testdeps:
 	go get -t $(VERBOSE_FLAG) ./...
 
-.PHONY: build test deps testdeps
+install: deps
+	go build $(VERBOSE_FLAG) ./...
+
+.PHONY: build test deps testdeps install

@@ -14,9 +14,9 @@ func Log(prefix string, message string) {
 	} else if prefix == "open" {
 		ct.ChangeColor(ct.Yellow, true, ct.None, false)
 	} else if prefix == "authorized" || prefix == "skip" {
-		ct.ChangeColor(ct.Blue, false, ct.None, false)
+		ct.ChangeColor(ct.Blue, true, ct.None, false)
 	} else {
-		ct.ChangeColor(ct.Green, true, ct.None, false)
+		ct.ChangeColor(ct.Green, false, ct.None, false)
 	}
 	fmt.Printf("%10s", prefix)
 	ct.ResetColor()
