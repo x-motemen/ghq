@@ -42,10 +42,10 @@ ghq.root::
     The path to directory under which cloned repositories are placed. See
     <<directory-structures,DIRECTORY STRUCTURES>> below. Defaults to "~/.ghq".
 
-anchor:directory-structures[]
-
 DIRECTORY STRUCTURES
 --------------------
+
+[[directory-structures]]
 
 Local repositories are placed under 'ghq.root' with named github.com/_user_/_repo_.
 
