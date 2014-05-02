@@ -7,14 +7,14 @@ import (
 )
 
 func Log(prefix string, message string) {
-	if prefix == "git" {
+	if prefix == "git" || prefix == "skip" {
 		ct.ChangeColor(ct.White, false, ct.None, false)
+	} else if prefix == "open" || prefix == "exists" {
+		ct.ChangeColor(ct.Yellow, false, ct.None, false)
+	} else if prefix == "authorized" || prefix == "skip" {
+		ct.ChangeColor(ct.Blue, false, ct.None, false)
 	} else if prefix == "error" {
 		ct.ChangeColor(ct.Red, false, ct.None, false)
-	} else if prefix == "open" {
-		ct.ChangeColor(ct.Yellow, true, ct.None, false)
-	} else if prefix == "authorized" || prefix == "skip" {
-		ct.ChangeColor(ct.Blue, true, ct.None, false)
 	} else {
 		ct.ChangeColor(ct.Green, false, ct.None, false)
 	}

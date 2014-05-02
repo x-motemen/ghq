@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/codegangsta/cli"
 	"github.com/motemen/ghq/pocket"
@@ -38,6 +39,11 @@ func main() {
 				cli.BoolFlag{"exact, e", "Perform an exact match"},
 				cli.BoolFlag{"full-path, p", "Show full paths"},
 			},
+		},
+		{
+			Name:   "look",
+			Usage:  "Look into a local repository",
+			Action: CommandLook,
 		},
 		{
 			Name:   "pocket",
@@ -95,11 +101,15 @@ func GetGitHubRepository(u *GitHubURL, doUpdate bool) {
 		dir, _ := filepath.Split(path)
 		mustBeOkay(os.MkdirAll(dir, 0755))
 		Git("clone", u.String(), path)
-	} else if doUpdate {
-		utils.Log("update", path)
+	} else {
+		if doUpdate {
+			utils.Log("update", path)
 
-		mustBeOkay(os.Chdir(path))
-		Git("remote", "update")
+			mustBeOkay(os.Chdir(path))
+			Git("remote", "update")
+		} else {
+			utils.Log("exists", path)
+		}
 	}
 }
 
@@ -132,6 +142,42 @@ func CommandList(c *cli.Context) {
 			fmt.Println(relPath)
 		}
 	})
+}
+
+func CommandLook(c *cli.Context) {
+	name := c.Args().First()
+
+	if name == "" {
+		cli.ShowCommandHelp(c, "look")
+		os.Exit(1)
+	}
+
+	pathsFound := make([]string, 0)
+	walkLocalRepositories(func(fullPath, relPath, user, repo string) {
+		if relPath == name || user+"/"+repo == name || repo == name {
+			pathsFound = append(pathsFound, fullPath)
+		}
+	})
+
+	switch len(pathsFound) {
+	case 0:
+		utils.Log("error", "No repository found")
+
+	case 1:
+		shell := os.Getenv("SHELL")
+		if shell == "" {
+			shell = "/bin/sh"
+		}
+
+		mustBeOkay(os.Chdir(pathsFound[0]))
+		syscall.Exec(shell, []string{shell}, nil)
+
+	default:
+		utils.Log("error", "More than one repositories are found; Try more precise name")
+		for _, path := range pathsFound {
+			utils.Log("error", " - "+path)
+		}
+	}
 }
 
 func CommandPocket(c *cli.Context) {
