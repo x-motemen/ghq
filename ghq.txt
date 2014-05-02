@@ -11,6 +11,7 @@ SYNOPSIS
 [verse]
 'ghq' get [-u] <GitHub repository URL> | <user>/<repo>
 'ghq' list [-p] [-e] [<query>]
+'ghq' look <repo> | <user>/<repo>
 'ghq' pocket [-u]
 
 COMMANDS
@@ -28,6 +29,9 @@ list::
     ('--exact') forces the match to be an exact one (i.e. the query equals to
     _repo_ or _user_/_repo_) If '-p' is given, the full paths to
     the repository root are printed instead of relative ones.
+
+list::
+    Look into a locally cloned repository with the shell.
 
 pocket::
     Retrieves http://getpocket.com/[Pocket] entries of github.com and
