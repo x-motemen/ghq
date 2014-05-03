@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/user"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -47,7 +45,7 @@ func main() {
 		},
 		{
 			Name:   "pocket",
-			Usage:  "Does get for all github entries in Pocket",
+			Usage:  "Get for all github entries in Pocket",
 			Action: CommandPocket,
 			Flags: []cli.Flag{
 				cli.BoolFlag{"update, u", "Update local repository if cloned already"},
@@ -82,8 +80,9 @@ func CommandGet(c *cli.Context) {
 }
 
 func GetGitHubRepository(u *GitHubURL, doUpdate bool) {
-	path := pathForRepository(u)
+	repo := LocalRepositoryFromGitHubURL(u)
 
+	path := repo.FullPath
 	newPath := false
 
 	_, err := os.Stat(path)
@@ -118,28 +117,30 @@ func CommandList(c *cli.Context) {
 	exact := c.Bool("exact")
 	showFullPath := c.Bool("full-path")
 
-	var filterFn func(string, string, string) bool
+	var filterFn func(*LocalRepository) bool
 	if query == "" {
-		filterFn = func(_, _, _ string) bool { return true }
+		filterFn = func(_ *LocalRepository) bool {
+			return true
+		}
 	} else if exact {
-		filterFn = func(relPath, user, repo string) bool {
-			return user+"/"+repo == query || repo == query
+		filterFn = func(repo *LocalRepository) bool {
+			return repo.Matches(query)
 		}
 	} else {
-		filterFn = func(relPath, user, repo string) bool {
-			return strings.Contains(user+"/"+repo, query)
+		filterFn = func(repo *LocalRepository) bool {
+			return strings.Contains(repo.NonHostPath(), query)
 		}
 	}
 
-	walkLocalRepositories(func(fullPath, relPath, user, repo string) {
-		if filterFn(relPath, user, repo) == false {
+	walkLocalRepositories(func(repo *LocalRepository) {
+		if filterFn(repo) == false {
 			return
 		}
 
 		if showFullPath {
-			fmt.Println(fullPath)
+			fmt.Println(repo.FullPath)
 		} else {
-			fmt.Println(relPath)
+			fmt.Println(repo.RelPath)
 		}
 	})
 }
@@ -152,14 +153,14 @@ func CommandLook(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	pathsFound := make([]string, 0)
-	walkLocalRepositories(func(fullPath, relPath, user, repo string) {
-		if relPath == name || user+"/"+repo == name || repo == name {
-			pathsFound = append(pathsFound, fullPath)
+	reposFound := make([]*LocalRepository, 0)
+	walkLocalRepositories(func(repo *LocalRepository) {
+		if repo.Matches(name) {
+			reposFound = append(reposFound, repo)
 		}
 	})
 
-	switch len(pathsFound) {
+	switch len(reposFound) {
 	case 0:
 		utils.Log("error", "No repository found")
 
@@ -169,13 +170,13 @@ func CommandLook(c *cli.Context) {
 			shell = "/bin/sh"
 		}
 
-		mustBeOkay(os.Chdir(pathsFound[0]))
-		syscall.Exec(shell, []string{shell}, nil)
+		mustBeOkay(os.Chdir(reposFound[0].FullPath))
+		syscall.Exec(shell, []string{shell}, syscall.Environ())
 
 	default:
 		utils.Log("error", "More than one repositories are found; Try more precise name")
-		for _, path := range pathsFound {
-			utils.Log("error", " - "+path)
+		for _, repo := range reposFound {
+			utils.Log("error", "- "+strings.Join(repo.PathParts, "/"))
 		}
 	}
 }
@@ -227,45 +228,4 @@ func CommandPocket(c *cli.Context) {
 
 		GetGitHubRepository(u, c.Bool("update"))
 	}
-}
-
-func walkLocalRepositories(callback func(string, string, string, string)) {
-	root := reposRoot()
-	filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
-		rel, err := filepath.Rel(root, path)
-		mustBeOkay(err)
-
-		paths := strings.Split(rel, string(filepath.Separator))
-		if len(paths) != 3 {
-			return nil
-		}
-
-		// host := paths[0]
-		user := paths[1]
-		repo := paths[2]
-
-		callback(path, rel, user, repo)
-
-		return filepath.SkipDir
-	})
-
-	return
-}
-
-func reposRoot() string {
-	reposRoot, err := GitConfig("ghq.root")
-	mustBeOkay(err)
-
-	if reposRoot == "" {
-		usr, err := user.Current()
-		mustBeOkay(err)
-
-		reposRoot = path.Join(usr.HomeDir, ".ghq")
-	}
-
-	return reposRoot
-}
-
-func pathForRepository(u *GitHubURL) string {
-	return path.Join(reposRoot(), "github.com", u.User, u.Repo)
 }
