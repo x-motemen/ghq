@@ -41,11 +41,13 @@ func LocalRepositoryFromGitHubURL(u *GitHubURL) *LocalRepository {
 	return LocalRepositoryFromPathParts([]string{"github.com", u.User, u.Repo})
 }
 
-func (repo *LocalRepository) PathTails() []string {
+// List of tail parts of relative path from the root directory (shortest first)
+// for example, {"ghq", "motemen/ghq", "github.com/motemen/ghq"} for $root/github.com/motemen/ghq.
+func (repo *LocalRepository) Subpaths() []string {
 	tails := make([]string, len(repo.PathParts))
 
 	for i, _ := range repo.PathParts {
-		tails[i] = strings.Join(repo.PathParts[i:], "/")
+		tails[i] = strings.Join(repo.PathParts[len(repo.PathParts)-(i+1):], "/")
 	}
 
 	return tails
@@ -56,7 +58,7 @@ func (repo *LocalRepository) NonHostPath() string {
 }
 
 func (repo *LocalRepository) Matches(pathQuery string) bool {
-	for _, p := range repo.PathTails() {
+	for _, p := range repo.Subpaths() {
 		if p == pathQuery {
 			return true
 		}

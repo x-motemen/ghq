@@ -35,7 +35,8 @@ func main() {
 			Action: CommandList,
 			Flags: []cli.Flag{
 				cli.BoolFlag{"exact, e", "Perform an exact match"},
-				cli.BoolFlag{"full-path, p", "Show full paths"},
+				cli.BoolFlag{"full-path, p", "Print full paths"},
+				cli.BoolFlag{"unique", "Print unique subpaths"},
 			},
 		},
 		{
@@ -115,7 +116,8 @@ func GetGitHubRepository(u *GitHubURL, doUpdate bool) {
 func CommandList(c *cli.Context) {
 	query := c.Args().First()
 	exact := c.Bool("exact")
-	showFullPath := c.Bool("full-path")
+	printFullPaths := c.Bool("full-path")
+	printUniquePaths := c.Bool("unique")
 
 	var filterFn func(*LocalRepository) bool
 	if query == "" {
@@ -132,17 +134,42 @@ func CommandList(c *cli.Context) {
 		}
 	}
 
+	repos := make([]*LocalRepository, 0)
+
 	walkLocalRepositories(func(repo *LocalRepository) {
 		if filterFn(repo) == false {
 			return
 		}
 
-		if showFullPath {
-			fmt.Println(repo.FullPath)
-		} else {
-			fmt.Println(repo.RelPath)
-		}
+		repos = append(repos, repo)
 	})
+
+	if printUniquePaths {
+		subpathCount := make(map[string]int)
+
+		for _, repo := range repos {
+			for _, p := range repo.Subpaths() {
+				subpathCount[p] = subpathCount[p] + 1
+			}
+		}
+
+		for _, repo := range repos {
+			for _, p := range repo.Subpaths() {
+				if subpathCount[p] == 1 {
+					fmt.Println(p)
+					break
+				}
+			}
+		}
+	} else {
+		for _, repo := range repos {
+			if printFullPaths {
+				fmt.Println(repo.FullPath)
+			} else {
+				fmt.Println(repo.RelPath)
+			}
+		}
+	}
 }
 
 func CommandLook(c *cli.Context) {

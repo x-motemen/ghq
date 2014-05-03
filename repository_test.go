@@ -11,5 +11,5 @@ func TestNewLocalRepository(t *testing.T) {
 	r, err := LocalRepositoryFromFullPath("/repos/github.com/motemen/ghq")
 	Expect(err).To(BeNil())
 	Expect(r.NonHostPath()).To(Equal("motemen/ghq"))
-	Expect(r.PathTails()).To(Equal([]string{"github.com/motemen/ghq", "motemen/ghq", "ghq"}))
+	Expect(r.Subpaths()).To(Equal([]string{"github.com/motemen/ghq", "motemen/ghq", "ghq"}))
 }
