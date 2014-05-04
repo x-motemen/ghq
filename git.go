@@ -1,29 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
-
-	"github.com/motemen/ghq/utils"
 )
-
-func Git(command ...string) error {
-	utils.Log("git", strings.Join(command, " "))
-
-	cmd := exec.Command("git", command...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("git: %s", err)
-	}
-
-	return nil
-}
 
 func GitConfig(key string) (string, error) {
 	cmd := exec.Command("git", "config", "--path", "--null", "--get", key)

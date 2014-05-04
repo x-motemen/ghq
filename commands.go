@@ -44,9 +44,9 @@ func CommandGet(c *cli.Context) {
 }
 
 func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
-	remoteURL := remote.RepositoryURL()
+	remoteURL := remote.URL()
 	pathParts := append(
-		[]string{remoteURL.Host}, strings.Split(remote.RepositoryURL().Path, "/")...,
+		[]string{remoteURL.Host}, strings.Split(remoteURL.Path, "/")...,
 	)
 	local := LocalRepositoryFromPathParts(pathParts)
 
@@ -63,14 +63,13 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 	}
 
 	if newPath {
-		utils.Log("clone", fmt.Sprintf("%s -> %s", remote.RepositoryURL(), path))
+		utils.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
 
-		remote.VCS().Clone(remote.RepositoryURL(), path)
+		remote.VCS().Clone(remoteURL, path)
 	} else {
 		if doUpdate {
 			utils.Log("update", path)
-
-			remote.VCS().Update(path)
+			local.VCS().Update(path)
 		} else {
 			utils.Log("exists", path)
 		}
@@ -197,7 +196,7 @@ func CommandPocket(c *cli.Context) {
 		utils.Log("authorized", authorized.Username)
 
 		accessToken = authorized.AccessToken
-		Git("config", "ghq.pocket.token", authorized.AccessToken)
+		utils.Run("git", "config", "ghq.pocket.token", authorized.AccessToken)
 	}
 
 	utils.Log("pocket", "Retrieving github.com entries")

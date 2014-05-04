@@ -53,6 +53,7 @@ func (repo *LocalRepository) NonHostPath() string {
 	return strings.Join(repo.PathParts[1:], "/")
 }
 
+// Checks if any subpath of the local repository equals the query.
 func (repo *LocalRepository) Matches(pathQuery string) bool {
 	for _, p := range repo.Subpaths() {
 		if p == pathQuery {
@@ -61,6 +62,26 @@ func (repo *LocalRepository) Matches(pathQuery string) bool {
 	}
 
 	return false
+}
+
+// TODO return err
+func (repo *LocalRepository) VCS() *VCSBackend {
+	var (
+		fi  os.FileInfo
+		err error
+	)
+
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git"))
+	if err == nil && fi.IsDir() {
+		return GitBackend
+	}
+
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".hg"))
+	if err == nil && fi.IsDir() {
+		return MercurialBackend
+	}
+
+	return nil
 }
 
 func walkLocalRepositories(callback func(*LocalRepository)) {

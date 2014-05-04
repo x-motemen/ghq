@@ -55,7 +55,7 @@ func main() {
 
 func mustBeOkay(err error) {
 	if err != nil {
-		_, file, line, _ := runtime.Caller(0)
+		_, file, line, _ := runtime.Caller(1)
 		utils.Log("error", fmt.Sprintf("at %s line %d: %s", file, line, err))
 		os.Exit(1)
 	}
