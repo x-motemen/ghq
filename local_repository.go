@@ -37,10 +37,6 @@ func LocalRepositoryFromPathParts(pathParts []string) *LocalRepository {
 	}
 }
 
-func LocalRepositoryFromGitHubURL(u *GitHubURL) *LocalRepository {
-	return LocalRepositoryFromPathParts([]string{"github.com", u.User, u.Repo})
-}
-
 // List of tail parts of relative path from the root directory (shortest first)
 // for example, {"ghq", "motemen/ghq", "github.com/motemen/ghq"} for $root/github.com/motemen/ghq.
 func (repo *LocalRepository) Subpaths() []string {

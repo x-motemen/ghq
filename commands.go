@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -21,16 +21,36 @@ func CommandGet(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	u, err := ParseGitHubURL(argUrl)
+	url, err := url.Parse(argUrl)
 	mustBeOkay(err)
 
-	getGitHubRepository(u, doUpdate)
+	if !url.IsAbs() {
+		url.Scheme = "https"
+		url.Host = "github.com"
+		if url.Path[0] != '/' {
+			url.Path = "/" + url.Path
+		}
+	}
+
+	remote, err := NewRemoteRepository(url)
+	mustBeOkay(err)
+
+	if remote.IsValid() == false {
+		utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
+		os.Exit(1)
+	}
+
+	getRemoteRepository(remote, doUpdate)
 }
 
-func getGitHubRepository(u *GitHubURL, doUpdate bool) {
-	repo := LocalRepositoryFromGitHubURL(u)
+func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
+	remoteURL := remote.RepositoryURL()
+	pathParts := append(
+		[]string{remoteURL.Host}, strings.Split(remote.RepositoryURL().Path, "/")...,
+	)
+	local := LocalRepositoryFromPathParts(pathParts)
 
-	path := repo.FullPath
+	path := local.FullPath
 	newPath := false
 
 	_, err := os.Stat(path)
@@ -43,17 +63,14 @@ func getGitHubRepository(u *GitHubURL, doUpdate bool) {
 	}
 
 	if newPath {
-		utils.Log("clone", fmt.Sprintf("%s/%s -> %s", u.User, u.Repo, path))
+		utils.Log("clone", fmt.Sprintf("%s -> %s", remote.RepositoryURL(), path))
 
-		dir, _ := filepath.Split(path)
-		mustBeOkay(os.MkdirAll(dir, 0755))
-		Git("clone", u.String(), path)
+		remote.VCS().Clone(remote.RepositoryURL(), path)
 	} else {
 		if doUpdate {
 			utils.Log("update", path)
 
-			mustBeOkay(os.Chdir(path))
-			Git("remote", "update")
+			remote.VCS().Update(path)
 		} else {
 			utils.Log("exists", path)
 		}
@@ -188,18 +205,20 @@ func CommandPocket(c *cli.Context) {
 	mustBeOkay(err)
 
 	for _, item := range res.List {
-		u, err := ParseGitHubURL(item.ResolvedURL)
+		url, err := url.Parse(item.ResolvedURL)
 		if err != nil {
-			utils.Log("error", err.Error())
-			continue
-		} else if u.User == "blog" {
-			utils.Log("skip", fmt.Sprintf("%s: is not a repository", u))
-			continue
-		} else if u.Extra != "" {
-			utils.Log("skip", fmt.Sprintf("%s: is not project home", u))
+			utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", item.ResolvedURL, err))
 			continue
 		}
 
-		getGitHubRepository(u, c.Bool("update"))
+		remote, err := NewRemoteRepository(url)
+		mustBeOkay(err)
+
+		if remote.IsValid() == false {
+			utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
+			continue
+		}
+
+		getRemoteRepository(remote, c.Bool("update"))
 	}
 }

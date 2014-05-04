@@ -10,7 +10,7 @@ import (
 	"github.com/motemen/ghq/utils"
 )
 
-func Git(command ...string) {
+func Git(command ...string) error {
 	utils.Log("git", strings.Join(command, " "))
 
 	cmd := exec.Command("git", command...)
@@ -19,9 +19,10 @@ func Git(command ...string) {
 
 	err := cmd.Run()
 	if err != nil {
-		utils.Log("error", fmt.Sprintf("git: %s", err))
-		os.Exit(1)
+		return fmt.Errorf("git: %s", err)
 	}
+
+	return nil
 }
 
 func GitConfig(key string) (string, error) {
