@@ -1,12 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/codegangsta/cli"
-	"github.com/motemen/ghq/utils"
 )
 
 func main() {
@@ -51,12 +48,4 @@ func main() {
 	}
 
 	app.Run(os.Args)
-}
-
-func mustBeOkay(err error) {
-	if err != nil {
-		_, file, line, _ := runtime.Caller(1)
-		utils.Log("error", fmt.Sprintf("at %s line %d: %s", file, line, err))
-		os.Exit(1)
-	}
 }

@@ -22,7 +22,7 @@ func CommandGet(c *cli.Context) {
 	}
 
 	url, err := url.Parse(argUrl)
-	mustBeOkay(err)
+	utils.DieIf(err)
 
 	if !url.IsAbs() {
 		url.Scheme = "https"
@@ -33,7 +33,7 @@ func CommandGet(c *cli.Context) {
 	}
 
 	remote, err := NewRemoteRepository(url)
-	mustBeOkay(err)
+	utils.DieIf(err)
 
 	if remote.IsValid() == false {
 		utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
@@ -59,7 +59,7 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 			newPath = true
 			err = nil
 		}
-		mustBeOkay(err)
+		utils.PanicIf(err)
 	}
 
 	if newPath {
@@ -159,7 +159,9 @@ func CommandLook(c *cli.Context) {
 			shell = "/bin/sh"
 		}
 
-		mustBeOkay(os.Chdir(reposFound[0].FullPath))
+		err := os.Chdir(reposFound[0].FullPath)
+		utils.PanicIf(err)
+
 		syscall.Exec(shell, []string{shell}, syscall.Environ())
 
 	default:
@@ -172,16 +174,17 @@ func CommandLook(c *cli.Context) {
 
 func CommandPocket(c *cli.Context) {
 	accessToken, err := GitConfig("ghq.pocket.token")
-	mustBeOkay(err)
+	utils.PanicIf(err)
 
 	if accessToken == "" {
 		receiverURL, ch, err := pocket.StartAccessTokenReceiver()
-		mustBeOkay(err)
+		utils.PanicIf(err)
+
 		utils.Log("pocket", "Waiting for Pocket authentication callback at "+receiverURL)
 
 		utils.Log("pocket", "Obtaining request token")
 		authRequest, err := pocket.ObtainRequestToken(receiverURL)
-		mustBeOkay(err)
+		utils.DieIf(err)
 
 		url := pocket.GenerateAuthorizationURL(authRequest.Code, receiverURL)
 		utils.Log("open", url)
@@ -190,7 +193,7 @@ func CommandPocket(c *cli.Context) {
 
 		utils.Log("pocket", "Obtaining access token")
 		authorized, err := pocket.ObtainAccessToken(authRequest.Code)
-		mustBeOkay(err)
+		utils.DieIf(err)
 
 		utils.Log("authorized", authorized.Username)
 
@@ -200,7 +203,7 @@ func CommandPocket(c *cli.Context) {
 
 	utils.Log("pocket", "Retrieving github.com entries")
 	res, err := pocket.RetrieveGitHubEntries(accessToken)
-	mustBeOkay(err)
+	utils.DieIf(err)
 
 	for _, item := range res.List {
 		url, err := url.Parse(item.ResolvedURL)
@@ -210,7 +213,9 @@ func CommandPocket(c *cli.Context) {
 		}
 
 		remote, err := NewRemoteRepository(url)
-		mustBeOkay(err)
+		if utils.ErrorIf(err) {
+			continue
+		}
 
 		if remote.IsValid() == false {
 			utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))

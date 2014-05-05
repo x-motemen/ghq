@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -78,5 +78,5 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 		return &GoogleCodeRepository{url}, nil
 	}
 
-	return nil, errors.New("Unsupported host")
+	return nil, fmt.Errorf("Unsupported host: %s", url.Host)
 }

@@ -6,6 +6,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/motemen/ghq/utils"
 )
 
 type LocalRepository struct {
@@ -87,7 +89,9 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	filepath.Walk(localRepositoriesRoot(), func(path string, fileInfo os.FileInfo, err error) error {
 		repo, err := LocalRepositoryFromFullPath(path)
-		mustBeOkay(err)
+		if err != nil {
+			return nil
+		}
 
 		if repo != nil {
 			callback(repo)
@@ -102,6 +106,8 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 
 var _localRepositoriesRoot string
 
+// Returns local cloned repositories' root.
+// Uses the value of `git config ghq.root` or defaults to ~/.ghq.
 func localRepositoriesRoot() string {
 	if _localRepositoriesRoot != "" {
 		return _localRepositoriesRoot
@@ -109,11 +115,11 @@ func localRepositoriesRoot() string {
 
 	var err error
 	_localRepositoriesRoot, err = GitConfig("ghq.root")
-	mustBeOkay(err)
+	utils.PanicIf(err)
 
 	if _localRepositoriesRoot == "" {
 		usr, err := user.Current()
-		mustBeOkay(err)
+		utils.PanicIf(err)
 
 		_localRepositoriesRoot = path.Join(usr.HomeDir, ".ghq")
 	}

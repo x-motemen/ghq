@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/daviddengcn/go-colortext"
 )
@@ -21,4 +22,26 @@ func Log(prefix string, message string) {
 	fmt.Printf("%10s", prefix)
 	ct.ResetColor()
 	fmt.Printf(" %s\n", message)
+}
+
+func ErrorIf(err error) bool {
+	if err != nil {
+		Log("error", err.Error())
+		return true
+	} else {
+		return false
+	}
+}
+
+func DieIf(err error) {
+	if err != nil {
+		Log("error", err.Error())
+		os.Exit(1)
+	}
+}
+
+func PanicIf(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
