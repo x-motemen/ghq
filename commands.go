@@ -64,7 +64,6 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 
 	if newPath {
 		utils.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
-
 		remote.VCS().Clone(remoteURL, path)
 	} else {
 		if doUpdate {
@@ -97,7 +96,7 @@ func CommandList(c *cli.Context) {
 		}
 	}
 
-	repos := make([]*LocalRepository, 0)
+	repos := []*LocalRepository{}
 
 	walkLocalRepositories(func(repo *LocalRepository) {
 		if filterFn(repo) == false {
@@ -108,7 +107,7 @@ func CommandList(c *cli.Context) {
 	})
 
 	if printUniquePaths {
-		subpathCount := make(map[string]int)
+		subpathCount := map[string]int{}
 
 		for _, repo := range repos {
 			for _, p := range repo.Subpaths() {
@@ -143,7 +142,7 @@ func CommandLook(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	reposFound := make([]*LocalRepository, 0)
+	reposFound := []*LocalRepository{}
 	walkLocalRepositories(func(repo *LocalRepository) {
 		if repo.Matches(name) {
 			reposFound = append(reposFound, repo)

@@ -21,7 +21,7 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	}
 
 	pathParts := strings.Split(relPath, string(filepath.Separator))
-	if len(pathParts) != 3 {
+	if len(pathParts) != 3 { // host, user, project
 		return nil, nil
 	}
 

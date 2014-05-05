@@ -81,16 +81,16 @@ func ObtainRequestToken(redirectURL string) (*OAuthRequestAPIResponse, error) {
 	return res, nil
 }
 
-func StartAccessTokenReceiver() (string, <-chan bool, error) {
+func StartAccessTokenReceiver() (string, <-chan struct{}, error) {
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return "", nil, err
 	}
 
-	ch := make(chan bool)
+	ch := make(chan struct{})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		ch <- true
+		ch <- struct{}{}
 		_ = listener.Close()
 	})
 
