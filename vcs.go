@@ -27,12 +27,7 @@ var GitBackend = &VCSBackend{
 		return utils.Run("git", "clone", remote.String(), local)
 	},
 	Update: func(local string) error {
-		err := os.Chdir(local)
-		if err != nil {
-			return err
-		}
-
-		return utils.Run("git", "remote", "update")
+		return utils.RunInDir(local, "git", "remote", "update")
 	},
 }
 
@@ -47,11 +42,6 @@ var MercurialBackend = &VCSBackend{
 		return utils.Run("hg", "clone", remote.String(), local)
 	},
 	Update: func(local string) error {
-		err := os.Chdir(local)
-		if err != nil {
-			return err
-		}
-
-		return utils.Run("hg", "pull")
+		return utils.RunInDir(local, "hg", "pull")
 	},
 }

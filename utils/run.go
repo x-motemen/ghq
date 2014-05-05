@@ -24,6 +24,15 @@ func RunSilently(command string, args ...string) error {
 	return RunCommand(cmd)
 }
 
+func RunInDir(dir, command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Dir = dir
+
+	return RunCommand(cmd)
+}
+
 func RunCommand(cmd *exec.Cmd) error {
 	Log(cmd.Args[0], strings.Join(cmd.Args[1:], " "))
 
