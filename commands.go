@@ -12,7 +12,16 @@ import (
 	"github.com/motemen/ghq/utils"
 )
 
-func CommandGet(c *cli.Context) {
+var GetCommand = cli.Command{
+	Name:   "get",
+	Usage:  "Clone/sync with a remote repository",
+	Action: DoGet,
+	Flags: []cli.Flag{
+		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+	},
+}
+
+func DoGet(c *cli.Context) {
 	argUrl := c.Args().Get(0)
 	doUpdate := c.Bool("update")
 
@@ -75,7 +84,18 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 	}
 }
 
-func CommandList(c *cli.Context) {
+var ListCommand = cli.Command{
+	Name:   "list",
+	Usage:  "List local repositories",
+	Action: DoList,
+	Flags: []cli.Flag{
+		cli.BoolFlag{"exact, e", "Perform an exact match"},
+		cli.BoolFlag{"full-path, p", "Print full paths"},
+		cli.BoolFlag{"unique", "Print unique subpaths"},
+	},
+}
+
+func DoList(c *cli.Context) {
 	query := c.Args().First()
 	exact := c.Bool("exact")
 	printFullPaths := c.Bool("full-path")
@@ -134,7 +154,13 @@ func CommandList(c *cli.Context) {
 	}
 }
 
-func CommandLook(c *cli.Context) {
+var LookCommand = cli.Command{
+	Name:   "look",
+	Usage:  "Look into a local repository",
+	Action: DoLook,
+}
+
+func DoLook(c *cli.Context) {
 	name := c.Args().First()
 
 	if name == "" {
@@ -172,7 +198,16 @@ func CommandLook(c *cli.Context) {
 	}
 }
 
-func CommandPocket(c *cli.Context) {
+var PocketCommand = cli.Command{
+	Name:   "pocket",
+	Usage:  "Get for all github entries in Pocket",
+	Action: DoPocket,
+	Flags: []cli.Flag{
+		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+	},
+}
+
+func DoPocket(c *cli.Context) {
 	accessToken, err := GitConfig("ghq.pocket.token")
 	utils.PanicIf(err)
 
