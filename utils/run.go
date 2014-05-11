@@ -33,10 +33,16 @@ func RunInDir(dir, command string, args ...string) error {
 	return RunCommand(cmd)
 }
 
+type RunFunc func(*exec.Cmd) error
+
+var CommandRunner RunFunc = func(cmd *exec.Cmd) error {
+	return cmd.Run()
+}
+
 func RunCommand(cmd *exec.Cmd) error {
 	Log(cmd.Args[0], strings.Join(cmd.Args[1:], " "))
 
-	err := cmd.Run()
+	err := CommandRunner(cmd)
 	if err != nil {
 		return &RunError{cmd, err}
 	}
