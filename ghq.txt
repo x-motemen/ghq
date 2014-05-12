@@ -8,10 +8,11 @@ ghq - Manage GitHub repository clones
 
 SYNOPSIS
 --------
+
 [verse]
-'ghq' get [-u] <GitHub repository URL> | <user>/<repo>
+'ghq' get [-u] <repository URL> | <user>/<project>
 'ghq' list [-p] [-e] [<query>]
-'ghq' look <repo> | <user>/<repo>
+'ghq' look <project> | <user>/<project>
 'ghq' pocket [-u]
 
 COMMANDS
@@ -19,7 +20,7 @@ COMMANDS
 
 get::
     Clone a GitHub repository under ghq root direcotry. See
-    <<directory-structures,DIRECTORY STRUCTURES>> below.  If the repository is
+    <<directory_structures,DIRECTORY STRUCTURES>> below.  If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed.
 
@@ -27,8 +28,8 @@ list::
     List locally cloned repositories. If a query argument is given, only
     repositories whose names contain that query text are listed. '-e'
     ('--exact') forces the match to be an exact one (i.e. the query equals to
-    _repo_ or _user_/_repo_) If '-p' is given, the full paths to
-    the repository root are printed instead of relative ones.
+    _project_ or _user_/_project_) If '-p' ('--full-path') is given, the full paths
+    to the repository root are printed instead of relative ones.
 
 list::
     Look into a locally cloned repository with the shell.
@@ -44,18 +45,19 @@ Configuration uses 'git-config' variables.
 
 ghq.root::
     The path to directory under which cloned repositories are placed. See
-    <<directory-structures,DIRECTORY STRUCTURES>> below. Defaults to "~/.ghq".
+    <<directory_structures,DIRECTORY STRUCTURES>> below. Defaults to "~/.ghq".
 
-DIRECTORY STRUCTURES
---------------------
-
-[[directory-structures]]
+[[directory_structures]]DIRECTORY STRUCTURES
+--------------------------------------------
 
 Local repositories are placed under 'ghq.root' with named github.com/_user_/_repo_.
 
 ----
 ~/.ghq
-`-- github.com
+|-- code.google.com/
+|   `-- p/
+|       `-- vim/
+`-- github.com/
     |-- codegangsta/
     |   `-- cli/
     |-- google/
