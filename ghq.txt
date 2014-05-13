@@ -12,7 +12,8 @@ SYNOPSIS
 [verse]
 'ghq' get [-u] <repository URL> | <user>/<project>
 'ghq' list [-p] [-e] [<query>]
-'ghq' look <project> | <user>/<project>
+'ghq' look <project> | <user>/<project> | <host>/<user>/<project>
+'ghq' starred [-u] <user>
 'ghq' pocket [-u]
 
 COMMANDS
@@ -31,8 +32,12 @@ list::
     _project_ or _user_/_project_) If '-p' ('--full-path') is given, the full paths
     to the repository root are printed instead of relative ones.
 
-list::
+look::
     Look into a locally cloned repository with the shell.
+
+starred::
+    Retrieves GitHub repositories that are starred by the user specified and
+    performs 'get' for each of them.
 
 pocket::
     Retrieves http://getpocket.com/[Pocket] entries of github.com and
