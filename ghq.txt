@@ -21,7 +21,7 @@ COMMANDS
 
 get::
     Clone a GitHub repository under ghq root direcotry. See
-    <<directory_structures,DIRECTORY STRUCTURES>> below.  If the repository is
+    <<directory-structures,DIRECTORY STRUCTURES>> below.  If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed.
 
@@ -50,9 +50,9 @@ Configuration uses 'git-config' variables.
 
 ghq.root::
     The path to directory under which cloned repositories are placed. See
-    <<directory_structures,DIRECTORY STRUCTURES>> below. Defaults to "~/.ghq".
+    <<directory-structures,DIRECTORY STRUCTURES>> below. Defaults to "~/.ghq".
 
-[[directory_structures]]DIRECTORY STRUCTURES
+[[directory-structures]]DIRECTORY STRUCTURES
 --------------------------------------------
 
 Local repositories are placed under 'ghq.root' with named github.com/_user_/_repo_.
