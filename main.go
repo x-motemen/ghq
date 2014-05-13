@@ -17,6 +17,7 @@ func main() {
 		GetCommand,
 		ListCommand,
 		LookCommand,
+		StarredGommand,
 		PocketCommand,
 	}
 

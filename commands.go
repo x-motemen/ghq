@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/codegangsta/cli"
+	"github.com/google/go-github/github"
 	"github.com/motemen/ghq/pocket"
 	"github.com/motemen/ghq/utils"
 )
@@ -16,6 +17,41 @@ var GetCommand = cli.Command{
 	Name:   "get",
 	Usage:  "Clone/sync with a remote repository",
 	Action: DoGet,
+	Flags: []cli.Flag{
+		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+	},
+}
+
+var ListCommand = cli.Command{
+	Name:   "list",
+	Usage:  "List local repositories",
+	Action: DoList,
+	Flags: []cli.Flag{
+		cli.BoolFlag{"exact, e", "Perform an exact match"},
+		cli.BoolFlag{"full-path, p", "Print full paths"},
+		cli.BoolFlag{"unique", "Print unique subpaths"},
+	},
+}
+
+var LookCommand = cli.Command{
+	Name:   "look",
+	Usage:  "Look into a local repository",
+	Action: DoLook,
+}
+
+var StarredGommand = cli.Command{
+	Name:   "starred",
+	Usage:  "Get all starred GitHub repositories",
+	Action: DoStarred,
+	Flags: []cli.Flag{
+		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+	},
+}
+
+var PocketCommand = cli.Command{
+	Name:   "pocket",
+	Usage:  "Get all github.com entries in Pocket",
+	Action: DoPocket,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 	},
@@ -84,17 +120,6 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 	}
 }
 
-var ListCommand = cli.Command{
-	Name:   "list",
-	Usage:  "List local repositories",
-	Action: DoList,
-	Flags: []cli.Flag{
-		cli.BoolFlag{"exact, e", "Perform an exact match"},
-		cli.BoolFlag{"full-path, p", "Print full paths"},
-		cli.BoolFlag{"unique", "Print unique subpaths"},
-	},
-}
-
 func DoList(c *cli.Context) {
 	query := c.Args().First()
 	exact := c.Bool("exact")
@@ -154,12 +179,6 @@ func DoList(c *cli.Context) {
 	}
 }
 
-var LookCommand = cli.Command{
-	Name:   "look",
-	Usage:  "Look into a local repository",
-	Action: DoLook,
-}
-
 func DoLook(c *cli.Context) {
 	name := c.Args().First()
 
@@ -198,13 +217,48 @@ func DoLook(c *cli.Context) {
 	}
 }
 
-var PocketCommand = cli.Command{
-	Name:   "pocket",
-	Usage:  "Get for all github entries in Pocket",
-	Action: DoPocket,
-	Flags: []cli.Flag{
-		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
-	},
+func DoStarred(c *cli.Context) {
+	user := c.Args().First()
+
+	if user == "" {
+		cli.ShowCommandHelp(c, "starred")
+		os.Exit(1)
+	}
+
+	client := github.NewClient(nil)
+	options := &github.ActivityListStarredOptions{Sort: "created"}
+
+	for page := 1; ; page++ {
+		options.Page = page
+
+		repositories, res, err := client.Activity.ListStarred(user, options)
+		utils.DieIf(err)
+
+		utils.Log("page", fmt.Sprintf("%d/%d", page, res.LastPage))
+		for _, repo := range repositories {
+			url, err := url.Parse(*repo.HTMLURL)
+			if err != nil {
+				utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", repo.HTMLURL, err))
+				continue
+			}
+
+			remote, err := NewRemoteRepository(url)
+			if utils.ErrorIf(err) {
+				continue
+			}
+
+			if remote.IsValid() == false {
+				utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
+				continue
+			}
+
+			getRemoteRepository(remote, c.Bool("update"))
+		}
+
+		if page == res.LastPage {
+			break
+		}
+	}
 }
 
 func DoPocket(c *cli.Context) {
