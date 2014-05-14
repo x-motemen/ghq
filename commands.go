@@ -17,8 +17,7 @@ var Commands = []cli.Command{
 	GetCommand,
 	ListCommand,
 	LookCommand,
-	StarredGommand,
-	PocketCommand,
+	ImportCommand,
 }
 
 var GetCommand = cli.Command{
@@ -47,45 +46,64 @@ var LookCommand = cli.Command{
 	Action: DoLook,
 }
 
-var StarredGommand = cli.Command{
+var ImportCommand = cli.Command{
+	Name:  "import",
+	Usage: "Import repositories from other web services",
+	Subcommands: []cli.Command{
+		ImportStarredGommand,
+		ImportPocketCommand,
+	},
+}
+
+var ImportStarredGommand = cli.Command{
 	Name:   "starred",
 	Usage:  "Get all starred GitHub repositories",
-	Action: DoStarred,
+	Action: DoImportStarred,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 	},
 }
 
-var PocketCommand = cli.Command{
+var ImportPocketCommand = cli.Command{
 	Name:   "pocket",
 	Usage:  "Get all github.com entries in Pocket",
-	Action: DoPocket,
+	Action: DoImportPocket,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 	},
 }
 
-var commandArguments = map[string]string{
-	"get":     "[-u] <repository URL> | <user>/<project>",
-	"list":    "[-p] [-e] [<query>]",
-	"look":    "<project> | <user>/<project> | <host>/<user>/<project>",
-	"starred": "[-u] <user>",
-	"pocket":  "[-u]",
+type commandDoc struct {
+	Parent    string
+	Arguments string
+}
+
+var commandDocs = map[string]commandDoc{
+	"get":     {"", "[-u] <repository URL> | <user>/<project>"},
+	"list":    {"", "[-p] [-e] [<query>]"},
+	"look":    {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
+	"import":  {"", "[-u] starred <user> | pocket"},
+	"starred": {"import", "[-u] <user>"},
+	"pocket":  {"import", "[-u]"},
+}
+
+func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
+	template := "{{if false}}"
+	for _, command := range append(Commands, ImportStarredGommand, ImportPocketCommand) {
+		template = template + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, genTemplate(commandDocs[command.Name]))
+	}
+	return template + "{{end}}"
 }
 
 func init() {
-	argsTemplate := "{{if false}}"
-	for _, command := range Commands {
-		args := commandArguments[command.Name]
-		argsTemplate = argsTemplate + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, args)
-	}
-	argsTemplate = argsTemplate + "{{end}}"
+	argsTemplate := mkCommandsTemplate(func(doc commandDoc) string { return doc.Arguments })
+	parentTemplate := mkCommandsTemplate(func(doc commandDoc) string { return string(strings.TrimLeft(doc.Parent+" ", " ")) })
 
 	cli.CommandHelpTemplate = `NAME:
    {{.Name}} - {{.Usage}}
 
 USAGE:
-   ghq {{.Name}} ` + argsTemplate + `
+   ghq ` + parentTemplate + `{{.Name}} ` + argsTemplate + `
 {{if (len .Description)}}
 DESCRIPTION:
    {{.Description}}
@@ -256,7 +274,7 @@ func DoLook(c *cli.Context) {
 	}
 }
 
-func DoStarred(c *cli.Context) {
+func DoImportStarred(c *cli.Context) {
 	user := c.Args().First()
 
 	if user == "" {
@@ -294,13 +312,13 @@ func DoStarred(c *cli.Context) {
 			getRemoteRepository(remote, c.Bool("update"))
 		}
 
-		if page == res.LastPage {
+		if page >= res.LastPage {
 			break
 		}
 	}
 }
 
-func DoPocket(c *cli.Context) {
+func DoImportPocket(c *cli.Context) {
 	accessToken, err := GitConfig("ghq.pocket.token")
 	utils.PanicIf(err)
 
