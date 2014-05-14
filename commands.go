@@ -287,7 +287,7 @@ func DoStarred(c *cli.Context) {
 			}
 
 			if remote.IsValid() == false {
-				utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
+				utils.Log("skip", fmt.Sprintf("Not a valid repository: %s", url))
 				continue
 			}
 
@@ -346,7 +346,7 @@ func DoPocket(c *cli.Context) {
 		}
 
 		if remote.IsValid() == false {
-			utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
+			utils.Log("skip", fmt.Sprintf("Not a valid repository: %s", url))
 			continue
 		}
 
