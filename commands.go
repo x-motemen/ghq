@@ -14,25 +14,25 @@ import (
 )
 
 var Commands = []cli.Command{
-	GetCommand,
-	ListCommand,
-	LookCommand,
-	ImportCommand,
+	commandGet,
+	commandList,
+	commandLook,
+	commandImport,
 }
 
-var GetCommand = cli.Command{
+var commandGet = cli.Command{
 	Name:   "get",
 	Usage:  "Clone/sync with a remote repository",
-	Action: DoGet,
+	Action: doGet,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 	},
 }
 
-var ListCommand = cli.Command{
+var commandList = cli.Command{
 	Name:   "list",
 	Usage:  "List local repositories",
-	Action: DoList,
+	Action: doList,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"exact, e", "Perform an exact match"},
 		cli.BoolFlag{"full-path, p", "Print full paths"},
@@ -40,34 +40,34 @@ var ListCommand = cli.Command{
 	},
 }
 
-var LookCommand = cli.Command{
+var commandLook = cli.Command{
 	Name:   "look",
 	Usage:  "Look into a local repository",
-	Action: DoLook,
+	Action: doLook,
 }
 
-var ImportCommand = cli.Command{
+var commandImport = cli.Command{
 	Name:  "import",
 	Usage: "Import repositories from other web services",
 	Subcommands: []cli.Command{
-		ImportStarredGommand,
-		ImportPocketCommand,
+		commandImportStarred,
+		commandImportPocket,
 	},
 }
 
-var ImportStarredGommand = cli.Command{
+var commandImportStarred = cli.Command{
 	Name:   "starred",
 	Usage:  "Get all starred GitHub repositories",
-	Action: DoImportStarred,
+	Action: doImportStarred,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 	},
 }
 
-var ImportPocketCommand = cli.Command{
+var commandImportPocket = cli.Command{
 	Name:   "pocket",
 	Usage:  "Get all github.com entries in Pocket",
-	Action: DoImportPocket,
+	Action: doImportPocket,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 	},
@@ -87,9 +87,10 @@ var commandDocs = map[string]commandDoc{
 	"pocket":  {"import", "[-u]"},
 }
 
+// Makes template conditionals to generate per-command documents.
 func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
 	template := "{{if false}}"
-	for _, command := range append(Commands, ImportStarredGommand, ImportPocketCommand) {
+	for _, command := range append(Commands, commandImportStarred, commandImportPocket) {
 		template = template + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, genTemplate(commandDocs[command.Name]))
 	}
 	return template + "{{end}}"
@@ -114,7 +115,7 @@ OPTIONS:
 {{end}}`
 }
 
-func DoGet(c *cli.Context) {
+func doGet(c *cli.Context) {
 	argUrl := c.Args().Get(0)
 	doUpdate := c.Bool("update")
 
@@ -177,7 +178,7 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 	}
 }
 
-func DoList(c *cli.Context) {
+func doList(c *cli.Context) {
 	query := c.Args().First()
 	exact := c.Bool("exact")
 	printFullPaths := c.Bool("full-path")
@@ -236,7 +237,7 @@ func DoList(c *cli.Context) {
 	}
 }
 
-func DoLook(c *cli.Context) {
+func doLook(c *cli.Context) {
 	name := c.Args().First()
 
 	if name == "" {
@@ -274,7 +275,7 @@ func DoLook(c *cli.Context) {
 	}
 }
 
-func DoImportStarred(c *cli.Context) {
+func doImportStarred(c *cli.Context) {
 	user := c.Args().First()
 
 	if user == "" {
@@ -318,7 +319,7 @@ func DoImportStarred(c *cli.Context) {
 	}
 }
 
-func DoImportPocket(c *cli.Context) {
+func doImportPocket(c *cli.Context) {
 	accessToken, err := GitConfig("ghq.pocket.token")
 	utils.PanicIf(err)
 

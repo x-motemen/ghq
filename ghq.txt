@@ -13,8 +13,8 @@ SYNOPSIS
 'ghq' get [-u] <repository URL> | <user>/<project>
 'ghq' list [-p] [-e] [<query>]
 'ghq' look <project> | <user>/<project> | <host>/<user>/<project>
-'ghq' starred [-u] <user>
-'ghq' pocket [-u]
+'ghq' import starred [-u] <user>
+'ghq' import pocket [-u]
 
 COMMANDS
 --------
@@ -35,11 +35,11 @@ list::
 look::
     Look into a locally cloned repository with the shell.
 
-starred::
+import starred::
     Retrieves GitHub repositories that are starred by the user specified and
     performs 'get' for each of them.
 
-pocket::
+import pocket::
     Retrieves http://getpocket.com/[Pocket] entries of github.com and
     performs 'get' for each of them.
 

@@ -72,45 +72,45 @@ func capture(block func()) (string, string, error) {
 	return string(bufOut), string(bufErr), nil
 }
 
-func TestCommandList(t *testing.T) {
+func commandTestList(t *testing.T) {
 	RegisterTestingT(t)
 
 	_, _, err := capture(func() {
 		app := cli.NewApp()
-		flagSet := flagSet("list", ListCommand.Flags)
+		flagSet := flagSet("list", commandList.Flags)
 		c := cli.NewContext(app, flagSet, flagSet)
 
-		DoList(c)
+		doList(c)
 	})
 
 	Expect(err).To(BeNil())
 }
 
-func TestCommandListUnique(t *testing.T) {
+func commandTestListUnique(t *testing.T) {
 	RegisterTestingT(t)
 
 	_, _, err := capture(func() {
 		app := cli.NewApp()
-		flagSet := flagSet("list", ListCommand.Flags)
+		flagSet := flagSet("list", commandList.Flags)
 		flagSet.Parse([]string{"--unique"})
 		c := cli.NewContext(app, flagSet, flagSet)
 
-		DoList(c)
+		doList(c)
 	})
 
 	Expect(err).To(BeNil())
 }
 
-func TestCommandListUnknown(t *testing.T) {
+func commandTestListUnknown(t *testing.T) {
 	RegisterTestingT(t)
 
 	_, _, err := capture(func() {
 		app := cli.NewApp()
-		flagSet := flagSet("list", ListCommand.Flags)
+		flagSet := flagSet("list", commandList.Flags)
 		flagSet.Parse([]string{"--unknown-flag"})
 		c := cli.NewContext(app, flagSet, flagSet)
 
-		DoList(c)
+		doList(c)
 	})
 
 	Expect(err).To(BeNil())
