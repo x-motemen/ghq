@@ -13,6 +13,14 @@ import (
 	"github.com/motemen/ghq/utils"
 )
 
+var Commands = []cli.Command{
+	GetCommand,
+	ListCommand,
+	LookCommand,
+	StarredGommand,
+	PocketCommand,
+}
+
 var GetCommand = cli.Command{
 	Name:   "get",
 	Usage:  "Clone/sync with a remote repository",
@@ -55,6 +63,37 @@ var PocketCommand = cli.Command{
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 	},
+}
+
+var commandArguments = map[string]string{
+	"get":     "[-u] <repository URL> | <user>/<project>",
+	"list":    "[-p] [-e] [<query>]",
+	"look":    "<project> | <user>/<project> | <host>/<user>/<project>",
+	"starred": "[-u] <user>",
+	"pocket":  "[-u]",
+}
+
+func init() {
+	argsTemplate := "{{if false}}"
+	for _, command := range Commands {
+		args := commandArguments[command.Name]
+		argsTemplate = argsTemplate + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, args)
+	}
+	argsTemplate = argsTemplate + "{{end}}"
+
+	cli.CommandHelpTemplate = `NAME:
+   {{.Name}} - {{.Usage}}
+
+USAGE:
+   ghq {{.Name}} ` + argsTemplate + `
+{{if (len .Description)}}
+DESCRIPTION:
+   {{.Description}}
+{{end}}{{if (len .Flags)}}
+OPTIONS:
+   {{range .Flags}}{{.}}
+   {{end}}
+{{end}}`
 }
 
 func DoGet(c *cli.Context) {

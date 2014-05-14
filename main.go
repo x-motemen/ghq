@@ -13,13 +13,6 @@ func main() {
 	app.Version = "0.1.0"
 	app.Author = "motemen"
 	app.Email = "motemen@gmail.com"
-	app.Commands = []cli.Command{
-		GetCommand,
-		ListCommand,
-		LookCommand,
-		StarredGommand,
-		PocketCommand,
-	}
-
+	app.Commands = Commands
 	app.Run(os.Args)
 }
