@@ -33,8 +33,9 @@ func (repo *GitHubRepository) IsValid() bool {
 		return false
 	}
 
-	// must be /{user}/{project}
-	if len(strings.Split(repo.url.Path, "/")) != 3 {
+	// must be /{user}/{project}/?
+	pathComponents := strings.Split(strings.TrimRight(repo.url.Path, "/"), "/")
+	if len(pathComponents) != 3 {
 		return false
 	}
 

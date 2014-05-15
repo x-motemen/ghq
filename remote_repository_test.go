@@ -33,6 +33,11 @@ func TestNewRemoteRepositoryGitHub(t *testing.T) {
 	Expect(repo.IsValid()).To(Equal(true))
 	Expect(repo.VCS()).To(Equal(GitBackend))
 
+	repo, err = NewRemoteRepository(parseURL("https://github.com/motemen/pusheen-explorer/"))
+	Expect(err).To(BeNil())
+	Expect(repo.IsValid()).To(Equal(true))
+	Expect(repo.VCS()).To(Equal(GitBackend))
+
 	repo, err = NewRemoteRepository(parseURL("https://github.com/motemen/pusheen-explorer/blob/master/README.md"))
 	Expect(err).To(BeNil())
 	Expect(repo.IsValid()).To(Equal(false))
