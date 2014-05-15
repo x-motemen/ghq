@@ -8,7 +8,7 @@ import (
 )
 
 func Log(prefix string, message string) {
-	if prefix == "git" || prefix == "hg" || prefix == "skip" {
+	if prefix == "git" || prefix == "hg" || prefix == "skip" || prefix == "cd" {
 		ct.ChangeColor(ct.White, false, ct.None, false)
 	} else if prefix == "open" || prefix == "exists" {
 		ct.ChangeColor(ct.Yellow, false, ct.None, false)

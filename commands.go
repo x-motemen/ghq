@@ -262,6 +262,7 @@ func doLook(c *cli.Context) {
 			shell = "/bin/sh"
 		}
 
+		utils.Log("cd", reposFound[0].FullPath)
 		err := os.Chdir(reposFound[0].FullPath)
 		utils.PanicIf(err)
 
