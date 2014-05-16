@@ -27,7 +27,7 @@ var GitBackend = &VCSBackend{
 		return utils.Run("git", "clone", remote.String(), local)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "git", "remote", "update")
+		return utils.RunInDir(local, "git", "pull", "--ff-only")
 	},
 }
 
