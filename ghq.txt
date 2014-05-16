@@ -21,7 +21,7 @@ COMMANDS
 
 get::
     Clone a GitHub repository under ghq root direcotry. See
-    <<directory-structures,DIRECTORY STRUCTURES>> below.  If the repository is
+    <<directory-structures,DIRECTORY STRUCTURES>> below. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed.
 

@@ -21,8 +21,13 @@ var Commands = []cli.Command{
 }
 
 var commandGet = cli.Command{
-	Name:   "get",
-	Usage:  "Clone/sync with a remote repository",
+	Name:  "get",
+	Usage: "Clone/sync with a remote repository",
+	Description: `
+    Clone a GitHub repository under ghq root direcotry. If the repository is
+    already cloned to local, nothing will happen unless '-u' ('--update')
+    flag is supplied, in which case 'git remote update' is executed.
+`,
 	Action: doGet,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
@@ -30,8 +35,15 @@ var commandGet = cli.Command{
 }
 
 var commandList = cli.Command{
-	Name:   "list",
-	Usage:  "List local repositories",
+	Name:  "list",
+	Usage: "List local repositories",
+	Description: `
+    List locally cloned repositories. If a query argument is given, only
+    repositories whose names contain that query text are listed. '-e'
+    ('--exact') forces the match to be an exact one (i.e. the query equals to
+    _project_ or _user_/_project_) If '-p' ('--full-path') is given, the full paths
+    to the repository root are printed instead of relative ones.
+`,
 	Action: doList,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"exact, e", "Perform an exact match"},
@@ -41,8 +53,11 @@ var commandList = cli.Command{
 }
 
 var commandLook = cli.Command{
-	Name:   "look",
-	Usage:  "Look into a local repository",
+	Name:  "look",
+	Usage: "Look into a local repository",
+	Description: `
+    Look into a locally cloned repository with the shell.
+`,
 	Action: doLook,
 }
 
@@ -56,8 +71,12 @@ var commandImport = cli.Command{
 }
 
 var commandImportStarred = cli.Command{
-	Name:   "starred",
-	Usage:  "Get all starred GitHub repositories",
+	Name:  "starred",
+	Usage: "Get all starred GitHub repositories",
+	Description: `
+    Retrieves GitHub repositories that are starred by the user specified and
+    performs 'get' for each of them.
+`,
 	Action: doImportStarred,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
@@ -65,8 +84,12 @@ var commandImportStarred = cli.Command{
 }
 
 var commandImportPocket = cli.Command{
-	Name:   "pocket",
-	Usage:  "Get all github.com entries in Pocket",
+	Name:  "pocket",
+	Usage: "Get all github.com entries in Pocket",
+	Description: `
+    Retrieves Pocket <http://getpocket.com/> entries of github.com and
+    performs 'get' for each of them.
+`,
 	Action: doImportPocket,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
@@ -101,17 +124,16 @@ func init() {
 	parentTemplate := mkCommandsTemplate(func(doc commandDoc) string { return string(strings.TrimLeft(doc.Parent+" ", " ")) })
 
 	cli.CommandHelpTemplate = `NAME:
-   {{.Name}} - {{.Usage}}
+    {{.Name}} - {{.Usage}}
 
 USAGE:
-   ghq ` + parentTemplate + `{{.Name}} ` + argsTemplate + `
+    ghq ` + parentTemplate + `{{.Name}} ` + argsTemplate + `
 {{if (len .Description)}}
-DESCRIPTION:
-   {{.Description}}
+DESCRIPTION: {{.Description}}
 {{end}}{{if (len .Flags)}}
 OPTIONS:
-   {{range .Flags}}{{.}}
-   {{end}}
+    {{range .Flags}}{{.}}
+    {{end}}
 {{end}}`
 }
 
