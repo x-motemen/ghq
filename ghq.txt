@@ -4,7 +4,7 @@ ghq(1)
 NAME
 ----
 
-ghq - Manage GitHub repository clones
+ghq - Manage remote repository clones
 
 SYNOPSIS
 --------
