@@ -72,7 +72,7 @@ func capture(block func()) (string, string, error) {
 	return string(bufOut), string(bufErr), nil
 }
 
-func commandTestList(t *testing.T) {
+func TestCommandList(t *testing.T) {
 	RegisterTestingT(t)
 
 	_, _, err := capture(func() {
@@ -86,7 +86,7 @@ func commandTestList(t *testing.T) {
 	Expect(err).To(BeNil())
 }
 
-func commandTestListUnique(t *testing.T) {
+func TestCommandListUnique(t *testing.T) {
 	RegisterTestingT(t)
 
 	_, _, err := capture(func() {
@@ -101,7 +101,7 @@ func commandTestListUnique(t *testing.T) {
 	Expect(err).To(BeNil())
 }
 
-func commandTestListUnknown(t *testing.T) {
+func TestCommandListUnknown(t *testing.T) {
 	RegisterTestingT(t)
 
 	_, _, err := capture(func() {
