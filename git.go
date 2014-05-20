@@ -8,7 +8,27 @@ import (
 )
 
 func GitConfig(key string) (string, error) {
-	cmd := exec.Command("git", "config", "--path", "--null", "--get", key)
+	return gitConfig(key, false)
+}
+
+func GitConfigAll(key string) ([]string, error) {
+	value, err := gitConfig(key, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(value, "\000"), nil
+}
+
+func gitConfig(key string, all bool) (string, error) {
+	var getFlag string
+	if all == true {
+		getFlag = "--get-all"
+	} else {
+		getFlag = "--get"
+	}
+
+	cmd := exec.Command("git", "config", "--path", "--null", getFlag, key)
 	cmd.Stderr = os.Stderr
 
 	buf, err := cmd.Output()

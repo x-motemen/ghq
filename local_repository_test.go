@@ -6,7 +6,7 @@ import "testing"
 func TestNewLocalRepository(t *testing.T) {
 	RegisterTestingT(t)
 
-	_localRepositoriesRoot = "/repos"
+	_localRepositoryRoots = []string{"/repos"}
 
 	r, err := LocalRepositoryFromFullPath("/repos/github.com/motemen/ghq")
 	Expect(err).To(BeNil())
