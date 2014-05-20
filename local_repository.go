@@ -69,6 +69,10 @@ func (repo *LocalRepository) NonHostPath() string {
 	return strings.Join(repo.PathParts[1:], "/")
 }
 
+func (repo *LocalRepository) IsUnderPrimaryRoot() bool {
+	return strings.HasPrefix(repo.FullPath, primaryLocalRepositoryRoot())
+}
+
 // Checks if any subpath of the local repository equals the query.
 func (repo *LocalRepository) Matches(pathQuery string) bool {
 	for _, p := range repo.Subpaths() {

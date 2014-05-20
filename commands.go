@@ -232,15 +232,25 @@ func doList(c *cli.Context) {
 	})
 
 	if printUniquePaths {
-		subpathCount := map[string]int{}
+		subpathCount := map[string]int{} // Count duplicated subpaths (ex. foo/dotfiles and bar/dotfiles)
+		reposCount := map[string]int{}   // Check duplicated repositories among roots
 
+		// Primary first
 		for _, repo := range repos {
-			for _, p := range repo.Subpaths() {
-				subpathCount[p] = subpathCount[p] + 1
+			if reposCount[repo.RelPath] == 0 {
+				for _, p := range repo.Subpaths() {
+					subpathCount[p] = subpathCount[p] + 1
+				}
 			}
+
+			reposCount[repo.RelPath] = reposCount[repo.RelPath] + 1
 		}
 
 		for _, repo := range repos {
+			if reposCount[repo.RelPath] > 1 && repo.IsUnderPrimaryRoot() == false {
+				continue
+			}
+
 			for _, p := range repo.Subpaths() {
 				if subpathCount[p] == 1 {
 					fmt.Println(p)
