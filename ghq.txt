@@ -4,6 +4,15 @@
 
 ghq - Manage remote repository clones
 
+== DESCRIPTION
+
+'ghq' provides a way to organize remote repository clones, like +go get+ does. When you clone a remote repository by +ghq get+, ghq makes a directory under a specific root directory (by default +~/.ghq+) using the remote repository URL's host and path.
+
+    $ ghq get https://github.com/motemen/ghq
+    # Runs `git clone https://github.com/motemen/ghq ~/.ghq/github.com/motemen/ghq`
+
+You can also list local repositories (+ghq list+), jump into local repositories (+ghq look+), and bulk cloning repositories from several web services (+ghq import+).
+
 == SYNOPSIS
 
 [verse]
@@ -16,10 +25,11 @@ ghq - Manage remote repository clones
 == COMMANDS
 
 get::
-    Clone a GitHub repository under ghq root direcotry. See
+    Clone a GitHub repository under ghq root directory. See
     <<directory-structures,DIRECTORY STRUCTURES>> below. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
-    flag is supplied, in which case 'git remote update' is executed.
+    flag is supplied, in which case 'git remote update' is executed. +
+    Supports GitHub and Google Code Project (Git/Mercurial) repositories.
 
 list::
     List locally cloned repositories. If a query argument is given, only
@@ -37,7 +47,8 @@ import starred::
 
 import pocket::
     Retrieves http://getpocket.com/[Pocket] entries of github.com and
-    performs 'get' for each of them.
+    performs 'get' for each of them. +
+    To use this, needs to be compiled with Pocket consumer key. See <<installing,INSTALLING>>.
 
 == CONFIGURATION
 
@@ -66,22 +77,28 @@ Local repositories are placed under 'ghq.root' with named github.com/_user_/_rep
 ....
 
 
-== INSTALLATION
+== [[installing]]INSTALLING
 
 ----
 go get github.com/motemen/ghq
 ----
 
-If you want to enable Pocket importing feature:
+Or clone the https://github.com/motemen/ghq[repository] and run:
+
+----
+make install
+----
+
+If you want to enable http://getpocket.com/[Pocket] importing feature:
 
 ----
 go get -ldflags "-X github.com/motemen/ghq/pocket.ConsumerKey <your Pocket consumer key>" github.com/motemen/ghq
 ----
 
-Or clone the code and run:
+Or using Makefile:
 
 ----
-make POCKET_CONSUMER_KEY=<your Pocket consumer key>
+make install POCKET_CONSUMER_KEY=<your Pocket consumer key>
 ----
 
 == AUTHOR
