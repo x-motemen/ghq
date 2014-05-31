@@ -29,7 +29,10 @@ get::
     <<directory-structures,DIRECTORY STRUCTURES>> below. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed. +
-    Supports GitHub and Google Code Project (Git/Mercurial) repositories.
+    If there are multiple +ghq.root+ 's, existing local clones are searched
+    first. Then a new repository clone is created under the primary root if
+    none is found. +
+    Currently supports GitHub and Google Code Project (Git/Mercurial) repositories.
 
 list::
     List locally cloned repositories. If a query argument is given, only
@@ -56,7 +59,11 @@ Configuration uses 'git-config' variables.
 
 ghq.root::
     The path to directory under which cloned repositories are placed. See
-    <<directory-structures,DIRECTORY STRUCTURES>> below. Defaults to "~/.ghq".
+    <<directory-structures,DIRECTORY STRUCTURES>> below. Defaults to +~/.ghq+. +
+    This variable can have multiple values. If so, the first one becomes
+    primary one i.e. new repository clones are always created under it. You may
+    want to specify "$GOPATH/src" as a secondary root (environment variables
+    should be expanded.)
 
 == [[directory-structures]]DIRECTORY STRUCTURES
 
