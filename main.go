@@ -6,7 +6,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-var Version string
+var Version string = "HEAD"
 
 func main() {
 	app := cli.NewApp()

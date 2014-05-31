@@ -1,13 +1,10 @@
-ghq(1)
-======
+= ghq(1) image:https://travis-ci.org/motemen/ghq.svg?branch=master["Build Status", link="https://travis-ci.org/motemen/ghq"]
 
-NAME
-----
+== NAME
 
 ghq - Manage remote repository clones
 
-SYNOPSIS
---------
+== SYNOPSIS
 
 [verse]
 'ghq' get [-u] <repository URL> | <user>/<project>
@@ -16,8 +13,7 @@ SYNOPSIS
 'ghq' import starred [-u] <user>
 'ghq' import pocket [-u]
 
-COMMANDS
---------
+== COMMANDS
 
 get::
     Clone a GitHub repository under ghq root direcotry. See
@@ -43,8 +39,7 @@ import pocket::
     Retrieves http://getpocket.com/[Pocket] entries of github.com and
     performs 'get' for each of them.
 
-CONFIGURATION
--------------
+== CONFIGURATION
 
 Configuration uses 'git-config' variables.
 
@@ -52,8 +47,7 @@ ghq.root::
     The path to directory under which cloned repositories are placed. See
     <<directory-structures,DIRECTORY STRUCTURES>> below. Defaults to "~/.ghq".
 
-[[directory-structures]]DIRECTORY STRUCTURES
---------------------------------------------
+== [[directory-structures]]DIRECTORY STRUCTURES
 
 Local repositories are placed under 'ghq.root' with named github.com/_user_/_repo_.
 
@@ -72,7 +66,24 @@ Local repositories are placed under 'ghq.root' with named github.com/_user_/_rep
 ----
 
 
-AUTHOR
-------
+== INSTALLATION
+
+----
+go get github.com/motemen/ghq
+----
+
+If you want to enable Pocket importing feature:
+
+----
+go get -ldflags "-X github.com/motemen/ghq/pocket.ConsumerKey <your Pocket consumer key>" github.com/motemen/ghq
+----
+
+Or clone the code and run:
+
+----
+make POCKET_CONSUMER_KEY=<your Pocket consumer key>
+----
+
+== AUTHOR
 
 motemen <motemen@gmail.com>
