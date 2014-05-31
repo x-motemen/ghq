@@ -1,6 +1,9 @@
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
 
-BUILD_FLAGS = -ldflags "-X main.VERSION $$(git describe --tags --always --dirty)"
+BUILD_FLAGS = -ldflags "\
+	      -X main.Version \"$$(git describe --tags --always --dirty)\" \
+	      -X github.com/motemen/ghq/pocket.ConsumerKey \"$$POCKET_CONSUMER_KEY\" \
+	      "
 
 build: deps
 	go build $(VERBOSE_FLAG) $(BUILD_FLAGS)

@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var consumerKey = "27000-330870baad7ffbb5ab2fa6b2"
+var ConsumerKey string
 
 var apiOrigin = "https://getpocket.com"
 
@@ -69,7 +69,7 @@ func ObtainRequestToken(redirectURL string) (*OAuthRequestAPIResponse, error) {
 	err := requestAPI(
 		"/v3/oauth/request",
 		url.Values{
-			"consumer_key": {consumerKey},
+			"consumer_key": {ConsumerKey},
 			"redirect_uri": {redirectURL},
 		},
 		res,
@@ -108,7 +108,7 @@ func ObtainAccessToken(requestToken string) (*OAuthAuthorizeAPIResponse, error) 
 	err := requestAPI(
 		"/v3/oauth/authorize",
 		url.Values{
-			"consumer_key": {consumerKey},
+			"consumer_key": {ConsumerKey},
 			"code":         {requestToken},
 		},
 		res,
@@ -130,7 +130,7 @@ func RetrieveGitHubEntries(accessToken string) (*RetrieveAPIResponse, error) {
 	err := requestAPI(
 		"/v3/get",
 		url.Values{
-			"consumer_key": {consumerKey},
+			"consumer_key": {ConsumerKey},
 			"access_token": {accessToken},
 			"domain":       {"github.com"},
 		},

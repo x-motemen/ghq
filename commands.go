@@ -353,6 +353,11 @@ func doImportStarred(c *cli.Context) {
 }
 
 func doImportPocket(c *cli.Context) {
+	if pocket.ConsumerKey == "" {
+		utils.Log("error", "Built without consumer key set")
+		return
+	}
+
 	accessToken, err := GitConfig("ghq.pocket.token")
 	utils.PanicIf(err)
 
