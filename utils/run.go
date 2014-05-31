@@ -35,7 +35,7 @@ func RunInDir(dir, command string, args ...string) error {
 
 type RunFunc func(*exec.Cmd) error
 
-var CommandRunner RunFunc = func(cmd *exec.Cmd) error {
+var CommandRunner = func(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 

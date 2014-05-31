@@ -138,15 +138,15 @@ OPTIONS:
 }
 
 func doGet(c *cli.Context) {
-	argUrl := c.Args().Get(0)
+	argURL := c.Args().Get(0)
 	doUpdate := c.Bool("update")
 
-	if argUrl == "" {
+	if argURL == "" {
 		cli.ShowCommandHelp(c, "get")
 		os.Exit(1)
 	}
 
-	url, err := url.Parse(argUrl)
+	url, err := url.Parse(argURL)
 	utils.DieIf(err)
 
 	if !url.IsAbs() {

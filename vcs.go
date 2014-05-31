@@ -8,7 +8,7 @@ import (
 	"github.com/motemen/ghq/utils"
 )
 
-// Represents a VCS backend.
+// A VCSBackend represents a VCS backend.
 type VCSBackend struct {
 	// Clones a remote repository to local path.
 	Clone func(*url.URL, string) error

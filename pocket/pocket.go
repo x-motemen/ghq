@@ -29,7 +29,7 @@ func requestAPIRaw(action string, params url.Values) (io.Reader, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Got response %d; X-Error=[%s]", resp.StatusCode, resp.Header.Get("X-Error"))
+		return nil, fmt.Errorf("got response %d; X-Error=[%s]", resp.StatusCode, resp.Header.Get("X-Error"))
 	}
 
 	return resp.Body, nil

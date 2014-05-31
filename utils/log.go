@@ -28,9 +28,9 @@ func ErrorIf(err error) bool {
 	if err != nil {
 		Log("error", err.Error())
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
 
 func DieIf(err error) {

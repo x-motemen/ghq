@@ -36,13 +36,12 @@ func gitConfig(key string, all bool) (string, error) {
 	if exitError, ok := err.(*exec.ExitError); ok {
 		if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
 			if waitStatus.ExitStatus() == 1 {
+				// The key was not found, do not treat as an error
 				return "", nil
-			} else {
-				return "", err
 			}
-		} else {
-			return "", err
 		}
+
+		return "", err
 	}
 
 	return strings.TrimRight(string(buf), "\000"), nil

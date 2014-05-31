@@ -9,7 +9,7 @@ import (
 	"github.com/motemen/ghq/utils"
 )
 
-// Represents a remote repository.
+// A RemoteRepository represents a remote repository.
 type RemoteRepository interface {
 	// The repository URL.
 	URL() *url.URL
@@ -19,7 +19,7 @@ type RemoteRepository interface {
 	VCS() *VCSBackend
 }
 
-// Represents a GitHub repository. Impliments RemoteRepository.
+// A GitHubRepository represents a GitHub repository. Impliments RemoteRepository.
 type GitHubRepository struct {
 	url *url.URL
 }
@@ -79,5 +79,5 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 		return &GoogleCodeRepository{url}, nil
 	}
 
-	return nil, fmt.Errorf("Unsupported host: %s", url.Host)
+	return nil, fmt.Errorf("unsupported host: %s", url.Host)
 }

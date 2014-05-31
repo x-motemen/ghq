@@ -33,7 +33,7 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	}
 
 	if relPath == "" {
-		return nil, fmt.Errorf("No local repository found for: %s", fullPath)
+		return nil, fmt.Errorf("no local repository found for: %s", fullPath)
 	}
 
 	pathParts := strings.Split(relPath, string(filepath.Separator))
@@ -53,12 +53,12 @@ func LocalRepositoryFromPathParts(pathParts []string) *LocalRepository {
 	}
 }
 
-// List of tail parts of relative path from the root directory (shortest first)
+// Subpaths returns lists of tail parts of relative path from the root directory (shortest first)
 // for example, {"ghq", "motemen/ghq", "github.com/motemen/ghq"} for $root/github.com/motemen/ghq.
 func (repo *LocalRepository) Subpaths() []string {
 	tails := make([]string, len(repo.PathParts))
 
-	for i, _ := range repo.PathParts {
+	for i := range repo.PathParts {
 		tails[i] = strings.Join(repo.PathParts[len(repo.PathParts)-(i+1):], "/")
 	}
 
@@ -73,7 +73,7 @@ func (repo *LocalRepository) IsUnderPrimaryRoot() bool {
 	return strings.HasPrefix(repo.FullPath, primaryLocalRepositoryRoot())
 }
 
-// Checks if any subpath of the local repository equals the query.
+// Matches checks if any subpath of the local repository equals the query.
 func (repo *LocalRepository) Matches(pathQuery string) bool {
 	for _, p := range repo.Subpaths() {
 		if p == pathQuery {
@@ -112,12 +112,12 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 				return nil
 			}
 
-			if repo != nil {
-				callback(repo)
-				return filepath.SkipDir
-			} else {
+			if repo == nil {
 				return nil
 			}
+
+			callback(repo)
+			return filepath.SkipDir
 		})
 	}
 
