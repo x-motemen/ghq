@@ -170,10 +170,7 @@ func doGet(c *cli.Context) {
 
 func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 	remoteURL := remote.URL()
-	pathParts := append(
-		[]string{remoteURL.Host}, strings.Split(remoteURL.Path, "/")...,
-	)
-	local := LocalRepositoryFromPathParts(pathParts)
+	local := LocalRepositoryFromURL(remoteURL)
 
 	path := local.FullPath
 	newPath := false

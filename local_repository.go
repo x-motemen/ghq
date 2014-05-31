@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/user"
 	"path"
@@ -37,15 +38,35 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	}
 
 	pathParts := strings.Split(relPath, string(filepath.Separator))
-	if len(pathParts) != 3 { // host, user, project
+	// - github.com, <user>, <project>
+	// - code.google.com, p, <project>
+	if len(pathParts) != 3 {
 		return nil, nil
 	}
 
 	return &LocalRepository{fullPath, relPath, pathParts}, nil
 }
 
-func LocalRepositoryFromPathParts(pathParts []string) *LocalRepository {
+func LocalRepositoryFromURL(remoteURL *url.URL) *LocalRepository {
+	pathParts := append(
+		[]string{remoteURL.Host}, strings.Split(remoteURL.Path, "/")...,
+	)
 	relPath := path.Join(pathParts...)
+
+	var localRepository *LocalRepository
+
+	// Find existing local repository first
+	walkLocalRepositories(func(repo *LocalRepository) {
+		if repo.RelPath == relPath {
+			localRepository = repo
+		}
+	})
+
+	if localRepository != nil {
+		return localRepository
+	}
+
+	// No local repository found, returning new one
 	return &LocalRepository{
 		path.Join(primaryLocalRepositoryRoot(), relPath),
 		relPath,
