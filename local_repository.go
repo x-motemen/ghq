@@ -107,6 +107,10 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
 		filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
+			if fileInfo.IsDir() == false {
+				return nil
+			}
+
 			repo, err := LocalRepositoryFromFullPath(path)
 			if err != nil {
 				return nil
@@ -120,8 +124,6 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 			return filepath.SkipDir
 		})
 	}
-
-	return
 }
 
 var _localRepositoryRoots []string
