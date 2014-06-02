@@ -6,12 +6,20 @@ import (
 	"regexp"
 )
 
-var pattern = regexp.MustCompile("^([^@]+)@([^:]+):(.+)$")
+// Convert SCP-like URL to SSH URL(e.g. [user@]host.xz:path/to/repo.git/)
+// ref. http://git-scm.com/docs/git-fetch#_git_urls
+// (golang hasn't supported Perl-like negative look-behind match)
+var hasSchemePattern = regexp.MustCompile("^[^:]+://")
+var scpLikeUrlPattern = regexp.MustCompile("^([^@]+@)?([^:]+):(.+)$")
 
 func NewURL(ref string) (*url.URL, error) {
-	if pattern.MatchString(ref) {
-		matched := pattern.FindStringSubmatch(ref)
-		ref = fmt.Sprintf("ssh://%s@%s/%s", matched[1], matched[2], matched[3])
+	if !hasSchemePattern.MatchString(ref) && scpLikeUrlPattern.MatchString(ref) {
+		matched := scpLikeUrlPattern.FindStringSubmatch(ref)
+		user := matched[1]
+		host := matched[2]
+		path := matched[3]
+
+		ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
 	}
 
 	return url.Parse(ref)
