@@ -6,11 +6,11 @@ import (
 )
 
 func TestNewURL(t *testing.T) {
-	url, err := NewURL("https://github.com/motemen/pusheen-explorer")
-	Expect(url.String()).To(Equal("https://github.com/motemen/pusheen-explorer"))
+	httpsUrl, err := NewURL("https://github.com/motemen/pusheen-explorer")
+	Expect(httpsUrl.String()).To(Equal("https://github.com/motemen/pusheen-explorer"))
 	Expect(err).To(BeNil())
 
-	url, err = NewURL("git@github.com:motemen/pusheen-explorer.git")
-	Expect(url.Host).To(Equal("ssh://git@github.com/motemen/pusheen-explorer.git"))
+	sshUrl, err := NewURL("git@github.com:motemen/pusheen-explorer.git")
+	Expect(sshUrl.String()).To(Equal("ssh://git@github.com/motemen/pusheen-explorer.git"))
 	Expect(err).To(BeNil())
 }
