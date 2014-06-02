@@ -79,5 +79,17 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 		return &GoogleCodeRepository{url}, nil
 	}
 
+	gheHosts, err := GitConfigAll("ghq.ghe.host")
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve GH:E hostname from .gitconfig: %s", err)
+	}
+
+	for _, host := range gheHosts {
+		if url.Host == host {
+			return &GitHubRepository{url}, nil
+		}
+	}
+
 	return nil, fmt.Errorf("unsupported host: %s", url.Host)
 }
