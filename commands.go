@@ -146,7 +146,7 @@ func doGet(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	url, err := url.Parse(argURL)
+	url, err := NewURL(argURL)
 	utils.DieIf(err)
 
 	if !url.IsAbs() {
