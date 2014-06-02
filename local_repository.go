@@ -51,7 +51,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) *LocalRepository {
 	pathParts := append(
 		[]string{remoteURL.Host}, strings.Split(remoteURL.Path, "/")...,
 	)
-	relPath := path.Join(pathParts...)
+	relPath := strings.TrimSuffix(path.Join(pathParts...), ".git")
 
 	var localRepository *LocalRepository
 
