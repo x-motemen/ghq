@@ -17,7 +17,12 @@ func GitConfigAll(key string) ([]string, error) {
 		return nil, err
 	}
 
-	return strings.Split(value, "\000"), nil
+	var values = strings.Split(value, "\000")
+	if len(values) == 1 && values[0] == "" {
+		values = values[:0]
+	}
+
+	return values, nil
 }
 
 func gitConfig(key string, all bool) (string, error) {
