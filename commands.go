@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -286,16 +288,29 @@ func doLook(c *cli.Context) {
 		utils.Log("error", "No repository found")
 
 	case 1:
-		shell := os.Getenv("SHELL")
-		if shell == "" {
-			shell = "/bin/sh"
+		if runtime.GOOS == "windows" {
+			cmd := exec.Command(os.Getenv("COMSPEC"))
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Dir = reposFound[0].FullPath
+			err := cmd.Start()
+			if err == nil {
+				cmd.Wait()
+				os.Exit(0)
+			}
+		} else {
+			shell := os.Getenv("SHELL")
+			if shell == "" {
+				shell = "/bin/sh"
+			}
+
+			utils.Log("cd", reposFound[0].FullPath)
+			err := os.Chdir(reposFound[0].FullPath)
+			utils.PanicIf(err)
+
+			syscall.Exec(shell, []string{shell}, syscall.Environ())
 		}
-
-		utils.Log("cd", reposFound[0].FullPath)
-		err := os.Chdir(reposFound[0].FullPath)
-		utils.PanicIf(err)
-
-		syscall.Exec(shell, []string{shell}, syscall.Environ())
 
 	default:
 		utils.Log("error", "More than one repositories are found; Try more precise name")
