@@ -83,6 +83,7 @@ var commandImportStarred = cli.Command{
 	Action: doImportStarred,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+		cli.BoolFlag{"p", "Clone with SSH"},
 	},
 }
 
@@ -330,6 +331,8 @@ func doLook(c *cli.Context) {
 func doImportStarred(c *cli.Context) {
 	user := c.Args().First()
 
+	isSSH := c.Bool("p")
+
 	if user == "" {
 		cli.ShowCommandHelp(c, "starred")
 		os.Exit(1)
@@ -350,6 +353,13 @@ func doImportStarred(c *cli.Context) {
 			if err != nil {
 				utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", repo.HTMLURL, err))
 				continue
+			}
+			if isSSH {
+				url, err = ConvertGitHubURLHTTPToSSH(url)
+				if err != nil {
+					utils.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", repo.HTMLURL, err))
+					continue
+				}
 			}
 
 			remote, err := NewRemoteRepository(url)
