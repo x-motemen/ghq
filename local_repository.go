@@ -44,7 +44,7 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 		return nil, nil
 	}
 
-	return &LocalRepository{fullPath, relPath, pathParts}, nil
+	return &LocalRepository{fullPath, filepath.ToSlash(relPath), pathParts}, nil
 }
 
 func LocalRepositoryFromURL(remoteURL *url.URL) *LocalRepository {
@@ -140,7 +140,6 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 			if repo == nil {
 				return nil
 			}
-
 			callback(repo)
 			return filepath.SkipDir
 		})
@@ -164,7 +163,11 @@ func localRepositoryRoots() []string {
 		usr, err := user.Current()
 		utils.PanicIf(err)
 
-		_localRepositoryRoots = []string{path.Join(usr.HomeDir, ".ghq")}
+		_localRepositoryRoots = []string{filepath.Join(usr.HomeDir, ".ghq")}
+	}
+
+	for i, v := range _localRepositoryRoots {
+		_localRepositoryRoots[i] = filepath.Clean(v)
 	}
 
 	return _localRepositoryRoots
