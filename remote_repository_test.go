@@ -43,7 +43,8 @@ func TestNewRemoteRepositoryGitHub(t *testing.T) {
 	Expect(repo.IsValid()).To(Equal(false))
 
 	repo, err = NewRemoteRepository(parseURL("https://example.com/motemen/pusheen-explorer"))
-	Expect(err).NotTo(BeNil())
+	Expect(err).To(BeNil())
+	Expect(repo.IsValid()).To(Equal(true))
 }
 
 func TestNewRemoteRepositoryGoogleCode(t *testing.T) {

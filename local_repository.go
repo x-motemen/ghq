@@ -38,11 +38,6 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	}
 
 	pathParts := strings.Split(relPath, string(filepath.Separator))
-	// - github.com, <user>, <project>
-	// - code.google.com, p, <project>
-	if len(pathParts) != 3 {
-		return nil, nil
-	}
 
 	return &LocalRepository{fullPath, filepath.ToSlash(relPath), pathParts}, nil
 }
@@ -131,6 +126,13 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 			if err != nil || fileInfo == nil || fileInfo.IsDir() == false {
 				return nil
 			}
+
+			if !strings.HasSuffix(path, ".git") && !strings.HasSuffix(path, ".hg") {
+				return nil
+			}
+
+			path = strings.TrimSuffix(path, ".git")
+			path = strings.TrimSuffix(path, ".hg")
 
 			repo, err := LocalRepositoryFromFullPath(path)
 			if err != nil {
