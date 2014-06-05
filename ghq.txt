@@ -65,6 +65,12 @@ ghq.root::
     want to specify "$GOPATH/src" as a secondary root (environment variables
     should be expanded.)
 
+ghq.ghe.host::
+    The hostname of your GitHub Enterprise installation. A repository that has a
+    hostname set with this key will be regarded as same one as one on GitHub.
+    This variable can have multiple values. If so, `ghq` tries matching with
+    each hostnames.
+
 == [[directory-structures]]DIRECTORY STRUCTURES
 
 Local repositories are placed under 'ghq.root' with named github.com/_user_/_repo_.
