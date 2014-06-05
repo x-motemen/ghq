@@ -106,11 +106,11 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":     {"", "[-u] <repository URL> | <user>/<project>"},
+	"get":     {"", "[-u] <repository URL> | [-u] [-p] <user>/<project>"},
 	"list":    {"", "[-p] [-e] [<query>]"},
 	"look":    {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
-	"import":  {"", "[-u] starred <user> | pocket"},
-	"starred": {"import", "[-u] <user>"},
+	"import":  {"", "[-u] [-p] starred <user> | [-u] pocket"},
+	"starred": {"import", "[-u] [-p] <user>"},
 	"pocket":  {"import", "[-u]"},
 }
 
