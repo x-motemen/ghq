@@ -33,6 +33,7 @@ var commandGet = cli.Command{
 	Action: doGet,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+		cli.BoolFlag{"p", "Clone with SSH"},
 	},
 }
 
@@ -152,10 +153,16 @@ func doGet(c *cli.Context) {
 	utils.DieIf(err)
 
 	if !url.IsAbs() {
-		url.Scheme = "https"
-		url.Host = "github.com"
-		if url.Path[0] != '/' {
-			url.Path = "/" + url.Path
+		isSSH := c.Bool("p")
+		if isSSH {
+			url, err = NewURL("git@github.com:" + url.Path)
+			utils.DieIf(err)
+		} else {
+			url.Scheme = "https"
+			url.Host = "github.com"
+			if url.Path[0] != '/' {
+				url.Path = "/" + url.Path
+			}
 		}
 	}
 
