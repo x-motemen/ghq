@@ -68,8 +68,8 @@ ghq.root::
 ghq.ghe.host::
     The hostname of your GitHub Enterprise installation. A repository that has a
     hostname set with this key will be regarded as same one as one on GitHub.
-    This variable can have multiple values. If so, the first one that is matched
-    becomes primary one.
+    This variable can have multiple values. If so, `ghq` tries matching with
+    each hostnames.
 
 == [[directory-structures]]DIRECTORY STRUCTURES
 
