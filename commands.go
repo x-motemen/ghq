@@ -40,6 +40,7 @@ var commandGet = cli.Command{
 
 var commandList = cli.Command{
 	Name:  "list",
+	ShortName: "ls",
 	Usage: "List local repositories",
 	Description: `
     List locally cloned repositories. If a query argument is given, only
@@ -58,6 +59,7 @@ var commandList = cli.Command{
 
 var commandLook = cli.Command{
 	Name:  "look",
+	ShortName: "lk",
 	Usage: "Look into a local repository",
 	Description: `
     Look into a locally cloned repository with the shell.
