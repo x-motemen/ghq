@@ -1,7 +1,7 @@
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
 
 BUILD_FLAGS = -ldflags "\
-	      -X main.Version \"$$(git describe --tags --always --dirty)\" \
+	      -X main.Version \"$$(git describe --tags --always --dirty) ($$(git name-rev --name-only HEAD))\" \
 	      -X github.com/motemen/ghq/pocket.ConsumerKey \"$$POCKET_CONSUMER_KEY\" \
 	      "
 
