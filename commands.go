@@ -33,6 +33,7 @@ var commandGet = cli.Command{
 	Action: doGet,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+		cli.BoolFlag{"p", "Clone with SSH"},
 	},
 }
 
@@ -82,6 +83,7 @@ var commandImportStarred = cli.Command{
 	Action: doImportStarred,
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+		cli.BoolFlag{"p", "Clone with SSH"},
 	},
 }
 
@@ -104,11 +106,11 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":     {"", "[-u] <repository URL> | <user>/<project>"},
+	"get":     {"", "[-u] <repository URL> | [-u] [-p] <user>/<project>"},
 	"list":    {"", "[-p] [-e] [<query>]"},
 	"look":    {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
-	"import":  {"", "[-u] starred <user> | pocket"},
-	"starred": {"import", "[-u] <user>"},
+	"import":  {"", "[-u] [-p] starred <user> | [-u] pocket"},
+	"starred": {"import", "[-u] [-p] <user>"},
 	"pocket":  {"import", "[-u]"},
 }
 
@@ -156,6 +158,12 @@ func doGet(c *cli.Context) {
 		url.Host = "github.com"
 		if url.Path[0] != '/' {
 			url.Path = "/" + url.Path
+		}
+
+		isSSH := c.Bool("p")
+		if isSSH {
+			url, err = ConvertGitHubURLHTTPToSSH(url)
+			utils.DieIf(err)
 		}
 	}
 
@@ -323,6 +331,8 @@ func doLook(c *cli.Context) {
 func doImportStarred(c *cli.Context) {
 	user := c.Args().First()
 
+	isSSH := c.Bool("p")
+
 	if user == "" {
 		cli.ShowCommandHelp(c, "starred")
 		os.Exit(1)
@@ -343,6 +353,13 @@ func doImportStarred(c *cli.Context) {
 			if err != nil {
 				utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", repo.HTMLURL, err))
 				continue
+			}
+			if isSSH {
+				url, err = ConvertGitHubURLHTTPToSSH(url)
+				if err != nil {
+					utils.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", repo.HTMLURL, err))
+					continue
+				}
 			}
 
 			remote, err := NewRemoteRepository(url)
