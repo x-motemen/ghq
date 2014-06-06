@@ -70,6 +70,28 @@ func (repo *GoogleCodeRepository) VCS() *VCSBackend {
 	}
 }
 
+type OtherRepository struct {
+	url *url.URL
+}
+
+func (repo *OtherRepository) URL() *url.URL {
+	return repo.url
+}
+
+func (repo *OtherRepository) IsValid() bool {
+	return true
+}
+
+func (repo *OtherRepository) VCS() *VCSBackend {
+	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
+		return MercurialBackend
+	} else if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
+		return GitBackend
+	} else {
+		return nil
+	}
+}
+
 func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 	if url.Host == "github.com" {
 		return &GitHubRepository{url}, nil
@@ -91,5 +113,5 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported host: %s", url.Host)
+	return &OtherRepository{url}, nil
 }
