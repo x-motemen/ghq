@@ -29,6 +29,7 @@ var commandGet = cli.Command{
     Clone a GitHub repository under ghq root direcotry. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed.
+    When you use '-p' option, the repository is cloned via SSH.
 `,
 	Action: doGet,
 	Flags: []cli.Flag{
