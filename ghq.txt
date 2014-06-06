@@ -16,7 +16,7 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 == SYNOPSIS
 
 [verse]
-'ghq' get [-u] <repository URL> | <user>/<project>
+'ghq' get [-u] <repository URL> | [-u] [-p] <user>/<project>
 'ghq' list [-p] [-e] [<query>]
 'ghq' look <project> | <user>/<project> | <host>/<user>/<project>
 'ghq' import starred [-u] <user>
@@ -29,6 +29,7 @@ get::
     <<directory-structures,DIRECTORY STRUCTURES>> below. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed. +
+    When you use '-p' option, the repository is cloned via SSH. +
     If there are multiple +ghq.root+ 's, existing local clones are searched
     first. Then a new repository clone is created under the primary root if
     none is found. +
