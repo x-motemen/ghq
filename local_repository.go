@@ -120,6 +120,8 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 	return nil
 }
 
+var vcsDirs = []string{".git", ".hg"}
+
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
 		filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
@@ -127,12 +129,18 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 				return nil
 			}
 
-			if !strings.HasSuffix(path, ".git") && !strings.HasSuffix(path, ".hg") {
-				return nil
+			vcsDirFound := false
+			for _, d := range vcsDirs {
+				_, err := os.Stat(filepath.Join(path, d))
+				if err == nil {
+					vcsDirFound = true
+					break
+				}
 			}
 
-			path = strings.TrimSuffix(path, ".git")
-			path = strings.TrimSuffix(path, ".hg")
+			if !vcsDirFound {
+				return nil
+			}
 
 			repo, err := LocalRepositoryFromFullPath(path)
 			if err != nil {

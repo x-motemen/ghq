@@ -19,7 +19,6 @@ func TestNewLocalRepository(t *testing.T) {
 	Expect(r.NonHostPath()).To(Equal("scm/motemen/ghq"))
 	Expect(r.Subpaths()).To(Equal([]string{"ghq", "motemen/ghq", "scm/motemen/ghq", "stash.com/scm/motemen/ghq"}))
 
-
 	githubURL, _ := url.Parse("ssh://git@github.com/motemen/ghq.git")
 	r = LocalRepositoryFromURL(githubURL)
 	Expect(r.FullPath).To(Equal("/repos/github.com/motemen/ghq"))
