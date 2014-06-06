@@ -1,4 +1,4 @@
-= ghq(1) image:https://travis-ci.org/motemen/ghq.svg?branch=master["Build Status", link="https://travis-ci.org/motemen/ghq"]
+= ghq(1) image:https://app.wercker.com/status/529f9ef4a8e48e2634661d7f2da9523f/s["wercker status", link="https://app.wercker.com/project/bykey/529f9ef4a8e48e2634661d7f2da9523f"]
 
 == NAME
 
