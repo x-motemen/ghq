@@ -9,6 +9,10 @@ import (
 var Version string = "HEAD"
 
 func main() {
+	newApp().Run(os.Args)
+}
+
+func newApp() *cli.App {
 	app := cli.NewApp()
 	app.Name = "ghq"
 	app.Usage = "Manage GitHub repository clones"
@@ -16,5 +20,5 @@ func main() {
 	app.Author = "motemen"
 	app.Email = "motemen@gmail.com"
 	app.Commands = Commands
-	app.Run(os.Args)
+	return app
 }

@@ -2,10 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
-	"os/exec"
-	"strings"
 
 	"github.com/motemen/ghq/utils"
 	. "github.com/onsi/gomega"
@@ -71,16 +68,4 @@ func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
 		"git ls-remote": nil,
 	})
 	Expect(repo.VCS()).To(Equal(GitBackend))
-}
-
-func NewFakeRunner(dispatch map[string]error) utils.RunFunc {
-	return func(cmd *exec.Cmd) error {
-		cmdString := strings.Join(cmd.Args, " ")
-		for cmdPrefix, err := range dispatch {
-			if strings.Index(cmdString, cmdPrefix) == 0 {
-				return err
-			}
-		}
-		panic(fmt.Sprintf("No fake dispatch found for: %s", cmdString))
-	}
 }
