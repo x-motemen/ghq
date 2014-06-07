@@ -29,6 +29,11 @@ func TestNewURL(t *testing.T) {
 	Expect(differentNameRepository.String()).To(Equal("https://github.com/motemen/ghq"))
 	Expect(differentNameRepository.Host).To(Equal("github.com"))
 	Expect(err).To(BeNil())
+
+  sameNameRepository, err := NewURL("same-name-ghq")
+	Expect(sameNameRepository.String()).To(Equal("https://github.com/same-name-ghq/same-name-ghq"))
+	Expect(sameNameRepository.Host).To(Equal("github.com"))
+	Expect(err).To(BeNil())
 }
 
 func TestConvertGitHubURLHTTPToSSH(t *testing.T) {
