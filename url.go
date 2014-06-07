@@ -22,10 +22,24 @@ func NewURL(ref string) (*url.URL, error) {
 		ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
 	}
 
-	return url.Parse(ref)
+	url, err := url.Parse(ref)
+	if err != nil {
+		return url, err
+	}
+
+	if !url.IsAbs() {
+		url.Scheme = "https"
+		url.Host = "github.com"
+		if url.Path[0] != '/' {
+			url.Path = "/" + url.Path
+		}
+	}
+
+	return url, nil
 }
 
 func ConvertGitHubURLHTTPToSSH(url *url.URL) (*url.URL, error) {
 	sshURL := fmt.Sprintf("ssh://git@github.com/%s", url.Path)
 	return url.Parse(sshURL)
 }
+

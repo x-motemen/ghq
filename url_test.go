@@ -24,6 +24,11 @@ func TestNewURL(t *testing.T) {
 	Expect(scpUrlWithoutUser.String()).To(Equal("ssh://github.com/motemen/pusheen-explorer.git"))
 	Expect(scpUrlWithoutUser.Host).To(Equal("github.com"))
 	Expect(err).To(BeNil())
+
+	differentNameRepository, err := NewURL("motemen/ghq")
+	Expect(differentNameRepository.String()).To(Equal("https://github.com/motemen/ghq"))
+	Expect(differentNameRepository.Host).To(Equal("github.com"))
+	Expect(err).To(BeNil())
 }
 
 func TestConvertGitHubURLHTTPToSSH(t *testing.T) {
@@ -34,3 +39,4 @@ func TestConvertGitHubURLHTTPToSSH(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(sshURL.String()).To(Equal("ssh://git@github.com/motemen/pusheen-explorer"))
 }
+
