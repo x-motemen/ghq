@@ -434,4 +434,3 @@ func doImportPocket(c *cli.Context) {
 		getRemoteRepository(remote, c.Bool("update"))
 	}
 }
-
