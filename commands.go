@@ -197,7 +197,14 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 
 	if newPath {
 		utils.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
-		remote.VCS().Clone(remoteURL, path)
+
+		vcs := remote.VCS()
+		if vcs == nil {
+			utils.Log("error", fmt.Sprintf("Counld not found version control system: %s", remoteURL))
+			os.Exit(1)
+		}
+
+		vcs.Clone(remoteURL, path)
 	} else {
 		if doUpdate {
 			utils.Log("update", path)
