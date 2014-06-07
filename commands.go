@@ -156,9 +156,7 @@ func doGet(c *cli.Context) {
 
 	isSSH := c.Bool("p")
 	if isSSH {
-		fmt.Println(url)
 		url, err = ConvertGitHubURLHTTPToSSH(url)
-		fmt.Println(url)
 		utils.DieIf(err)
 	}
 
