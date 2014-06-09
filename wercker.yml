@@ -6,7 +6,6 @@ build:
     - script:
         name: go get
         code: |
-          cd $WERCKER_SOURCE_DIR
           go version
           go get -t ./...
 
@@ -18,4 +17,4 @@ build:
     - script:
         name: cross-build binaries
         code: |
-          gox -parallel=1 -os='linux darwin windows' -arch='386 amd64' -output='build/{{.Dir}}_{{.OS}}_{{.Arch}}' ./...
+          gox -parallel=1 -os='linux darwin windows' -arch='386 amd64' -output="$WERCKER_OUTPUT_DIR/{{.Dir}}_{{.OS}}_{{.Arch}}" ./...
