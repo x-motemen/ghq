@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 )
 
 // Convert SCP-like URL to SSH URL(e.g. [user@]host.xz:path/to/repo.git/)
@@ -22,7 +23,23 @@ func NewURL(ref string) (*url.URL, error) {
 		ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
 	}
 
-	return url.Parse(ref)
+	url, err := url.Parse(ref)
+	if err != nil {
+		return url, err
+	}
+
+	if !url.IsAbs() {
+		if !strings.Contains(url.Path, "/") {
+			url.Path = url.Path + "/" + url.Path
+		}
+		url.Scheme = "https"
+		url.Host = "github.com"
+		if url.Path[0] != '/' {
+			url.Path = "/" + url.Path
+		}
+	}
+
+	return url, nil
 }
 
 func ConvertGitHubURLHTTPToSSH(url *url.URL) (*url.URL, error) {

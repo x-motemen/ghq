@@ -154,18 +154,10 @@ func doGet(c *cli.Context) {
 	url, err := NewURL(argURL)
 	utils.DieIf(err)
 
-	if !url.IsAbs() {
-		url.Scheme = "https"
-		url.Host = "github.com"
-		if url.Path[0] != '/' {
-			url.Path = "/" + url.Path
-		}
-
-		isSSH := c.Bool("p")
-		if isSSH {
-			url, err = ConvertGitHubURLHTTPToSSH(url)
-			utils.DieIf(err)
-		}
+	isSSH := c.Bool("p")
+	if isSSH {
+		url, err = ConvertGitHubURLHTTPToSSH(url)
+		utils.DieIf(err)
 	}
 
 	remote, err := NewRemoteRepository(url)
