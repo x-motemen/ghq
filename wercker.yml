@@ -1,4 +1,4 @@
-box: motemen/golang-gox
+box: motemen/golang-gox@0.0.1-dev
 build:
   steps:
     - setup-go-workspace
@@ -16,6 +16,6 @@ build:
           go test ./...
 
     - script:
-        name: cross-build
+        name: cross-build binaries
         code: |
           sudo gox -os='linux darwin windows' -arch='386 amd64' -output='build/{{.Dir}}_{{.OS}}_{{.Arch}}' ./...
