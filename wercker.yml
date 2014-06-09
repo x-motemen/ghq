@@ -1,4 +1,4 @@
-box: motemen/golang-gox@0.0.1-dev
+box: motemen/golang-gox
 build:
   steps:
     - setup-go-workspace
@@ -18,3 +18,27 @@ build:
         name: cross-build binaries
         code: |
           gox -parallel=1 -os='linux darwin windows' -arch='386 amd64' -output="$WERCKER_OUTPUT_DIR/{{.Dir}}_{{.OS}}_{{.Arch}}" ./...
+
+deploy:
+  steps:
+    - motemen/github-create-release:
+        token: $GITHUB_TOKEN
+        tag_pattern: v*
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: ghq_linux_386
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: ghq_linux_amd64
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: ghq_darwin_386
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: ghq_darwin_amd64
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: ghq_windows_386.exe
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: ghq_windows_amd64.exe
