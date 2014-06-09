@@ -1,4 +1,4 @@
-= ghq(1) image:https://app.wercker.com/status/529f9ef4a8e48e2634661d7f2da9523f/s["wercker status", link="https://app.wercker.com/project/bykey/529f9ef4a8e48e2634661d7f2da9523f"]
+= ghq(1) image:https://app.wercker.com/status/529f9ef4a8e48e2634661d7f2da9523f/s/master["wercker status", link="https://app.wercker.com/project/bykey/529f9ef4a8e48e2634661d7f2da9523f"]
 
 == NAME
 
