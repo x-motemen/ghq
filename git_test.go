@@ -1,8 +1,8 @@
 package main
 
 import (
-	"testing"
 	. "github.com/onsi/gomega"
+	"testing"
 )
 
 func TestGitConfigAll(t *testing.T) {

@@ -2,10 +2,10 @@ package pocket
 
 import (
 	"fmt"
+	. "github.com/onsi/gomega"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	. "github.com/onsi/gomega"
 )
 
 func TestObtainRequestToken(t *testing.T) {
