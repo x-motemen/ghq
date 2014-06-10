@@ -14,7 +14,7 @@ build:
     - script:
         name: cross-build binaries
         code: |
-          gox -os='linux darwin windows' -arch='386 amd64' -output="$WERCKER_OUTPUT_DIR/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version \"$(git describe --tags --always --dirty) ($(git name-rev --name-only HEAD))\"" ./...
+          gox -os='linux darwin windows' -arch='386 amd64' -output="$WERCKER_OUTPUT_DIR/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version \"$(git describe --tags --always --dirty) ($(git name-rev --name-only HEAD | sed 's/^remotes\/origin\///'))\"" ./...
     - script:
         name: output release tag
         code: |
