@@ -2,23 +2,19 @@ box: motemen/golang-gox
 build:
   steps:
     - setup-go-workspace
-
     - script:
         name: go get
         code: |
           go version
           go get -t ./...
-
     - script:
         name: go test
         code: |
           go test ./...
-
     - script:
         name: cross-build binaries
         code: |
           gox -os='linux darwin windows' -arch='386 amd64' -output="$WERCKER_OUTPUT_DIR/{{.Dir}}_{{.OS}}_{{.Arch}}" ./...
-
 deploy:
   steps:
     - motemen/github-create-release:
