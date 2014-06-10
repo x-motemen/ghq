@@ -18,7 +18,7 @@ build:
     - script:
         name: output release tag
         code: |
-          git describe --tags --exact --match 'v*' || true > $WERCKER_OUTPUT_DIR/.release_tag
+          git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || true
 deploy:
   steps:
     - script:
