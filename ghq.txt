@@ -72,6 +72,9 @@ ghq.ghe.host::
     This variable can have multiple values. If so, `ghq` tries matching with
     each hostnames.
 
+ghq.alias::
+    The short name for sub-command. 
+
 == [[directory-structures]]DIRECTORY STRUCTURES
 
 Local repositories are placed under 'ghq.root' with named github.com/_user_/_repo_.

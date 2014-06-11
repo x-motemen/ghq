@@ -23,8 +23,9 @@ var Commands = []cli.Command{
 }
 
 var commandGet = cli.Command{
-	Name:  "get",
-	Usage: "Clone/sync with a remote repository",
+	Name:      "get",
+	ShortName: RetrieveCmdShortName("get"),
+	Usage:     "Clone/sync with a remote repository",
 	Description: `
     Clone a GitHub repository under ghq root direcotry. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
@@ -39,9 +40,9 @@ var commandGet = cli.Command{
 }
 
 var commandList = cli.Command{
-	Name:  "list",
-	ShortName: "ls",
-	Usage: "List local repositories",
+	Name:      "list",
+	ShortName: RetrieveCmdShortName("list"),
+	Usage:     "List local repositories",
 	Description: `
     List locally cloned repositories. If a query argument is given, only
     repositories whose names contain that query text are listed. '-e'
@@ -58,9 +59,9 @@ var commandList = cli.Command{
 }
 
 var commandLook = cli.Command{
-	Name:  "look",
-	ShortName: "lk",
-	Usage: "Look into a local repository",
+	Name:      "look",
+	ShortName: RetrieveCmdShortName("look"),
+	Usage:     "Look into a local repository",
 	Description: `
     Look into a locally cloned repository with the shell.
 `,
@@ -68,8 +69,9 @@ var commandLook = cli.Command{
 }
 
 var commandImport = cli.Command{
-	Name:  "import",
-	Usage: "Import repositories from other web services",
+	Name:      "import",
+	ShortName: RetrieveCmdShortName("import"),
+	Usage:     "Import repositories from other web services",
 	Subcommands: []cli.Command{
 		commandImportStarred,
 		commandImportPocket,
@@ -124,6 +126,12 @@ func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
 		template = template + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, genTemplate(commandDocs[command.Name]))
 	}
 	return template + "{{end}}"
+}
+
+func RetrieveCmdShortName(cmd string) string {
+	shortname, err := gitConfig("ghq.alias."+cmd, false)
+	utils.DieIf(err)
+	return shortname
 }
 
 func init() {
