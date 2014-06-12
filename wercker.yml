@@ -1,4 +1,4 @@
-box: motemen/golang-gox
+box: motemen/golang-goxc
 build:
   steps:
     - setup-go-workspace
@@ -12,9 +12,9 @@ build:
         code: |
           go test ./...
     - script:
-        name: cross-build binaries
+        name: goxc build & archive
         code: |
-          gox -os='linux darwin windows' -arch='386 amd64' -output="$WERCKER_OUTPUT_DIR/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version \"$(git describe --tags --always --dirty) ($(git name-rev --name-only HEAD | sed 's/^remotes\/origin\///'))\"" ./...
+          goxc -tasks='xc archive' -bc 'linux,!arm windows darwin' -d $WERCKER_OUTPUT_DIR/ -build-ldflags "-X main.Version \"$(git describe --tags --always --dirty) ($(git name-rev --name-only HEAD | sed 's/^remotes\/origin\///'))\"" -resources-include='README*'
     - script:
         name: output release tag
         code: |
@@ -30,19 +30,19 @@ deploy:
         tag: $RELEASE_TAG
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: ghq_linux_386
+        file: snapshot/ghq_linux_386.tar.gz
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: ghq_linux_amd64
+        file: snapshot/ghq_linux_amd64.tar.gz
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: ghq_darwin_386
+        file: snapshot/ghq_darwin_386.zip
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: ghq_darwin_amd64
+        file: snapshot/ghq_darwin_amd64.zip
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: ghq_windows_386.exe
+        file: snapshot/ghq_windows_386.zip
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: ghq_windows_amd64.exe
+        file: snapshot/ghq_windows_amd64.zip
