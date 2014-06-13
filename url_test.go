@@ -1,8 +1,9 @@
 package main
 
 import (
-	. "github.com/onsi/gomega"
+	"net/url"
 	"testing"
+	. "github.com/onsi/gomega"
 )
 
 func TestNewURL(t *testing.T) {
@@ -36,11 +37,21 @@ func TestNewURL(t *testing.T) {
 	Expect(err).To(BeNil())
 }
 
-func TestConvertGitHubURLHTTPToSSH(t *testing.T) {
+func TestConvertGitURLHTTPToSSH(t *testing.T) {
 	RegisterTestingT(t)
 
-	httpsURL, err := NewURL("https://github.com/motemen/pusheen-explorer")
-	sshURL, err := ConvertGitHubURLHTTPToSSH(httpsURL)
+	var (
+		httpsURL, sshURL *url.URL
+		err              error
+	)
+
+	httpsURL, err = NewURL("https://github.com/motemen/pusheen-explorer")
+	sshURL, err = ConvertGitURLHTTPToSSH(httpsURL)
 	Expect(err).To(BeNil())
 	Expect(sshURL.String()).To(Equal("ssh://git@github.com/motemen/pusheen-explorer"))
+
+	httpsURL, err = NewURL("https://ghe.example.com/motemen/pusheen-explorer")
+	sshURL, err = ConvertGitURLHTTPToSSH(httpsURL)
+	Expect(err).To(BeNil())
+	Expect(sshURL.String()).To(Equal("ssh://git@ghe.example.com/motemen/pusheen-explorer"))
 }
