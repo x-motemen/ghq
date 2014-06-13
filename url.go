@@ -42,7 +42,7 @@ func NewURL(ref string) (*url.URL, error) {
 	return url, nil
 }
 
-func ConvertGitHubURLHTTPToSSH(url *url.URL) (*url.URL, error) {
-	sshURL := fmt.Sprintf("ssh://git@github.com/%s", url.Path)
+func ConvertGitURLHTTPToSSH(url *url.URL) (*url.URL, error) {
+	sshURL := fmt.Sprintf("ssh://git@%s/%s", url.Host, url.Path)
 	return url.Parse(sshURL)
 }

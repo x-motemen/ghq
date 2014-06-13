@@ -156,7 +156,8 @@ func doGet(c *cli.Context) {
 
 	isSSH := c.Bool("p")
 	if isSSH {
-		url, err = ConvertGitHubURLHTTPToSSH(url)
+		// Assume Git repository if `-p` is given.
+		url, err = ConvertGitURLHTTPToSSH(url)
 		utils.DieIf(err)
 	}
 
@@ -355,7 +356,7 @@ func doImportStarred(c *cli.Context) {
 				continue
 			}
 			if isSSH {
-				url, err = ConvertGitHubURLHTTPToSSH(url)
+				url, err = ConvertGitURLHTTPToSSH(url)
 				if err != nil {
 					utils.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", repo.HTMLURL, err))
 					continue
