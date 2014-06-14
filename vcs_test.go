@@ -33,7 +33,7 @@ func TestGitBackend(t *testing.T) {
 		return nil
 	}
 
-	err = GitBackend.Clone(remoteURL, localDir)
+	err = GitBackend.Clone(remoteURL, localDir, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(1))
@@ -41,10 +41,18 @@ func TestGitBackend(t *testing.T) {
 		"git", "clone", remoteURL.String(), localDir,
 	}))
 
-	err = GitBackend.Update(localDir)
+	err = GitBackend.Clone(remoteURL, localDir, true)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(2))
+	Expect(lastCommand().Args).To(Equal([]string{
+		"git", "clone", "--depth", "1", remoteURL.String(), localDir,
+	}))
+
+	err = GitBackend.Update(localDir)
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commands).To(HaveLen(3))
 	Expect(lastCommand().Args).To(Equal([]string{
 		"git", "pull", "--ff-only",
 	}))
@@ -73,7 +81,7 @@ func TestMercurialBackend(t *testing.T) {
 		return nil
 	}
 
-	err = MercurialBackend.Clone(remoteURL, localDir)
+	err = MercurialBackend.Clone(remoteURL, localDir, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(1))
@@ -81,10 +89,17 @@ func TestMercurialBackend(t *testing.T) {
 		"hg", "clone", remoteURL.String(), localDir,
 	}))
 
-	err = MercurialBackend.Update(localDir)
+	err = MercurialBackend.Clone(remoteURL, localDir, true)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(2))
+	Expect(lastCommand().Args).To(Equal([]string{
+		"hg", "clone", remoteURL.String(), localDir,
+	}))
+	err = MercurialBackend.Update(localDir)
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commands).To(HaveLen(3))
 	Expect(lastCommand().Args).To(Equal([]string{
 		"hg", "pull",
 	}))

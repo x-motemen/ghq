@@ -35,6 +35,7 @@ var commandGet = cli.Command{
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 		cli.BoolFlag{"p", "Clone with SSH"},
+		cli.BoolFlag{"shallow", "Do a shallow clone"},
 	},
 }
 
@@ -85,6 +86,7 @@ var commandImportStarred = cli.Command{
 	Flags: []cli.Flag{
 		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
 		cli.BoolFlag{"p", "Clone with SSH"},
+		cli.BoolFlag{"shallow", "Do a shallow clone"},
 	},
 }
 
@@ -145,6 +147,7 @@ OPTIONS:
 func doGet(c *cli.Context) {
 	argURL := c.Args().Get(0)
 	doUpdate := c.Bool("update")
+	isShallow := c.Bool("shallow")
 
 	if argURL == "" {
 		cli.ShowCommandHelp(c, "get")
@@ -169,10 +172,13 @@ func doGet(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	getRemoteRepository(remote, doUpdate)
+	getRemoteRepository(remote, doUpdate, isShallow)
 }
 
-func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
+// getRemoteRepository clones or updates a remote repository remote.
+// If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
+// If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial)
+func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool) {
 	remoteURL := remote.URL()
 	local := LocalRepositoryFromURL(remoteURL)
 
@@ -197,7 +203,7 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool) {
 			os.Exit(1)
 		}
 
-		vcs.Clone(remoteURL, path)
+		vcs.Clone(remoteURL, path, isShallow)
 	} else {
 		if doUpdate {
 			utils.Log("update", path)
@@ -331,8 +337,9 @@ func doLook(c *cli.Context) {
 
 func doImportStarred(c *cli.Context) {
 	user := c.Args().First()
-
+	doUpdate := c.Bool("update")
 	isSSH := c.Bool("p")
+	isShallow := c.Bool("shallow")
 
 	if user == "" {
 		cli.ShowCommandHelp(c, "starred")
@@ -373,7 +380,7 @@ func doImportStarred(c *cli.Context) {
 				continue
 			}
 
-			getRemoteRepository(remote, c.Bool("update"))
+			getRemoteRepository(remote, doUpdate, isShallow)
 		}
 
 		if page >= res.LastPage {
@@ -383,6 +390,9 @@ func doImportStarred(c *cli.Context) {
 }
 
 func doImportPocket(c *cli.Context) {
+	doUpdate := c.Bool("update")
+	isShallow := c.Bool("shallow")
+
 	if pocket.ConsumerKey == "" {
 		utils.Log("error", "Built without consumer key set")
 		return
@@ -437,6 +447,6 @@ func doImportPocket(c *cli.Context) {
 			continue
 		}
 
-		getRemoteRepository(remote, c.Bool("update"))
+		getRemoteRepository(remote, doUpdate, isShallow)
 	}
 }

@@ -75,8 +75,9 @@ func capture(block func()) (string, string, error) {
 }
 
 type _cloneArgs struct {
-	remote *url.URL
-	local  string
+	remote  *url.URL
+	local   string
+	shallow bool
 }
 
 type _updateArgs struct {
@@ -98,10 +99,11 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 
 	var originalGitBackend = GitBackend
 	GitBackend = &VCSBackend{
-		Clone: func(remote *url.URL, local string) error {
+		Clone: func(remote *url.URL, local string, shallow bool) error {
 			cloneArgs = _cloneArgs{
-				remote: remote,
-				local:  local,
+				remote:  remote,
+				local:   local,
+				shallow: shallow,
 			}
 			return nil
 		},
@@ -129,6 +131,7 @@ func TestCommandGet(t *testing.T) {
 
 		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
 		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(cloneArgs.shallow).To(Equal(false))
 	})
 
 	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
@@ -148,6 +151,25 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "-u", "motemen/ghq-test-repo"})
 
 		Expect(updateArgs.local).To(Equal(localDir))
+	})
+
+	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+		app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
+
+		Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
+		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(cloneArgs.shallow).To(Equal(false))
+	})
+
+	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+
+		app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo"})
+
+		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
+		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(cloneArgs.shallow).To(Equal(true))
 	})
 }
 

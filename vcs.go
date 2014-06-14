@@ -11,20 +11,26 @@ import (
 // A VCSBackend represents a VCS backend.
 type VCSBackend struct {
 	// Clones a remote repository to local path.
-	Clone func(*url.URL, string) error
+	Clone func(*url.URL, string, bool) error
 	// Updates a cloned local repository.
 	Update func(string) error
 }
 
 var GitBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string) error {
+	Clone: func(remote *url.URL, local string, shallow bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
 
-		return utils.Run("git", "clone", remote.String(), local)
+		args := []string{"clone"}
+		if shallow {
+			args = append(args, "--depth", "1")
+		}
+		args = append(args, remote.String(), local)
+
+		return utils.Run("git", args...)
 	},
 	Update: func(local string) error {
 		return utils.RunInDir(local, "git", "pull", "--ff-only")
@@ -32,7 +38,8 @@ var GitBackend = &VCSBackend{
 }
 
 var MercurialBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string) error {
+	// Mercurial seems not supporting shallow clone currently.
+	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
