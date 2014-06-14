@@ -16,24 +16,27 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 == SYNOPSIS
 
 [verse]
-'ghq' get [-u] <repository URL> | [-u] [-p] <user>/<project>
+'ghq' get [-u] [-p] (<repository URL> | <user>/<project> | <project>)
 'ghq' list [-p] [-e] [<query>]
-'ghq' look <project> | <user>/<project> | <host>/<user>/<project>
-'ghq' import starred [-u] <user>
+'ghq' look (<project> | <path/to/project>)
+'ghq' import starred [-u] [-p] <user>
 'ghq' import pocket [-u]
 
 == COMMANDS
 
 get::
-    Clone a GitHub repository under ghq root directory. See
-    <<directory-structures,DIRECTORY STRUCTURES>> below. If the repository is
+    Clone a remote repository under ghq root directory (see
+    <<directory-structures,DIRECTORY STRUCTURES>> below). If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
-    flag is supplied, in which case 'git remote update' is executed. +
-    When you use '-p' option, the repository is cloned via SSH. +
+    flag is supplied, in which case the local repository is updated ('git pull --ff-only' eg.).
+    When you use '-p' option, the repository is cloned via SSH protocol. +
     If there are multiple +ghq.root+ 's, existing local clones are searched
     first. Then a new repository clone is created under the primary root if
     none is found. +
-    Currently supports GitHub and Google Code Project (Git/Mercurial) repositories.
+    With '-shallow' option, a "shallow clone" will be performed (for Git
+    repositories only, 'git clone --depth 1 ...' eg.). Be careful that a
+    shallow-cloned repository cannot be pushed to remote. +
+    Currently Git and Mercurial repositories are supported.
 
 list::
     List locally cloned repositories. If a query argument is given, only
