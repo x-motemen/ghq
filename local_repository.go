@@ -177,7 +177,11 @@ func localRepositoryRoots() []string {
 	}
 
 	for i, v := range _localRepositoryRoots {
-		_localRepositoryRoots[i] = filepath.Clean(v)
+		path := filepath.Clean(v)
+		if _, err := os.Stat(path); err == nil {
+			_localRepositoryRoots[i], err = filepath.EvalSymlinks(path)
+			utils.PanicIf(err)
+		}
 	}
 
 	return _localRepositoryRoots
