@@ -51,6 +51,7 @@ look::
 import starred::
     Retrieves GitHub repositories that are starred by the user specified and
     performs 'get' for each of them.
+    If environment variable GHQ_GITHUB_TOKEN is set, it is used for GitHub API requests.
 
 import pocket::
     Retrieves http://getpocket.com/[Pocket] entries of github.com and
