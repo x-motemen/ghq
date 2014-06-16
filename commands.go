@@ -349,6 +349,12 @@ func doImportStarred(c *cli.Context) {
 
 	githubToken := os.Getenv("GHQ_GITHUB_TOKEN")
 
+	if githubToken == "" {
+		var err error
+		githubToken, err = GitConfig("ghq.github.token")
+		utils.PanicIf(err)
+	}
+
 	var client *github.Client
 
 	if githubToken != "" {
@@ -359,6 +365,7 @@ func doImportStarred(c *cli.Context) {
 	} else {
 		client = github.NewClient(nil)
 	}
+
 	options := &github.ActivityListStarredOptions{Sort: "created"}
 
 	for page := 1; ; page++ {
