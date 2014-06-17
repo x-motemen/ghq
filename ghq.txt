@@ -30,7 +30,7 @@ get::
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case the local repository is updated ('git pull --ff-only' eg.).
     When you use '-p' option, the repository is cloned via SSH protocol. +
-    If there are multiple +ghq.root+ 's, existing local clones are searched
+    If there are multiple +ghq.root+ s, existing local clones are searched
     first. Then a new repository clone is created under the primary root if
     none is found. +
     With '-shallow' option, a "shallow clone" will be performed (for Git

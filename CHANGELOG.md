@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3 (2014-06-17)
+
+- [feature] `ghq get -shallow` to perform a shallow clone
+- [feature] Use GitHub token for `git import starred` if specified thanks to @makimoto (#16)
+- [fix] Resolve ghq.root's symlinks thanks to @sorah (#15)
+
 ## 0.2 (2014-06-10)
 
 - [feature] Support SCP-like repository URLs thanks to @kentaro (#1)
