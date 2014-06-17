@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"code.google.com/p/goauth2/oauth"
 	"github.com/codegangsta/cli"
 	"github.com/google/go-github/github"
 	"github.com/motemen/ghq/pocket"
@@ -346,7 +347,25 @@ func doImportStarred(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	client := github.NewClient(nil)
+	githubToken := os.Getenv("GHQ_GITHUB_TOKEN")
+
+	if githubToken == "" {
+		var err error
+		githubToken, err = GitConfig("ghq.github.token")
+		utils.PanicIf(err)
+	}
+
+	var client *github.Client
+
+	if githubToken != "" {
+		oauthTransport := &oauth.Transport{
+			Token: &oauth.Token{AccessToken: githubToken},
+		}
+		client = github.NewClient(oauthTransport.Client())
+	} else {
+		client = github.NewClient(nil)
+	}
+
 	options := &github.ActivityListStarredOptions{Sort: "created"}
 
 	for page := 1; ; page++ {

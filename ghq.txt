@@ -51,6 +51,9 @@ look::
 import starred::
     Retrieves GitHub repositories that are starred by the user specified and
     performs 'get' for each of them.
+    You can set GitHub access token to enviroment variable 'GHQ_GITHUB_TOKEN' or
+    'ghq.github.taken' in 'git-config' variables. (The former takes precedence over
+    the latter.)
 
 import pocket::
     Retrieves http://getpocket.com/[Pocket] entries of github.com and
@@ -74,6 +77,9 @@ ghq.ghe.host::
     hostname set with this key will be regarded as same one as one on GitHub.
     This variable can have multiple values. If so, `ghq` tries matching with
     each hostnames.
+
+ghq.github.token::
+    GitHub's access token used in `ghq import starred` command.
 
 == [[directory-structures]]DIRECTORY STRUCTURES
 
