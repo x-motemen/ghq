@@ -200,7 +200,7 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool)
 
 		vcs := remote.VCS()
 		if vcs == nil {
-			utils.Log("error", fmt.Sprintf("Counld not found version control system: %s", remoteURL))
+			utils.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
 			os.Exit(1)
 		}
 
