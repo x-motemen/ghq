@@ -351,7 +351,7 @@ func doImportStarred(c *cli.Context) {
 
 	if githubToken == "" {
 		var err error
-		githubToken, err = GitConfig("ghq.github.token")
+		githubToken, err = GitConfigSingle("ghq.github.token")
 		utils.PanicIf(err)
 	}
 
@@ -417,7 +417,7 @@ func doImportPocket(c *cli.Context) {
 		return
 	}
 
-	accessToken, err := GitConfig("ghq.pocket.token")
+	accessToken, err := GitConfigSingle("ghq.pocket.token")
 	utils.PanicIf(err)
 
 	if accessToken == "" {
