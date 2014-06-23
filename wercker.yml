@@ -19,15 +19,25 @@ build:
         name: output release tag
         code: |
           git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || true
+    - script:
+        name: generate release notes
+        code: |
+          git log -1 -p -S'## ' -- CHANGELOG.md | sed 's/^+-/-/p;d' > $WERCKER_OUTPUT_DIR/.release_notes
 deploy:
   steps:
     - script:
         name: restore release tag
         code: |
           export RELEASE_TAG=$(cat .release_tag)
+    - script:
+        name: restore release notes
+        code: |
+          export RELEASE_NOTES=$(cat .release_notes)
     - motemen/github-create-release:
         token: $GITHUB_TOKEN
         tag: $RELEASE_TAG
+        title: $RELEASE_TAG
+        body: $RELEASE_NOTES
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
         file: snapshot/ghq_linux_386.tar.gz
