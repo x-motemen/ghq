@@ -49,6 +49,6 @@ var MercurialBackend = &VCSBackend{
 		return utils.Run("hg", "clone", remote.String(), local)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "hg", "pull")
+		return utils.RunInDir(local, "hg", "pull", "--update")
 	},
 }
