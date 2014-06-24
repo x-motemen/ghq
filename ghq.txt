@@ -72,11 +72,25 @@ ghq.root::
     want to specify "$GOPATH/src" as a secondary root (environment variables
     should be expanded.)
 
+ghq.<url>.vcs::
+    ghq tries to detect the remote repository's VCS backend for non-"github.com"
+    repositories.  With this option you can explicitly specify the VCS for the
+    remote repository. The URL is matched against '<url>' using 'git config --get-urlmatch'. +
+    Accepted values are "git", "github", "hg", "mercurial". +
+    For example in .gitconfig: +
+
+....
+[ghq "https://ghe.example.com/repos/"]
+vcs = git
+....
+
+
 ghq.ghe.host::
     The hostname of your GitHub Enterprise installation. A repository that has a
     hostname set with this key will be regarded as same one as one on GitHub.
     This variable can have multiple values. If so, `ghq` tries matching with
-    each hostnames.
+    each hostnames. +
+    This option is DEPRECATED, so use "ghq.<url>.vcs" configuration instead.
 
 ghq.github.token::
     GitHub's access token used in `ghq import starred` command.
@@ -100,7 +114,7 @@ Local repositories are placed under 'ghq.root' with named github.com/_user_/_rep
 ....
 
 
-== [[installing]]INSTALLING
+== [[installing]]INSTALLATION
 
 ----
 go get github.com/motemen/ghq
