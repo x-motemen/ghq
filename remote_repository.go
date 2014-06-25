@@ -83,21 +83,23 @@ func (repo *OtherRepository) IsValid() bool {
 }
 
 func (repo *OtherRepository) VCS() *VCSBackend {
-	// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
-	// (in gitconfig:)
-	//     [ghq "https://ghe.example.com/"]
-	//     vcs = github
-	vcs, err := GitConfig("--get-urlmatch", "ghq.vcs", repo.URL().String())
-	if err != nil {
-		utils.Log("error", err.Error())
-	}
+	if GitHasFeatureConfigURLMatch() {
+		// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
+		// (in gitconfig:)
+		//     [ghq "https://ghe.example.com/"]
+		//     vcs = github
+		vcs, err := GitConfig("--get-urlmatch", "ghq.vcs", repo.URL().String())
+		if err != nil {
+			utils.Log("error", err.Error())
+		}
 
-	if vcs == "git" || vcs == "github" {
-		return GitBackend
-	}
+		if vcs == "git" || vcs == "github" {
+			return GitBackend
+		}
 
-	if vcs == "hg" || vcs == "mercurial" {
-		return MercurialBackend
+		if vcs == "hg" || vcs == "mercurial" {
+			return MercurialBackend
+		}
 	}
 
 	// Detect VCS backend automatically
