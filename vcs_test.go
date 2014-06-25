@@ -101,7 +101,7 @@ func TestMercurialBackend(t *testing.T) {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(3))
 	Expect(lastCommand().Args).To(Equal([]string{
-		"hg", "pull",
+		"hg", "pull", "--update",
 	}))
 	Expect(lastCommand().Dir).To(Equal(localDir))
 }
