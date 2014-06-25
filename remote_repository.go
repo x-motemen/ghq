@@ -100,6 +100,8 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 		if vcs == "hg" || vcs == "mercurial" {
 			return MercurialBackend
 		}
+	} else {
+		utils.Log("warning", "This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
 	}
 
 	// Detect VCS backend automatically
