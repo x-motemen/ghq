@@ -3,6 +3,10 @@ build:
   steps:
     - setup-go-workspace
     - script:
+        name: git version
+        code: |
+          git version
+    - script:
         name: go get
         code: |
           go version
