@@ -3,8 +3,12 @@ package main
 import (
 	"os"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/motemen/ghq/utils"
 )
 
 // GitConfigSingle fetches single git-config variable.
@@ -48,4 +52,43 @@ func GitConfig(args ...string) (string, error) {
 	}
 
 	return strings.TrimRight(string(buf), "\000"), nil
+}
+
+var versionRx = regexp.MustCompile(`(\d+)\.(\d+)\.(\d+)`)
+
+var featureConfigURLMatchVersion = []uint{1, 8, 5}
+
+func GitHasFeatureConfigURLMatch() bool {
+	cmd := exec.Command("git", "--version")
+	buf, err := cmd.Output()
+
+	if err != nil {
+		return false
+	}
+
+	return gitVersionOutputSatisfies(string(buf), featureConfigURLMatchVersion)
+}
+
+func gitVersionOutputSatisfies(gitVersionOutput string, baseVersionParts []uint) bool {
+	versionStrings := versionRx.FindStringSubmatch(gitVersionOutput)
+	if versionStrings == nil {
+		return false
+	}
+
+	for i, v := range baseVersionParts {
+		thisV64, err := strconv.ParseUint(versionStrings[i+1], 10, 0)
+		utils.PanicIf(err)
+
+		thisV := uint(thisV64)
+
+		if thisV > v {
+			return true
+		} else if v == thisV {
+			continue
+		} else {
+			return false
+		}
+	}
+
+	return true
 }
