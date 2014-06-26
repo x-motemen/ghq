@@ -11,7 +11,7 @@ import (
 // ref. http://git-scm.com/docs/git-fetch#_git_urls
 // (golang hasn't supported Perl-like negative look-behind match)
 var hasSchemePattern = regexp.MustCompile("^[^:]+://")
-var scpLikeUrlPattern = regexp.MustCompile("^([^@]+@)?([^:]+):(.+)$")
+var scpLikeUrlPattern = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
 
 func NewURL(ref string) (*url.URL, error) {
 	if !hasSchemePattern.MatchString(ref) && scpLikeUrlPattern.MatchString(ref) {
