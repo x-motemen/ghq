@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4 (2014-06-26)
+
+- [feature] Support per-URL configuration variables e.g. `ghq.<URL>.vcs` to skip VCS backend auto-detection
+- [fix] Fixed path problems of SCP-like URLs thanks to @osamu2001 (#20)
+- [fix] `ghq get -u` now updates work tree for Mercurial repositories thanks to @troter (#19)
+- And typo fixes thanks to @sorah, @dtan4 (#17, #18)
+
 ## 0.3 (2014-06-17)
 
 - [feature] `ghq get -shallow` to perform a shallow clone
