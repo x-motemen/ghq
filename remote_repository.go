@@ -83,6 +83,28 @@ func (repo *OtherRepository) IsValid() bool {
 }
 
 func (repo *OtherRepository) VCS() *VCSBackend {
+	if GitHasFeatureConfigURLMatch() {
+		// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
+		// (in gitconfig:)
+		//     [ghq "https://ghe.example.com/"]
+		//     vcs = github
+		vcs, err := GitConfig("--get-urlmatch", "ghq.vcs", repo.URL().String())
+		if err != nil {
+			utils.Log("error", err.Error())
+		}
+
+		if vcs == "git" || vcs == "github" {
+			return GitBackend
+		}
+
+		if vcs == "hg" || vcs == "mercurial" {
+			return MercurialBackend
+		}
+	} else {
+		utils.Log("warning", "This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
+	}
+
+	// Detect VCS backend automatically
 	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
 		return MercurialBackend
 	} else if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {

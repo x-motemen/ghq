@@ -13,8 +13,9 @@ var logger = &colorine.Logger{
 		"skip": colorine.Verbose,
 		"cd":   colorine.Verbose,
 
-		"open":   colorine.Warn,
-		"exists": colorine.Warn,
+		"open":    colorine.Warn,
+		"exists":  colorine.Warn,
+		"warning": colorine.Warn,
 
 		"authorized": colorine.Notice,
 
