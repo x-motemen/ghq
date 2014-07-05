@@ -158,8 +158,7 @@ func doGet(c *cli.Context) {
 	url, err := NewURL(argURL)
 	utils.DieIf(err)
 
-	isSSH := c.Bool("p")
-	if isSSH {
+	if isSSH(c) {
 		// Assume Git repository if `-p` is given.
 		url, err = ConvertGitURLHTTPToSSH(url)
 		utils.DieIf(err)
@@ -174,6 +173,19 @@ func doGet(c *cli.Context) {
 	}
 
 	getRemoteRepository(remote, doUpdate, isShallow)
+}
+
+func isSSH(c *cli.Context) bool {
+	protocolConfig, err := GitConfigSingle("ghq.protocol")
+	if err != nil {
+		protocolConfig = "http"
+	}
+
+	if protocolConfig == "ssh" {
+		return true
+	} else {
+		return c.Bool("p")
+	}
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
@@ -339,7 +351,6 @@ func doLook(c *cli.Context) {
 func doImportStarred(c *cli.Context) {
 	user := c.Args().First()
 	doUpdate := c.Bool("update")
-	isSSH := c.Bool("p")
 	isShallow := c.Bool("shallow")
 
 	if user == "" {
@@ -381,7 +392,7 @@ func doImportStarred(c *cli.Context) {
 				utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", repo.HTMLURL, err))
 				continue
 			}
-			if isSSH {
+			if isSSH(c) {
 				url, err = ConvertGitURLHTTPToSSH(url)
 				if err != nil {
 					utils.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", repo.HTMLURL, err))
