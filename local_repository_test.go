@@ -26,4 +26,8 @@ func TestNewLocalRepository(t *testing.T) {
 	stashURL, _ := url.Parse("ssh://git@stash.com/scm/motemen/ghq")
 	r = LocalRepositoryFromURL(stashURL)
 	Expect(r.FullPath).To(Equal("/repos/stash.com/scm/motemen/ghq"))
+
+	stashURLWithPort, _ := url.Parse("ssh://git@stash.com:7999/scm/motemen/ghq")
+	r = LocalRepositoryFromURL(stashURLWithPort)
+	Expect(r.FullPath).To(Equal("/repos/stash.com/scm/motemen/ghq"))
 }
