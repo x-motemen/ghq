@@ -34,9 +34,9 @@ var commandGet = cli.Command{
 `,
 	Action: doGet,
 	Flags: []cli.Flag{
-		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
-		cli.BoolFlag{"p", "Clone with SSH"},
-		cli.BoolFlag{"shallow", "Do a shallow clone"},
+		cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
+		cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
+		cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
 	},
 }
 
@@ -52,9 +52,9 @@ var commandList = cli.Command{
 `,
 	Action: doList,
 	Flags: []cli.Flag{
-		cli.BoolFlag{"exact, e", "Perform an exact match"},
-		cli.BoolFlag{"full-path, p", "Print full paths"},
-		cli.BoolFlag{"unique", "Print unique subpaths"},
+		cli.BoolFlag{Name: "exact, e", Usage: "Perform an exact match"},
+		cli.BoolFlag{Name: "full-path, p", Usage: "Print full paths"},
+		cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
 	},
 }
 
@@ -85,9 +85,9 @@ var commandImportStarred = cli.Command{
 `,
 	Action: doImportStarred,
 	Flags: []cli.Flag{
-		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
-		cli.BoolFlag{"p", "Clone with SSH"},
-		cli.BoolFlag{"shallow", "Do a shallow clone"},
+		cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
+		cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
+		cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
 	},
 }
 
@@ -100,7 +100,7 @@ var commandImportPocket = cli.Command{
 `,
 	Action: doImportPocket,
 	Flags: []cli.Flag{
-		cli.BoolFlag{"update, u", "Update local repository if cloned already"},
+		cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
 	},
 }
 
