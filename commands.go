@@ -2,17 +2,13 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 	"syscall"
 
-	"code.google.com/p/goauth2/oauth"
 	"github.com/codegangsta/cli"
-	"github.com/google/go-github/github"
-	"github.com/motemen/ghq/pocket"
 	"github.com/motemen/ghq/utils"
 )
 
@@ -69,39 +65,7 @@ var commandLook = cli.Command{
 
 var commandImport = cli.Command{
 	Name:  "import",
-	Usage: "Import repositories from other web services",
-	Subcommands: []cli.Command{
-		commandImportStarred,
-		commandImportPocket,
-	},
-}
-
-var commandImportStarred = cli.Command{
-	Name:  "starred",
-	Usage: "Get all starred GitHub repositories",
-	Description: `
-    Retrieves GitHub repositories that are starred by the user specified and
-    performs 'get' for each of them.
-`,
-	Action: doImportStarred,
-	Flags: []cli.Flag{
-		cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
-		cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
-		cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
-	},
-}
-
-var commandImportPocket = cli.Command{
-	Name:  "pocket",
-	Usage: "Get all github.com entries in Pocket",
-	Description: `
-    Retrieves Pocket <http://getpocket.com/> entries of github.com and
-    performs 'get' for each of them.
-`,
-	Action: doImportPocket,
-	Flags: []cli.Flag{
-		cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
-	},
+	Usage: "Bulk get repositories from a file or stdin",
 }
 
 type commandDoc struct {
@@ -121,7 +85,7 @@ var commandDocs = map[string]commandDoc{
 // Makes template conditionals to generate per-command documents.
 func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
 	template := "{{if false}}"
-	for _, command := range append(Commands, commandImportStarred, commandImportPocket) {
+	for _, command := range append(Commands) {
 		template = template + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, genTemplate(commandDocs[command.Name]))
 	}
 	return template + "{{end}}"
@@ -333,139 +297,5 @@ func doLook(c *cli.Context) {
 		for _, repo := range reposFound {
 			utils.Log("error", "- "+strings.Join(repo.PathParts, "/"))
 		}
-	}
-}
-
-func doImportStarred(c *cli.Context) {
-	user := c.Args().First()
-	doUpdate := c.Bool("update")
-	isSSH := c.Bool("p")
-	isShallow := c.Bool("shallow")
-
-	if user == "" {
-		cli.ShowCommandHelp(c, "starred")
-		os.Exit(1)
-	}
-
-	githubToken := os.Getenv("GHQ_GITHUB_TOKEN")
-
-	if githubToken == "" {
-		var err error
-		githubToken, err = GitConfigSingle("ghq.github.token")
-		utils.PanicIf(err)
-	}
-
-	var client *github.Client
-
-	if githubToken != "" {
-		oauthTransport := &oauth.Transport{
-			Token: &oauth.Token{AccessToken: githubToken},
-		}
-		client = github.NewClient(oauthTransport.Client())
-	} else {
-		client = github.NewClient(nil)
-	}
-
-	options := &github.ActivityListStarredOptions{Sort: "created"}
-
-	for page := 1; ; page++ {
-		options.Page = page
-
-		repositories, res, err := client.Activity.ListStarred(user, options)
-		utils.DieIf(err)
-
-		utils.Log("page", fmt.Sprintf("%d/%d", page, res.LastPage))
-		for _, repo := range repositories {
-			url, err := url.Parse(*repo.HTMLURL)
-			if err != nil {
-				utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", repo.HTMLURL, err))
-				continue
-			}
-			if isSSH {
-				url, err = ConvertGitURLHTTPToSSH(url)
-				if err != nil {
-					utils.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", repo.HTMLURL, err))
-					continue
-				}
-			}
-
-			remote, err := NewRemoteRepository(url)
-			if utils.ErrorIf(err) {
-				continue
-			}
-
-			if remote.IsValid() == false {
-				utils.Log("skip", fmt.Sprintf("Not a valid repository: %s", url))
-				continue
-			}
-
-			getRemoteRepository(remote, doUpdate, isShallow)
-		}
-
-		if page >= res.LastPage {
-			break
-		}
-	}
-}
-
-func doImportPocket(c *cli.Context) {
-	doUpdate := c.Bool("update")
-	isShallow := c.Bool("shallow")
-
-	if pocket.ConsumerKey == "" {
-		utils.Log("error", "Built without consumer key set")
-		return
-	}
-
-	accessToken, err := GitConfigSingle("ghq.pocket.token")
-	utils.PanicIf(err)
-
-	if accessToken == "" {
-		receiverURL, ch, err := pocket.StartAccessTokenReceiver()
-		utils.PanicIf(err)
-
-		utils.Log("pocket", "Waiting for Pocket authentication callback at "+receiverURL)
-
-		utils.Log("pocket", "Obtaining request token")
-		authRequest, err := pocket.ObtainRequestToken(receiverURL)
-		utils.DieIf(err)
-
-		url := pocket.GenerateAuthorizationURL(authRequest.Code, receiverURL)
-		utils.Log("open", url)
-
-		<-ch
-
-		utils.Log("pocket", "Obtaining access token")
-		authorized, err := pocket.ObtainAccessToken(authRequest.Code)
-		utils.DieIf(err)
-
-		utils.Log("authorized", authorized.Username)
-
-		accessToken = authorized.AccessToken
-		utils.Run("git", "config", "ghq.pocket.token", authorized.AccessToken)
-	}
-
-	utils.Log("pocket", "Retrieving github.com entries")
-	res, err := pocket.RetrieveGitHubEntries(accessToken)
-	utils.DieIf(err)
-
-	for _, item := range res.List {
-		url, err := url.Parse(item.ResolvedURL)
-		if err != nil {
-			utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", item.ResolvedURL, err))
-			continue
-		}
-
-		remote, err := NewRemoteRepository(url)
-		if utils.ErrorIf(err) {
-			continue
-		}
-
-		if remote.IsValid() == false {
-			utils.Log("skip", fmt.Sprintf("Not a valid repository: %s", url))
-			continue
-		}
-
-		getRemoteRepository(remote, doUpdate, isShallow)
 	}
 }
