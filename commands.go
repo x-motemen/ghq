@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -64,8 +66,9 @@ var commandLook = cli.Command{
 }
 
 var commandImport = cli.Command{
-	Name:  "import",
-	Usage: "Bulk get repositories from a file or stdin",
+	Name:   "import",
+	Usage:  "Bulk get repositories from a file or stdin",
+	Action: doImport,
 }
 
 type commandDoc struct {
@@ -74,12 +77,10 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":     {"", "[-u] <repository URL> | [-u] [-p] <user>/<project>"},
-	"list":    {"", "[-p] [-e] [<query>]"},
-	"look":    {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
-	"import":  {"", "[-u] [-p] starred <user> | [-u] pocket"},
-	"starred": {"import", "[-u] [-p] <user>"},
-	"pocket":  {"import", "[-u]"},
+	"get":    {"", "[-u] <repository URL> | [-u] [-p] <user>/<project>"},
+	"list":   {"", "[-p] [-e] [<query>]"},
+	"look":   {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
+	"import": {"", "< file"},
 }
 
 // Makes template conditionals to generate per-command documents.
@@ -297,5 +298,45 @@ func doLook(c *cli.Context) {
 		for _, repo := range reposFound {
 			utils.Log("error", "- "+strings.Join(repo.PathParts, "/"))
 		}
+	}
+}
+
+func doImport(c *cli.Context) {
+	var (
+		doUpdate  = c.Bool("update")
+		isSSH     = c.Bool("p")
+		isShallow = c.Bool("shallow")
+	)
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		line := scanner.Text()
+		url, err := url.Parse(line)
+		if err != nil {
+			utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", line, err))
+			continue
+		}
+		if isSSH {
+			url, err = ConvertGitURLHTTPToSSH(url)
+			if err != nil {
+				utils.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", url, err))
+				continue
+			}
+		}
+
+		remote, err := NewRemoteRepository(url)
+		if utils.ErrorIf(err) {
+			continue
+		}
+		if remote.IsValid() == false {
+			utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
+			continue
+		}
+
+		getRemoteRepository(remote, doUpdate, isShallow)
+	}
+	if err := scanner.Err(); err != nil {
+		utils.Log("error", fmt.Sprintf("While reading input: %s", err))
+		os.Exit(1)
 	}
 }
