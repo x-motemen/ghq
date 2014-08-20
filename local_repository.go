@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/motemen/ghq/utils"
 )
 
@@ -170,10 +170,10 @@ func localRepositoryRoots() []string {
 	utils.PanicIf(err)
 
 	if len(_localRepositoryRoots) == 0 {
-		usr, err := user.Current()
+		homeDir, err := homedir.Dir()
 		utils.PanicIf(err)
 
-		_localRepositoryRoots = []string{filepath.Join(usr.HomeDir, ".ghq")}
+		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
 	}
 
 	for i, v := range _localRepositoryRoots {
