@@ -4,7 +4,6 @@ VERSION = $$(git describe --tags --always --dirty) ($$(git name-rev --name-only 
 
 BUILD_FLAGS = -ldflags "\
 	      -X main.Version \"$(VERSION)\" \
-	      -X github.com/motemen/ghq/pocket.ConsumerKey \"$$POCKET_CONSUMER_KEY\" \
 	      "
 
 build: deps
