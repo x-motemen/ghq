@@ -19,8 +19,7 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 'ghq' get [-u] [-p] (<repository URL> | <user>/<project> | <project>)
 'ghq' list [-p] [-e] [<query>]
 'ghq' look (<project> | <path/to/project>)
-'ghq' import starred [-u] [-p] <user>
-'ghq' import pocket [-u]
+'ghq' import < FILE
 
 == COMMANDS
 
@@ -48,17 +47,8 @@ list::
 look::
     Look into a locally cloned repository with the shell.
 
-import starred::
-    Retrieves GitHub repositories that are starred by the user specified and
-    performs 'get' for each of them.
-    You can set GitHub access token to enviroment variable 'GHQ_GITHUB_TOKEN' or
-    'ghq.github.taken' in 'git-config' variables. (The former takes precedence over
-    the latter.)
-
-import pocket::
-    Retrieves http://getpocket.com/[Pocket] entries of github.com and
-    performs 'get' for each of them. +
-    To use this, needs to be compiled with Pocket consumer key. See <<installing,INSTALLING>>.
+import::
+    Reads repository URLs from stdin and performs 'get' for each of them.
 
 == CONFIGURATION
 
@@ -126,18 +116,6 @@ Or clone the https://github.com/motemen/ghq[repository] and run:
 
 ----
 make install
-----
-
-If you want to enable http://getpocket.com/[Pocket] importing feature:
-
-----
-go get -ldflags "-X github.com/motemen/ghq/pocket.ConsumerKey <your Pocket consumer key>" github.com/motemen/ghq
-----
-
-Or using Makefile:
-
-----
-make install POCKET_CONSUMER_KEY=<your Pocket consumer key>
 ----
 
 == AUTHOR
