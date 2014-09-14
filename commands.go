@@ -267,6 +267,7 @@ func doLook(c *cli.Context) {
 	switch len(reposFound) {
 	case 0:
 		utils.Log("error", "No repository found")
+		os.Exit(1)
 
 	case 1:
 		if runtime.GOOS == "windows" {
