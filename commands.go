@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -309,7 +310,44 @@ func doImport(c *cli.Context) {
 		isShallow = c.Bool("shallow")
 	)
 
-	scanner := bufio.NewScanner(os.Stdin)
+	var (
+		in       io.Reader
+		finalize func() error
+	)
+
+	if len(c.Args()) == 0 {
+		// `ghq import` reads URLs from stdin
+		in = os.Stdin
+		finalize = func() error { return nil }
+	} else {
+		// Handle `ghq import starred motemen` case
+		// with `git config --global ghq.import.starred "github-list-starred"`
+		subCommand := c.Args().First()
+		command, err := GitConfigSingle("ghq.import." + subCommand)
+		if err == nil && command == "" {
+			err = fmt.Errorf("ghq.import.%s configuration not found", subCommand)
+		}
+		utils.DieIf(err)
+
+		// execute `sh -c 'COMMAND "$@"' -- ARG...`
+		// TODO: Windows
+		shellCommand := append([]string{"sh", "-c", command + ` "$@"`, "--"}, c.Args().Tail()...)
+
+		utils.Log("run", strings.Join(append([]string{command}, c.Args().Tail()...), " "))
+
+		cmd := exec.Command(shellCommand[0], shellCommand[1:]...)
+		cmd.Stderr = os.Stderr
+
+		in, err = cmd.StdoutPipe()
+		utils.DieIf(err)
+
+		err = cmd.Start()
+		utils.DieIf(err)
+
+		finalize = cmd.Wait
+	}
+
+	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		line := scanner.Text()
 		url, err := url.Parse(line)
@@ -340,4 +378,6 @@ func doImport(c *cli.Context) {
 		utils.Log("error", fmt.Sprintf("While reading input: %s", err))
 		os.Exit(1)
 	}
+
+	utils.DieIf(finalize())
 }
