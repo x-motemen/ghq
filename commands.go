@@ -21,6 +21,12 @@ var Commands = []cli.Command{
 	commandImport,
 }
 
+var cloneFlags = []cli.Flag{
+	cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
+	cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
+	cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
+}
+
 var commandGet = cli.Command{
 	Name:  "get",
 	Usage: "Clone/sync with a remote repository",
@@ -31,11 +37,7 @@ var commandGet = cli.Command{
     When you use '-p' option, the repository is cloned via SSH.
 `,
 	Action: doGet,
-	Flags: []cli.Flag{
-		cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
-		cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
-		cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
-	},
+	Flags:  cloneFlags,
 }
 
 var commandList = cli.Command{
@@ -69,6 +71,7 @@ var commandImport = cli.Command{
 	Name:   "import",
 	Usage:  "Bulk get repositories from a file or stdin",
 	Action: doImport,
+	Flags:  cloneFlags,
 }
 
 type commandDoc struct {
