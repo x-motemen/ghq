@@ -101,6 +101,10 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 			return SubversionBackend
 		}
 
+		if vcs == "git svn" || vcs == "git-svn" {
+			return GitsvnBackend
+		}
+
 		if vcs == "hg" || vcs == "mercurial" {
 			return MercurialBackend
 		}

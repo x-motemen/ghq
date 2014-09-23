@@ -107,6 +107,11 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		err error
 	)
 
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git/svn"))
+	if err == nil && fi.IsDir() {
+		return GitsvnBackend
+	}
+
 	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git"))
 	if err == nil && fi.IsDir() {
 		return GitBackend
