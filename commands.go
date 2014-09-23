@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -320,7 +319,7 @@ func doImport(c *cli.Context) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
-		url, err := url.Parse(line)
+		url, err := NewURL(line)
 		if err != nil {
 			utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", line, err))
 			continue
