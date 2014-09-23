@@ -19,6 +19,7 @@ var Commands = []cli.Command{
 	commandList,
 	commandLook,
 	commandImport,
+	commandRoot,
 }
 
 var commandGet = cli.Command{
@@ -71,6 +72,12 @@ var commandImport = cli.Command{
 	Action: doImport,
 }
 
+var commandRoot = cli.Command{
+	Name:   "root",
+	Usage:  "Returns repositories' root",
+	Action: doRoot,
+}
+
 type commandDoc struct {
 	Parent    string
 	Arguments string
@@ -81,6 +88,7 @@ var commandDocs = map[string]commandDoc{
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"look":   {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 	"import": {"", "< file"},
+	"root":   {"", ""},
 }
 
 // Makes template conditionals to generate per-command documents.
@@ -340,4 +348,8 @@ func doImport(c *cli.Context) {
 		utils.Log("error", fmt.Sprintf("While reading input: %s", err))
 		os.Exit(1)
 	}
+}
+
+func doRoot(c *cli.Context) {
+	fmt.Println(primaryLocalRepositoryRoot())
 }
