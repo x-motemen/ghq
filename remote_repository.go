@@ -97,6 +97,10 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 			return GitBackend
 		}
 
+		if vcs == "svn" || vcs == "subversion" {
+			return SubversionBackend
+		}
+
 		if vcs == "hg" || vcs == "mercurial" {
 			return MercurialBackend
 		}
@@ -109,6 +113,8 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 		return MercurialBackend
 	} else if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
 		return GitBackend
+	} else if utils.RunSilently("svn", "info", repo.url.String()) == nil {
+		return SubversionBackend
 	} else {
 		return nil
 	}

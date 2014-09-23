@@ -59,6 +59,54 @@ func TestGitBackend(t *testing.T) {
 	Expect(lastCommand().Dir).To(Equal(localDir))
 }
 
+func TestSubversionBackend(t *testing.T) {
+	RegisterTestingT(t)
+
+	tempDir, err := ioutil.TempDir("", "ghq-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	localDir := filepath.Join(tempDir, "repo")
+
+	remoteURL, err := url.Parse("https://example.com/git/repo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	commands := []*exec.Cmd{}
+	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
+	utils.CommandRunner = func(cmd *exec.Cmd) error {
+		commands = append(commands, cmd)
+		return nil
+	}
+
+	err = SubversionBackend.Clone(remoteURL, localDir, false)
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commands).To(HaveLen(1))
+	Expect(lastCommand().Args).To(Equal([]string{
+		"svn", "checkout", remoteURL.String(), localDir,
+	}))
+
+	err = SubversionBackend.Clone(remoteURL, localDir, true)
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commands).To(HaveLen(2))
+	Expect(lastCommand().Args).To(Equal([]string{
+		"svn", "checkout", "--depth", "1", remoteURL.String(), localDir,
+	}))
+
+	err = SubversionBackend.Update(localDir)
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commands).To(HaveLen(3))
+	Expect(lastCommand().Args).To(Equal([]string{
+		"svn", "update",
+	}))
+	Expect(lastCommand().Dir).To(Equal(localDir))
+}
+
 func TestMercurialBackend(t *testing.T) {
 	RegisterTestingT(t)
 

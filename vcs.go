@@ -37,6 +37,27 @@ var GitBackend = &VCSBackend{
 	},
 }
 
+var SubversionBackend = &VCSBackend{
+	Clone: func(remote *url.URL, local string, shallow bool) error {
+		dir, _ := filepath.Split(local)
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+
+		args := []string{"checkout"}
+		if shallow {
+			args = append(args, "--depth", "1")
+		}
+		args = append(args, remote.String(), local)
+
+		return utils.Run("svn", args...)
+	},
+	Update: func(local string) error {
+		return utils.RunInDir(local, "svn", "update")
+	},
+}
+
 var MercurialBackend = &VCSBackend{
 	// Mercurial seems not supporting shallow clone currently.
 	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {

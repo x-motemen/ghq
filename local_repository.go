@@ -112,6 +112,11 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		return GitBackend
 	}
 
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".svn"))
+	if err == nil && fi.IsDir() {
+		return SubversionBackend
+	}
+
 	fi, err = os.Stat(filepath.Join(repo.FullPath, ".hg"))
 	if err == nil && fi.IsDir() {
 		return MercurialBackend
