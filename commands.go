@@ -321,7 +321,7 @@ func doImport(c *cli.Context) {
 		finalize = func() error { return nil }
 	} else {
 		// Handle `ghq import starred motemen` case
-		// with `git config --global ghq.import.starred "github-list-starred"`
+		// with `git config --global ghq.import.starred "!github-list-starred"`
 		subCommand := c.Args().First()
 		command, err := GitConfigSingle("ghq.import." + subCommand)
 		if err == nil && command == "" {
@@ -331,6 +331,7 @@ func doImport(c *cli.Context) {
 
 		// execute `sh -c 'COMMAND "$@"' -- ARG...`
 		// TODO: Windows
+		command = strings.TrimLeft(command, "!")
 		shellCommand := append([]string{"sh", "-c", command + ` "$@"`, "--"}, c.Args().Tail()...)
 
 		utils.Log("run", strings.Join(append([]string{command}, c.Args().Tail()...), " "))
