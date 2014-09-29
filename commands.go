@@ -78,6 +78,9 @@ var commandRoot = cli.Command{
 	Name:   "root",
 	Usage:  "Returns repositories' root",
 	Action: doRoot,
+	Flags: []cli.Flag{
+		cli.BoolFlag{Name: "all", Usage: "Return all roots"},
+	},
 }
 
 type commandDoc struct {
@@ -353,5 +356,12 @@ func doImport(c *cli.Context) {
 }
 
 func doRoot(c *cli.Context) {
-	fmt.Println(primaryLocalRepositoryRoot())
+	all := c.Bool("all")
+	if all {
+		for _, root := range localRepositoryRoots() {
+			fmt.Println(root)
+		}
+	} else {
+		fmt.Println(primaryLocalRepositoryRoot())
+	}
 }
