@@ -63,6 +63,7 @@ __ghq_commands () {
         'list:List local repositories'
         'look:Look into a local repository'
         'import:Import repositories from other web services'
+        "root:Returns repositories' root"
         'help:Shows a list of commands or help for one command'
     )
 
