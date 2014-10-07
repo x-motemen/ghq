@@ -171,6 +171,19 @@ func TestCommandGet(t *testing.T) {
 		Expect(cloneArgs.local).To(Equal(localDir))
 		Expect(cloneArgs.shallow).To(Equal(true))
 	})
+
+	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+		localDir := filepath.Join(tmpRoot, "github.com", "motemen")
+		os.MkdirAll(localDir, 0755)
+		wd, _ := os.Getwd()
+		defer os.Chdir(wd)
+		os.Chdir(localDir)
+
+		app.Run([]string{"", "get", "-u", "ghq-test-repo"})
+
+		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
+		Expect(cloneArgs.local).To(Equal(filepath.Join(localDir, "ghq-test-repo")))
+	})
 }
 
 func TestCommandList(t *testing.T) {
