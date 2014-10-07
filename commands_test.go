@@ -11,8 +11,8 @@ import (
 )
 
 import (
-	"testing"
 	. "github.com/onsi/gomega"
+	"testing"
 )
 
 func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
