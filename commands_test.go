@@ -102,7 +102,7 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 		Clone: func(remote *url.URL, local string, shallow bool) error {
 			cloneArgs = _cloneArgs{
 				remote:  remote,
-				local:   local,
+				local:   filepath.FromSlash(local),
 				shallow: shallow,
 			}
 			return nil

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -138,10 +139,17 @@ func doGet(c *cli.Context) {
 	// Find repository name trailing after github.com/USER/. 
 	if !strings.Contains(argURL, "/") {
 		if wd, err := os.Getwd(); err == nil {
+			wd = filepath.ToSlash(wd)
+			if runtime.GOOS == "windows" {
+				wd = strings.ToLower(wd)
+			}
 			m := regexp.MustCompile(`/github.com/[^\/]+$`).FindStringIndex(wd)
 			if len(m) > 1 {
 				base, tail := wd[:m[0]], wd[m[0]+1:]
 				for _, root := range localRepositoryRoots() {
+					if runtime.GOOS == "windows" {
+						root = filepath.ToSlash(strings.ToLower(root))
+					}
 					if root == base {
 						argURL = "https://" + tail + "/" + argURL
 						break
