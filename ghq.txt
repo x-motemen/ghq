@@ -21,6 +21,7 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 'ghq' look (<project> | <path/to/project>)
 'ghq' import [-u] [-p] < FILE
 'ghq' import <subcommand> [<args>...]
+'ghq' root [--all]
 
 == COMMANDS
 
@@ -55,6 +56,10 @@ import::
     ghq looks up a configuration 'ghq.import.<subcommand>' for a command, invokes
     it, and uses its output as URLs list. See below for 'ghq.import.<subcommand>'
     in CONFIGURATION section.
+
+root::
+    Prints repositories' root (i.e. `ghq.root`). Without '--all' option, the
+    primary one is shown.
 
 == CONFIGURATION
 
