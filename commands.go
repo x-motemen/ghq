@@ -70,17 +70,17 @@ var commandLook = cli.Command{
 
 var commandImport = cli.Command{
 	Name:   "import",
-	Usage:  "Bulk get repositories from a file or stdin",
+	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
 	Flags:  cloneFlags,
 }
 
 var commandRoot = cli.Command{
 	Name:   "root",
-	Usage:  "Returns repositories' root",
+	Usage:  "Show repositories' root",
 	Action: doRoot,
 	Flags: []cli.Flag{
-		cli.BoolFlag{Name: "all", Usage: "Return all roots"},
+		cli.BoolFlag{Name: "all", Usage: "Show all roots"},
 	},
 }
 
