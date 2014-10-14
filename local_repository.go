@@ -130,7 +130,7 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 	return nil
 }
 
-var vcsDirs = []string{".git", ".hg"}
+var vcsDirs = []string{".git", ".svn", ".hg"}
 
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
