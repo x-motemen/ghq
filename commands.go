@@ -183,7 +183,11 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool)
 			os.Exit(1)
 		}
 
-		vcs.Clone(remoteURL, path, isShallow)
+		err := vcs.Clone(remoteURL, path, isShallow)
+		if err != nil {
+			utils.Log("error", fmt.Sprintf("Could not find repository: %s", err))
+			os.Exit(1)
+		}
 	} else {
 		if doUpdate {
 			utils.Log("update", path)
