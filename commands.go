@@ -157,7 +157,7 @@ func doGet(c *cli.Context) {
 
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
-// If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial)
+// If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
 func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool) {
 	remoteURL := remote.URL()
 	local := LocalRepositoryFromURL(remoteURL)

@@ -26,4 +26,28 @@ func TestNewLocalRepository(t *testing.T) {
 	stashURL, _ := url.Parse("ssh://git@stash.com/scm/motemen/ghq")
 	r = LocalRepositoryFromURL(stashURL)
 	Expect(r.FullPath).To(Equal("/repos/stash.com/scm/motemen/ghq"))
+
+	svnSourceforgeURL, _ := url.Parse("http://svn.code.sf.net/p/ghq/code/trunk")
+	r = LocalRepositoryFromURL(svnSourceforgeURL)
+	Expect(r.FullPath).To(Equal("/repos/svn.code.sf.net/p/ghq/code/trunk"))
+
+	gitSourceforgeURL, _ := url.Parse("http://git.code.sf.net/p/ghq/code")
+	r = LocalRepositoryFromURL(gitSourceforgeURL)
+	Expect(r.FullPath).To(Equal("/repos/git.code.sf.net/p/ghq/code"))
+
+	svnSourceforgeJpURL, _ := url.Parse("http://scm.sourceforge.jp/svnroot/ghq/")
+	r = LocalRepositoryFromURL(svnSourceforgeJpURL)
+	Expect(r.FullPath).To(Equal("/repos/scm.sourceforge.jp/svnroot/ghq"))
+
+	gitSourceforgeJpURL, _ := url.Parse("http://scm.sourceforge.jp/gitroot/ghq/ghq.git")
+	r = LocalRepositoryFromURL(gitSourceforgeJpURL)
+	Expect(r.FullPath).To(Equal("/repos/scm.sourceforge.jp/gitroot/ghq/ghq"))
+
+	svnAssemblaURL, _ := url.Parse("https://subversion.assembla.com/svn/ghq/")
+	r = LocalRepositoryFromURL(svnAssemblaURL)
+	Expect(r.FullPath).To(Equal("/repos/subversion.assembla.com/svn/ghq"))
+
+	gitAssemblaURL, _ := url.Parse("https://git.assembla.com/ghq.git")
+	r = LocalRepositoryFromURL(gitAssemblaURL)
+	Expect(r.FullPath).To(Equal("/repos/git.assembla.com/ghq"))
 }

@@ -107,9 +107,19 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		err error
 	)
 
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git/svn"))
+	if err == nil && fi.IsDir() {
+		return GitsvnBackend
+	}
+
 	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git"))
 	if err == nil && fi.IsDir() {
 		return GitBackend
+	}
+
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".svn"))
+	if err == nil && fi.IsDir() {
+		return SubversionBackend
 	}
 
 	fi, err = os.Stat(filepath.Join(repo.FullPath, ".hg"))
@@ -120,7 +130,7 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 	return nil
 }
 
-var vcsDirs = []string{".git", ".hg"}
+var vcsDirs = []string{".git", ".svn", ".hg"}
 
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
