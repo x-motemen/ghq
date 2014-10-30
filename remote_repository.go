@@ -101,7 +101,7 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 			return SubversionBackend
 		}
 
-		if vcs == "git svn" || vcs == "git-svn" {
+		if vcs == "git-svn" {
 			return GitsvnBackend
 		}
 
