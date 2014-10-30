@@ -10,6 +10,7 @@ var logger = &colorine.Logger{
 	colorine.Prefixes{
 		"git":  colorine.Verbose,
 		"hg":   colorine.Verbose,
+		"svn":  colorine.Verbose,
 		"skip": colorine.Verbose,
 		"cd":   colorine.Verbose,
 
