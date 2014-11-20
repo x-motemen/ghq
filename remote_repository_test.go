@@ -44,6 +44,20 @@ func TestNewRemoteRepositoryGitHub(t *testing.T) {
 	Expect(repo.IsValid()).To(Equal(true))
 }
 
+func TestNewRemoteRepositoryGitHubGist(t *testing.T) {
+	RegisterTestingT(t)
+
+	var (
+		repo RemoteRepository
+		err  error
+	)
+
+	repo, err = NewRemoteRepository(parseURL("https://gist.github.com/motemen/9733745"))
+	Expect(err).To(BeNil())
+	Expect(repo.IsValid()).To(Equal(true))
+	Expect(repo.VCS()).To(Equal(GitBackend))
+}
+
 func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
 	RegisterTestingT(t)
 

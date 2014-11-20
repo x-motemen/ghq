@@ -46,6 +46,23 @@ func (repo *GitHubRepository) VCS() *VCSBackend {
 	return GitBackend
 }
 
+// A GitHubGistRepository represents a GitHub Gist repository.
+type GitHubGistRepository struct {
+	url *url.URL
+}
+
+func (repo *GitHubGistRepository) URL() *url.URL {
+	return repo.url
+}
+
+func (repo *GitHubGistRepository) IsValid() bool {
+	return true
+}
+
+func (repo *GitHubGistRepository) VCS() *VCSBackend {
+	return GitBackend
+}
+
 type GoogleCodeRepository struct {
 	url *url.URL
 }
@@ -127,6 +144,10 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 	if url.Host == "github.com" {
 		return &GitHubRepository{url}, nil
+	}
+
+	if url.Host == "gist.github.com" {
+		return &GitHubGistRepository{url}, nil
 	}
 
 	if url.Host == "code.google.com" {
