@@ -309,7 +309,8 @@ func doLook(c *cli.Context) {
 			err := os.Chdir(reposFound[0].FullPath)
 			utils.PanicIf(err)
 
-			syscall.Exec(shell, []string{shell}, syscall.Environ())
+			env := append(syscall.Environ(), "GHQ_LOOK="+reposFound[0].RelPath)
+			syscall.Exec(shell, []string{shell}, env)
 		}
 
 	default:
