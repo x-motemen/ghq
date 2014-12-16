@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/codegangsta/cli"
@@ -67,13 +69,16 @@ var commandLook = cli.Command{
 `,
 	Action: doLook,
 }
+var importFlags = append(
+	append([]cli.Flag{},
+		cli.BoolFlag{Name: "parallel", Usage: "Parallel import"}),
+	cloneFlags...)
 
 var commandImport = cli.Command{
 	Name:   "import",
 	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
-	Flags:  cloneFlags,
-}
+	Flags:  importFlags}
 
 var commandRoot = cli.Command{
 	Name:   "root",
@@ -322,9 +327,11 @@ func doLook(c *cli.Context) {
 
 func doImport(c *cli.Context) {
 	var (
-		doUpdate  = c.Bool("update")
-		isSSH     = c.Bool("p")
-		isShallow = c.Bool("shallow")
+		doUpdate    = c.Bool("update")
+		isSSH       = c.Bool("p")
+		isShallow   = c.Bool("shallow")
+		isParallel  = c.Bool("parallel")
+		parallelNum = 4
 	)
 
 	var (
@@ -365,6 +372,20 @@ func doImport(c *cli.Context) {
 		finalize = cmd.Wait
 	}
 
+	// for parallel
+	var (
+		sem = make(chan struct{}, parallelNum)
+		wg  = &sync.WaitGroup{}
+	)
+	if isParallel {
+		// avoid that the vcs breaks stdout
+		utils.CommandRunner = func(cmd *exec.Cmd) error {
+			cmd.Stdout = ioutil.Discard
+			cmd.Stderr = ioutil.Discard
+			return cmd.Run()
+		}
+	}
+
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -389,9 +410,24 @@ func doImport(c *cli.Context) {
 			utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
 			continue
 		}
+		if isParallel {
+			wg.Add(1)
+			go func() {
+				sem <- struct{}{}
+				getRemoteRepository(remote, doUpdate, isShallow)
 
-		getRemoteRepository(remote, doUpdate, isShallow)
+				wg.Done()
+				<-sem
+			}()
+		} else {
+			getRemoteRepository(remote, doUpdate, isShallow)
+		}
 	}
+
+	if isParallel {
+		wg.Wait()
+	}
+
 	if err := scanner.Err(); err != nil {
 		utils.Log("error", fmt.Sprintf("While reading input: %s", err))
 		os.Exit(1)
