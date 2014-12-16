@@ -130,7 +130,7 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "motemen/ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
 		Expect(cloneArgs.shallow).To(Equal(false))
 	})
 
@@ -140,7 +140,7 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
 	})
 
 	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
@@ -158,7 +158,7 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
 		Expect(cloneArgs.shallow).To(Equal(false))
 	})
 
@@ -168,7 +168,7 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
 		Expect(cloneArgs.shallow).To(Equal(true))
 	})
 }
