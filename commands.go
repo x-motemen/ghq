@@ -282,6 +282,20 @@ func doLook(c *cli.Context) {
 		}
 	})
 
+	if len(reposFound) == 0 {
+		url, err := NewURL(name)
+
+		if err == nil {
+			repo := LocalRepositoryFromURL(url)
+			_, err := os.Stat(repo.FullPath)
+
+			// if the directory exists
+			if err == nil {
+				reposFound = append(reposFound, repo)
+			}
+		}
+	}
+
 	switch len(reposFound) {
 	case 0:
 		utils.Log("error", "No repository found")
