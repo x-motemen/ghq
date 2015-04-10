@@ -136,9 +136,14 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
 		filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
 			if err != nil || fileInfo == nil || fileInfo.IsDir() == false {
-				return nil
+				// ghq.root can contain regular files.
+				if root == filepath.Dir(path) {
+					return nil
+				}
+				// If a regular file was found in a non-root directory, the directory
+				// shouldn't be a repository.
+				return filepath.SkipDir
 			}
-
 			vcsDirFound := false
 			for _, d := range vcsDirs {
 				_, err := os.Stat(filepath.Join(path, d))
