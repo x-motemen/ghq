@@ -89,3 +89,24 @@ var MercurialBackend = &VCSBackend{
 		return utils.RunInDir(local, "hg", "pull", "--update")
 	},
 }
+
+var DarcsBackend = &VCSBackend{
+	Clone: func(remote *url.URL, local string, shallow bool) error {
+		dir, _ := filepath.Split(local)
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+
+		args := []string{"get"}
+		if shallow {
+			args = append(args, "--lazy")
+		}
+		args = append(args, remote.String(), local)
+
+		return utils.Run("darcs", args...)
+	},
+	Update: func(local string) error {
+		return utils.RunInDir(local, "darcs", "pull")
+	},
+}

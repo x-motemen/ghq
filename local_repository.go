@@ -127,10 +127,15 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		return MercurialBackend
 	}
 
+	fi, err = os.Stat(filepath.Join(repo.FullPath, "_darcs"))
+	if err == nil && fi.IsDir() {
+		return DarcsBackend
+	}
+
 	return nil
 }
 
-var vcsDirs = []string{".git", ".svn", ".hg"}
+var vcsDirs = []string{".git", ".svn", ".hg", "_darcs"}
 
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
