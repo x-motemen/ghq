@@ -78,7 +78,8 @@ ghq.<url>.vcs::
     repositories.  With this option you can explicitly specify the VCS for the
     remote repository. The URL is matched against '<url>' using 'git config --get-urlmatch'. +
     Accepted values are "git", "github" (an alias for "git"), "subversion",
-    "svn" (an alias for "subversion"), "git-svn", "mercurial", "hg" (an alias for "mercurial"). +
+    "svn" (an alias for "subversion"), "git-svn", "mercurial", "hg" (an alias for "mercurial"),
+    and "darcs". +
     To get this configuration variable effective, you will need Git 1.8.5 or higher. +
     For example in .gitconfig:
 
