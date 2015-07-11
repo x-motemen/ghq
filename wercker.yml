@@ -51,8 +51,7 @@ deploy:
     - script:
         name: set release tag
         code: |
-          if [ -n "$GOBUMP_NEW_VERSION" ] && [[ "$GOBUMP_NEW_VERSION" == *.*.0 ]]; then
-            # Create release tag only when the minor version was updated
+          if [ -n "$GOBUMP_NEW_VERSION" ]; then
             export RELEASE_TAG="v$GOBUMP_NEW_VERSION"
           fi
     - tcnksm/ghr:
