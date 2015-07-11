@@ -11,8 +11,8 @@ import (
 )
 
 import (
-	"testing"
 	. "github.com/onsi/gomega"
+	"testing"
 )
 
 func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
@@ -179,7 +179,7 @@ func TestCommandList(t *testing.T) {
 	_, _, err := capture(func() {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
-		c := cli.NewContext(app, flagSet, flagSet)
+		c := cli.NewContext(app, flagSet, nil)
 
 		doList(c)
 	})
@@ -194,7 +194,7 @@ func TestCommandListUnique(t *testing.T) {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
 		flagSet.Parse([]string{"--unique"})
-		c := cli.NewContext(app, flagSet, flagSet)
+		c := cli.NewContext(app, flagSet, nil)
 
 		doList(c)
 	})
@@ -209,7 +209,7 @@ func TestCommandListUnknown(t *testing.T) {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
 		flagSet.Parse([]string{"--unknown-flag"})
-		c := cli.NewContext(app, flagSet, flagSet)
+		c := cli.NewContext(app, flagSet, nil)
 
 		doList(c)
 	})
