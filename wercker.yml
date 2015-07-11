@@ -10,7 +10,6 @@ build:
     - script:
         name: go get
         code: |
-          go version
           go get -t ./...
     - script:
         name: go test
@@ -28,6 +27,10 @@ deploy:
         github_token: $GITHUB_TOKEN
         label_pattern_major: ^(major|breaking)$
         label_pattern_minor: ^(minor|feature)$
+    - script:
+        name: go get
+        code: |
+          go get ./...
     - wercker/gox:
         os: darwin linux windows
         arch: 386 amd64
@@ -38,7 +41,8 @@ deploy:
         code: |
           for dir in $WERCKER_OUTPUT_DIR/pkg/*; do
             if [ -d "$dir" ]; then
-              cp -R -v README.* zsh/ "$dir"
+              cp -R zsh/ "$dir"
+              cp ghq.txt "$dir/README.txt"
             fi
           done
     - motemen/zip:
