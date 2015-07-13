@@ -53,9 +53,11 @@ deploy:
         code: |
           if [ -n "$GOBUMP_NEW_VERSION" ]; then
             export RELEASE_TAG="v$GOBUMP_NEW_VERSION"
+            export GHR_OPT=--draft
           fi
     - tcnksm/ghr:
         token: $GITHUB_TOKEN
         input: $WERCKER_OUTPUT_DIR/dist
         replace: true
         version: $RELEASE_TAG
+        opt: $GHR_OPT
