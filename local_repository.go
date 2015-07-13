@@ -142,7 +142,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 				}
 				// If a regular file was found in a non-root directory, the directory
 				// shouldn't be a repository.
-				if !strings.HasPrefix(fileInfo.Name(), ".") {
+				if fileInfo != nil && !strings.HasPrefix(fileInfo.Name(), ".") {
 					return filepath.SkipDir
 				}
 
