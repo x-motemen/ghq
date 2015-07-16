@@ -8,11 +8,12 @@ import (
 
 var logger = &colorine.Logger{
 	colorine.Prefixes{
-		"git":  colorine.Verbose,
-		"hg":   colorine.Verbose,
-		"svn":  colorine.Verbose,
-		"skip": colorine.Verbose,
-		"cd":   colorine.Verbose,
+		"git":   colorine.Verbose,
+		"hg":    colorine.Verbose,
+		"svn":   colorine.Verbose,
+		"darcs": colorine.Verbose,
+		"skip":  colorine.Verbose,
+		"cd":    colorine.Verbose,
 
 		"open":    colorine.Warn,
 		"exists":  colorine.Warn,

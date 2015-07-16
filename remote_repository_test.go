@@ -84,3 +84,12 @@ func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
 	})
 	Expect(repo.VCS()).To(Equal(GitBackend))
 }
+
+func TestNewRemoteRepositoryDarcsHub(t *testing.T) {
+	RegisterTestingT(t)
+
+	repo, err := NewRemoteRepository(parseURL("http://hub.darcs.net/foo/bar"))
+	Expect(err).To(BeNil())
+	Expect(repo.IsValid()).To(Equal(true))
+	Expect(repo.VCS()).To(Equal(DarcsBackend))
+}
