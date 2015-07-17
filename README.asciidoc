@@ -1,1 +1,1 @@
-/Users/motemen/dev/go/src/github.com/motemen/ghq/_projects/ghq/README.asciidoc
+ghq.txt
