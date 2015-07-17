@@ -1,8 +1,14 @@
 package main
 
-import . "github.com/onsi/gomega"
-import "net/url"
-import "testing"
+import (
+	. "github.com/onsi/gomega"
+	"testing"
+)
+
+import (
+	"net/url"
+	"os"
+)
 
 func TestNewLocalRepository(t *testing.T) {
 	RegisterTestingT(t)
@@ -50,4 +56,15 @@ func TestNewLocalRepository(t *testing.T) {
 	gitAssemblaURL, _ := url.Parse("https://git.assembla.com/ghq.git")
 	r = LocalRepositoryFromURL(gitAssemblaURL)
 	Expect(r.FullPath).To(Equal("/repos/git.assembla.com/ghq"))
+}
+
+func TestLocalRepositoryRoots(t *testing.T) {
+	RegisterTestingT(t)
+
+	_localRepositoryRoots = nil
+
+	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
+	os.Setenv("GHQ_ROOT", "/path/to/ghqroot")
+
+	Expect(localRepositoryRoots()).To(Equal([]string{"/path/to/ghqroot"}))
 }

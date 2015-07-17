@@ -182,16 +182,27 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 
 var _localRepositoryRoots []string
 
-// Returns local cloned repositories' root.
-// Uses the value of `git config ghq.root` or defaults to ~/.ghq.
+// localRepositoryRoots returns locally cloned repositories' root directories.
+// The root dirs are determined as following:
+//
+//   - If GHQ_ROOT environment variable is nonempty, use it as the only root dir.
+//   - Otherwise, use the result of `git config --get-all ghq.root` as the dirs.
+//   - Otherwise, fallback to the default root, `~/.ghq`.
+//
+// TODO: More fancy default directory path?
 func localRepositoryRoots() []string {
 	if len(_localRepositoryRoots) != 0 {
 		return _localRepositoryRoots
 	}
 
-	var err error
-	_localRepositoryRoots, err = GitConfigAll("ghq.root")
-	utils.PanicIf(err)
+	envRoot := os.Getenv("GHQ_ROOT")
+	if envRoot != "" {
+		_localRepositoryRoots = []string{envRoot}
+	} else {
+		var err error
+		_localRepositoryRoots, err = GitConfigAll("ghq.root")
+		utils.PanicIf(err)
+	}
 
 	if len(_localRepositoryRoots) == 0 {
 		homeDir, err := homedir.Dir()
