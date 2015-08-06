@@ -140,7 +140,7 @@ var vcsDirs = []string{".git", ".svn", ".hg", "_darcs"}
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
 		filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
-			if err != nil || fileInfo == nil || fileInfo.IsDir() == false {
+			if err != nil || fileInfo == nil || (fileInfo.IsDir() == false && fileInfo.Mode()&os.ModeSymlink == 0) {
 				// ghq.root can contain regular files.
 				if root == filepath.Dir(path) {
 					return nil
