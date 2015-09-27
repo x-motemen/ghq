@@ -58,6 +58,7 @@ var commandList = cli.Command{
 		cli.BoolFlag{Name: "exact, e", Usage: "Perform an exact match"},
 		cli.BoolFlag{Name: "full-path, p", Usage: "Print full paths"},
 		cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
+		cli.BoolFlag{Name: "category, c", Usage: "Print specified category's"},
 	},
 }
 
@@ -221,13 +222,49 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool)
 
 func doList(c *cli.Context) {
 	query := c.Args().First()
+	category := c.Args().First()
+	isCategory := c.Bool("category")
 	exact := c.Bool("exact")
 	printFullPaths := c.Bool("full-path")
 	printUniquePaths := c.Bool("unique")
 
+	if isCategory {
+		query = ""
+	}
+
+	var categoryFn = func(repo *LocalRepository) bool {
+			if isCategory && category != "" {
+				localPath := repo.FullPath
+				categoryFile := path.Dir(localPath) + "/." + path.Base(localPath)
+				fp, err := os.Open(categoryFile)
+
+				if err != nil {
+					return false
+				}
+				defer fp.Close()
+
+				scanner := bufio.NewScanner(fp)
+
+				var flg bool
+				if scanner.Scan() {
+					flg = category == scanner.Text()
+				} else {
+					flg = false
+				}
+
+				if err := scanner.Err(); err != nil {
+					utils.PanicIf(err)
+				}
+
+				return flg
+			}
+
+			return true
+	}
+
 	var filterFn func(*LocalRepository) bool
 	if query == "" {
-		filterFn = func(_ *LocalRepository) bool {
+		filterFn = func(repo *LocalRepository) bool {
 			return true
 		}
 	} else if exact {
@@ -243,7 +280,7 @@ func doList(c *cli.Context) {
 	repos := []*LocalRepository{}
 
 	walkLocalRepositories(func(repo *LocalRepository) {
-		if filterFn(repo) == false {
+		if (categoryFn(repo) && filterFn(repo)) == false {
 			return
 		}
 
