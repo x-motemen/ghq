@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"path"
+	"io/ioutil"
 
 	"github.com/codegangsta/cli"
 	"github.com/motemen/ghq/utils"
@@ -126,6 +128,7 @@ OPTIONS:
 
 func doGet(c *cli.Context) {
 	argURL := c.Args().Get(0)
+	category := c.Args().Get(1)
 	doUpdate := c.Bool("update")
 	isShallow := c.Bool("shallow")
 
@@ -153,6 +156,24 @@ func doGet(c *cli.Context) {
 	}
 
 	getRemoteRepository(remote, doUpdate, isShallow)
+
+	if category != "" {
+		localPath := LocalRepositoryFromURL(remote.URL()).FullPath
+		categoryFile := path.Dir(localPath) + "/." + path.Base(localPath)
+
+		if doUpdate {
+			utils.Log("overwrite category", fmt.Sprintf("%s as %s", localPath, category))
+			ioutil.WriteFile(categoryFile, []byte(category + "\n"), 0644)
+		} else {
+			_, err := os.Stat(localPath)
+			if err != nil {
+				utils.PanicIf(err)
+			} else {
+				utils.Log("new category", fmt.Sprintf("%s as %s", localPath, category))
+				ioutil.WriteFile(categoryFile, []byte(category + "\n"), 0644)
+			}
+		}
+	}
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
