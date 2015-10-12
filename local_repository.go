@@ -175,7 +175,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 				return nil
 			}
 			callback(repo)
-			return filepath.SkipDir
+			return nil
 		})
 	}
 }
