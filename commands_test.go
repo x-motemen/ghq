@@ -130,7 +130,7 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "motemen/ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
 		Expect(cloneArgs.shallow).To(Equal(false))
 	})
 
@@ -140,7 +140,7 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
 	})
 
 	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
@@ -158,7 +158,7 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
 		Expect(cloneArgs.shallow).To(Equal(false))
 	})
 
@@ -168,7 +168,7 @@ func TestCommandGet(t *testing.T) {
 		app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(localDir))
+		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
 		Expect(cloneArgs.shallow).To(Equal(true))
 	})
 
@@ -192,7 +192,7 @@ func TestCommandList(t *testing.T) {
 	_, _, err := capture(func() {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
-		c := cli.NewContext(app, flagSet, flagSet)
+		c := cli.NewContext(app, flagSet, nil)
 
 		doList(c)
 	})
@@ -207,7 +207,7 @@ func TestCommandListUnique(t *testing.T) {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
 		flagSet.Parse([]string{"--unique"})
-		c := cli.NewContext(app, flagSet, flagSet)
+		c := cli.NewContext(app, flagSet, nil)
 
 		doList(c)
 	})
@@ -222,7 +222,7 @@ func TestCommandListUnknown(t *testing.T) {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
 		flagSet.Parse([]string{"--unknown-flag"})
-		c := cli.NewContext(app, flagSet, flagSet)
+		c := cli.NewContext(app, flagSet, nil)
 
 		doList(c)
 	})

@@ -1,52 +1,65 @@
-box: motemen/golang-goxc
+box: tcnksm/gox
 build:
   steps:
     - setup-go-workspace
     - script:
-        name: git version
+        name: show environments
         code: |
           git version
+          go version
     - script:
         name: go get
         code: |
-          go version
           go get -t ./...
     - script:
         name: go test
         code: |
-          go test ./...
-    - script:
-        name: goxc build & archive
-        code: |
-          goxc -tasks='xc archive' -bc 'linux,!arm windows darwin' -d $WERCKER_OUTPUT_DIR/ -build-ldflags "-X main.Version \"$(git describe --tags --always --dirty) ($(git name-rev --name-only HEAD | sed 's/^remotes\/origin\///'))\"" -resources-include='README*,zsh/_ghq'
-    - script:
-        name: output release tag
-        code: |
-          git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || true
+          go test -v ./...
 deploy:
   steps:
+    - setup-go-workspace
     - script:
-        name: restore release tag
+        name: install tools
         code: |
-          export RELEASE_TAG=$(cat .release_tag)
-    - wercker/github-create-release:
+          apt-get update
+          apt-get install -y zip
+          curl -L http://stedolan.github.io/jq/download/linux64/jq -o /usr/local/bin/jq
+          chmod +x /usr/local/bin/jq
+
+    - motemen/gobump-github-pull-request:
+        github_token: $GITHUB_TOKEN
+        label_pattern_major: ^(major|breaking)$
+        label_pattern_minor: ^(minor|feature)$
+    - script:
+        name: go get
+        code: |
+          go get ./...
+    - wercker/gox:
+        os: darwin linux windows
+        arch: 386 amd64
+        output: '{{.Dir}}_{{.OS}}_{{.Arch}}/{{.Dir}}'
+        dest: $WERCKER_OUTPUT_DIR/pkg
+    - script:
+        name: include assets into artifacts
+        code: |
+          for dir in $WERCKER_OUTPUT_DIR/pkg/*; do
+            if [ -d "$dir" ]; then
+              cp -R zsh/ "$dir"
+              cp ghq.txt "$dir/README.txt"
+            fi
+          done
+    - tcnksm/zip:
+        input: $WERCKER_OUTPUT_DIR/pkg
+        output: $WERCKER_OUTPUT_DIR/dist
+    - script:
+        name: set release tag
+        code: |
+          if [ -n "$GOBUMP_NEW_VERSION" ]; then
+            export RELEASE_TAG="v$GOBUMP_NEW_VERSION"
+          fi
+    - tcnksm/ghr:
         token: $GITHUB_TOKEN
-        tag: $RELEASE_TAG
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/ghq_linux_386.tar.gz
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/ghq_linux_amd64.tar.gz
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/ghq_darwin_386.zip
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/ghq_darwin_amd64.zip
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/ghq_windows_386.zip
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/ghq_windows_amd64.zip
+        input: $WERCKER_OUTPUT_DIR/dist
+        replace: true
+        version: $RELEASE_TAG
+        opt: --draft

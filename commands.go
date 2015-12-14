@@ -72,17 +72,17 @@ var commandLook = cli.Command{
 
 var commandImport = cli.Command{
 	Name:   "import",
-	Usage:  "Bulk get repositories from a file or stdin",
+	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
 	Flags:  cloneFlags,
 }
 
 var commandRoot = cli.Command{
 	Name:   "root",
-	Usage:  "Returns repositories' root",
+	Usage:  "Show repositories' root",
 	Action: doRoot,
 	Flags: []cli.Flag{
-		cli.BoolFlag{Name: "all", Usage: "Return all roots"},
+		cli.BoolFlag{Name: "all", Usage: "Show all roots"},
 	},
 }
 
@@ -181,7 +181,7 @@ func doGet(c *cli.Context) {
 
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
-// If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial)
+// If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
 func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool) {
 	remoteURL := remote.URL()
 	local := LocalRepositoryFromURL(remoteURL)
@@ -207,7 +207,11 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool)
 			os.Exit(1)
 		}
 
-		vcs.Clone(remoteURL, path, isShallow)
+		err := vcs.Clone(remoteURL, path, isShallow)
+		if err != nil {
+			utils.Log("error", err.Error())
+			os.Exit(1)
+		}
 	} else {
 		if doUpdate {
 			utils.Log("update", path)
@@ -302,6 +306,20 @@ func doLook(c *cli.Context) {
 		}
 	})
 
+	if len(reposFound) == 0 {
+		url, err := NewURL(name)
+
+		if err == nil {
+			repo := LocalRepositoryFromURL(url)
+			_, err := os.Stat(repo.FullPath)
+
+			// if the directory exists
+			if err == nil {
+				reposFound = append(reposFound, repo)
+			}
+		}
+	}
+
 	switch len(reposFound) {
 	case 0:
 		utils.Log("error", "No repository found")
@@ -329,7 +347,8 @@ func doLook(c *cli.Context) {
 			err := os.Chdir(reposFound[0].FullPath)
 			utils.PanicIf(err)
 
-			syscall.Exec(shell, []string{shell}, syscall.Environ())
+			env := append(syscall.Environ(), "GHQ_LOOK="+reposFound[0].RelPath)
+			syscall.Exec(shell, []string{shell}, env)
 		}
 
 	default:

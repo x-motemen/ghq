@@ -107,9 +107,19 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		err error
 	)
 
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git/svn"))
+	if err == nil && fi.IsDir() {
+		return GitsvnBackend
+	}
+
 	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git"))
 	if err == nil && fi.IsDir() {
 		return GitBackend
+	}
+
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".svn"))
+	if err == nil && fi.IsDir() {
+		return SubversionBackend
 	}
 
 	fi, err = os.Stat(filepath.Join(repo.FullPath, ".hg"))
@@ -117,10 +127,15 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		return MercurialBackend
 	}
 
+	fi, err = os.Stat(filepath.Join(repo.FullPath, "_darcs"))
+	if err == nil && fi.IsDir() {
+		return DarcsBackend
+	}
+
 	return nil
 }
 
-var vcsDirs = []string{".git", ".hg"}
+var vcsDirs = []string{".git", ".svn", ".hg", "_darcs"}
 
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
@@ -158,16 +173,27 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 
 var _localRepositoryRoots []string
 
-// Returns local cloned repositories' root.
-// Uses the value of `git config ghq.root` or defaults to ~/.ghq.
+// localRepositoryRoots returns locally cloned repositories' root directories.
+// The root dirs are determined as following:
+//
+//   - If GHQ_ROOT environment variable is nonempty, use it as the only root dir.
+//   - Otherwise, use the result of `git config --get-all ghq.root` as the dirs.
+//   - Otherwise, fallback to the default root, `~/.ghq`.
+//
+// TODO: More fancy default directory path?
 func localRepositoryRoots() []string {
 	if len(_localRepositoryRoots) != 0 {
 		return _localRepositoryRoots
 	}
 
-	var err error
-	_localRepositoryRoots, err = GitConfigAll("ghq.root")
-	utils.PanicIf(err)
+	envRoot := os.Getenv("GHQ_ROOT")
+	if envRoot != "" {
+		_localRepositoryRoots = []string{envRoot}
+	} else {
+		var err error
+		_localRepositoryRoots, err = GitConfigAll("ghq.root")
+		utils.PanicIf(err)
+	}
 
 	if len(_localRepositoryRoots) == 0 {
 		homeDir, err := homedir.Dir()

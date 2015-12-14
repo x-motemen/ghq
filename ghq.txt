@@ -21,6 +21,7 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 'ghq' look (<project> | <path/to/project>)
 'ghq' import [-u] [-p] < FILE
 'ghq' import <subcommand> [<args>...]
+'ghq' root [--all]
 
 == COMMANDS
 
@@ -56,6 +57,10 @@ import::
     it, and uses its output as URLs list. See below for 'ghq.import.<subcommand>'
     in CONFIGURATION section.
 
+root::
+    Prints repositories' root (i.e. `ghq.root`). Without '--all' option, the
+    primary one is shown.
+
 == CONFIGURATION
 
 Configuration uses 'git-config' variables.
@@ -72,8 +77,9 @@ ghq.<url>.vcs::
     ghq tries to detect the remote repository's VCS backend for non-"github.com"
     repositories.  With this option you can explicitly specify the VCS for the
     remote repository. The URL is matched against '<url>' using 'git config --get-urlmatch'. +
-    Accepted values are "git", "github" (an alias for "git"), "mercurial", "hg"
-    (an alias for "mercurial"). +
+    Accepted values are "git", "github" (an alias for "git"), "subversion",
+    "svn" (an alias for "subversion"), "git-svn", "mercurial", "hg" (an alias for "mercurial"),
+    and "darcs". +
     To get this configuration variable effective, you will need Git 1.8.5 or higher. +
     For example in .gitconfig:
 
@@ -103,6 +109,12 @@ ghq.ghe.host::
     This variable can have multiple values. If so, `ghq` tries matching with
     each hostnames. +
     This option is DEPRECATED, so use "ghq.<url>.vcs" configuration instead.
+
+== ENVIRONMENT VARIABLES
+
+GHQ_ROOT::
+    If set to a path, this value is used as the only root directory regardless
+    of other existing ghq.root settings.
 
 == [[directory-structures]]DIRECTORY STRUCTURES
 
