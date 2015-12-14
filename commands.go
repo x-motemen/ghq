@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -136,28 +135,29 @@ func doGet(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	// Find repository name trailing after github.com/USER/. 
-	if !strings.Contains(argURL, "/") {
+	// If argURL is a "./foo" or "../bar" form,
+	// find repository name trailing after github.com/USER/.
+	parts := strings.Split(argURL, string(filepath.Separator))
+	if parts[0] == "." || parts[0] == ".." {
 		if wd, err := os.Getwd(); err == nil {
-			wd = filepath.ToSlash(wd)
-			if runtime.GOOS == "windows" {
-				wd = strings.ToLower(wd)
-			}
-			m := regexp.MustCompile(`/github.com/[^\/]+$`).FindStringIndex(wd)
-			if len(m) > 1 {
-				base, tail := wd[:m[0]], wd[m[0]+1:]
-				for _, root := range localRepositoryRoots() {
-					if runtime.GOOS == "windows" {
-						root = filepath.ToSlash(strings.ToLower(root))
-					}
-					if root == base {
-						argURL = "https://" + tail + "/" + argURL
-						break
-					}
+			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
+
+			var repoPath string
+			for _, r := range localRepositoryRoots() {
+				p := strings.TrimPrefix(path, r+string(filepath.Separator))
+				if p != path && (repoPath == "" || len(p) < len(repoPath)) {
+					repoPath = p
 				}
+			}
+
+			if repoPath != "" {
+				// Guess it
+				utils.Log("resolved", fmt.Sprintf("relative %q to %q", argURL, "https://"+repoPath))
+				argURL = "https://" + repoPath
 			}
 		}
 	}
+
 	url, err := NewURL(argURL)
 	utils.DieIf(err)
 

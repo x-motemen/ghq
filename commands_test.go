@@ -89,7 +89,34 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 	if err != nil {
 		t.Fatalf("Could not create tempdir: %s", err)
 	}
-	defer func() { os.RemoveAll(tmpRoot) }()
+	defer os.RemoveAll(tmpRoot)
+
+	// Resolve /var/folders/.../T/... to /private/var/... in OSX
+	tmpRoot = func() string {
+		wd, err := os.Getwd()
+		if err != nil {
+			t.Fatalf("os.Getwd(): %s", err)
+		}
+
+		defer func() {
+			err := os.Chdir(wd)
+			if err != nil {
+				t.Fatalf("os.Chdir(): %s", err)
+			}
+		}()
+
+		err = os.Chdir(tmpRoot)
+		if err != nil {
+			t.Fatalf("os.Chdir(): %s", err)
+		}
+
+		tmpRoot, err := os.Getwd()
+		if err != nil {
+			t.Fatalf("os.Getwd(): %s", err)
+		}
+
+		return tmpRoot
+	}()
 
 	_localRepositoryRoots = []string{tmpRoot}
 	defer func() { _localRepositoryRoots = []string{} }()
@@ -179,10 +206,23 @@ func TestCommandGet(t *testing.T) {
 		defer os.Chdir(wd)
 		os.Chdir(localDir)
 
-		app.Run([]string{"", "get", "-u", "ghq-test-repo"})
+		app.Run([]string{"", "get", "-u", "." + string(filepath.Separator) + "ghq-test-repo"})
 
 		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
 		Expect(cloneArgs.local).To(Equal(filepath.Join(localDir, "ghq-test-repo")))
+	})
+
+	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+		os.MkdirAll(localDir, 0755)
+		wd, _ := os.Getwd()
+		defer os.Chdir(wd)
+		os.Chdir(localDir)
+
+		app.Run([]string{"", "get", "-u", ".." + string(filepath.Separator) + "ghq-another-test-repo"})
+
+		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-another-test-repo"))
+		Expect(cloneArgs.local).To(Equal(filepath.Join(tmpRoot, "github.com", "motemen", "ghq-another-test-repo")))
 	})
 }
 
