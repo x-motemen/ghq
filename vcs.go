@@ -110,3 +110,14 @@ var DarcsBackend = &VCSBackend{
 		return utils.RunInDir(local, "darcs", "pull")
 	},
 }
+
+var vcsRegistry = map[string]*VCSBackend{
+	"git":        GitBackend,
+	"github":     GitBackend,
+	"svn":        SubversionBackend,
+	"subversion": SubversionBackend,
+	"git-svn":    GitsvnBackend,
+	"hg":         MercurialBackend,
+	"mercurial":  MercurialBackend,
+	"darcs":      DarcsBackend,
+}

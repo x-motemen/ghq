@@ -26,6 +26,7 @@ var cloneFlags = []cli.Flag{
 	cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
 	cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
 	cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
+	cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
 }
 
 var commandGet = cli.Command{
@@ -90,7 +91,7 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] <repository URL> | [-u] [-p] <user>/<project>"},
+	"get":    {"", "[-u] [--vcs <vcs>] <repository URL> | [-u] [-p] <user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"look":   {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 	"import": {"", "< file"},
@@ -128,6 +129,7 @@ func doGet(c *cli.Context) {
 	argURL := c.Args().Get(0)
 	doUpdate := c.Bool("update")
 	isShallow := c.Bool("shallow")
+	vcsBackend := c.String("vcs")
 
 	if argURL == "" {
 		cli.ShowCommandHelp(c, "get")
@@ -152,13 +154,13 @@ func doGet(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	getRemoteRepository(remote, doUpdate, isShallow)
+	getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool) {
+func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool, vcsBackend string) {
 	remoteURL := remote.URL()
 	local := LocalRepositoryFromURL(remoteURL)
 
@@ -177,7 +179,10 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool)
 	if newPath {
 		utils.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
 
-		vcs := remote.VCS()
+		vcs := vcsRegistry[vcsBackend]
+		if vcs == nil {
+			vcs = remote.VCS()
+		}
 		if vcs == nil {
 			utils.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
 			os.Exit(1)
@@ -337,9 +342,10 @@ func doLook(c *cli.Context) {
 
 func doImport(c *cli.Context) {
 	var (
-		doUpdate  = c.Bool("update")
-		isSSH     = c.Bool("p")
-		isShallow = c.Bool("shallow")
+		doUpdate   = c.Bool("update")
+		isSSH      = c.Bool("p")
+		isShallow  = c.Bool("shallow")
+		vcsBackend = c.String("vcs")
 	)
 
 	var (
@@ -405,7 +411,7 @@ func doImport(c *cli.Context) {
 			continue
 		}
 
-		getRemoteRepository(remote, doUpdate, isShallow)
+		getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
 	}
 	if err := scanner.Err(); err != nil {
 		utils.Log("error", fmt.Sprintf("While reading input: %s", err))
