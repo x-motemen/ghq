@@ -1,9 +1,9 @@
 package main
 
 import (
+	. "github.com/onsi/gomega"
 	"net/url"
 	"testing"
-	. "github.com/onsi/gomega"
 )
 
 func TestNewURL(t *testing.T) {

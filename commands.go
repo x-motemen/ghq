@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"syscall"
@@ -132,6 +133,29 @@ func doGet(c *cli.Context) {
 	if argURL == "" {
 		cli.ShowCommandHelp(c, "get")
 		os.Exit(1)
+	}
+
+	// If argURL is a "./foo" or "../bar" form,
+	// find repository name trailing after github.com/USER/.
+	parts := strings.Split(argURL, string(filepath.Separator))
+	if parts[0] == "." || parts[0] == ".." {
+		if wd, err := os.Getwd(); err == nil {
+			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
+
+			var repoPath string
+			for _, r := range localRepositoryRoots() {
+				p := strings.TrimPrefix(path, r+string(filepath.Separator))
+				if p != path && (repoPath == "" || len(p) < len(repoPath)) {
+					repoPath = p
+				}
+			}
+
+			if repoPath != "" {
+				// Guess it
+				utils.Log("resolved", fmt.Sprintf("relative %q to %q", argURL, "https://"+repoPath))
+				argURL = "https://" + repoPath
+			}
+		}
 	}
 
 	url, err := NewURL(argURL)
