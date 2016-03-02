@@ -6,7 +6,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-var Version string = "0.7.2"
+var Version string = "0.7.3"
 
 func main() {
 	newApp().Run(os.Args)
