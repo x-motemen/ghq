@@ -188,7 +188,7 @@ func localRepositoryRoots() []string {
 
 	envRoot := os.Getenv("GHQ_ROOT")
 	if envRoot != "" {
-		_localRepositoryRoots = strings.Split(envRoot, string(os.PathListSeparator))
+		_localRepositoryRoots = filepath.SplitList(envRoot)
 	} else {
 		var err error
 		_localRepositoryRoots, err = GitConfigAll("ghq.root")
