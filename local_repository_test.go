@@ -17,12 +17,12 @@ func TestNewLocalRepository(t *testing.T) {
 
 	_localRepositoryRoots = []string{"/repos"}
 
-	r, err := LocalRepositoryFromFullPath("/repos/github.com/motemen/ghq")
+	r, err := LocalRepositoryFromFullPath("/repos/github.com/motemen/ghq", false)
 	Expect(err).To(BeNil())
 	Expect(r.NonHostPath()).To(Equal("motemen/ghq"))
 	Expect(r.Subpaths()).To(Equal([]string{"ghq", "motemen/ghq", "github.com/motemen/ghq"}))
 
-	r, err = LocalRepositoryFromFullPath("/repos/stash.com/scm/motemen/ghq")
+	r, err = LocalRepositoryFromFullPath("/repos/stash.com/scm/motemen/ghq", false)
 	Expect(err).To(BeNil())
 	Expect(r.NonHostPath()).To(Equal("scm/motemen/ghq"))
 	Expect(r.Subpaths()).To(Equal([]string{"ghq", "motemen/ghq", "scm/motemen/ghq", "stash.com/scm/motemen/ghq"}))
@@ -67,11 +67,11 @@ func TestLocalRepositoryRoots(t *testing.T) {
 
 	_localRepositoryRoots = nil
 	os.Setenv("GHQ_ROOT", "/path/to/ghqroot")
-	Expect(localRepositoryRoots()).To(Equal([]string{"/path/to/ghqroot"}))
+	Expect(localRepositoryRoots(false)).To(Equal([]string{"/path/to/ghqroot"}))
 
 	_localRepositoryRoots = nil
 	os.Setenv("GHQ_ROOT", "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
-	Expect(localRepositoryRoots()).To(Equal([]string{"/path/to/ghqroot1", "/path/to/ghqroot2"}))
+	Expect(localRepositoryRoots(false)).To(Equal([]string{"/path/to/ghqroot1", "/path/to/ghqroot2"}))
 }
 
 // https://gist.github.com/kyanny/c231f48e5d08b98ff2c3
@@ -96,7 +96,7 @@ func TestList_Symlink(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	paths := []string{}
-	walkLocalRepositories(func(repo *LocalRepository) {
+	walkLocalRepositories(false, func(repo *LocalRepository) {
 		paths = append(paths, repo.RelPath)
 	})
 
