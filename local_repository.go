@@ -18,10 +18,10 @@ type LocalRepository struct {
 	PathParts []string
 }
 
-func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
+func LocalRepositoryFromFullPath(fullPath string, symlink bool) (*LocalRepository, error) {
 	var relPath string
 
-	for _, root := range localRepositoryRoots() {
+	for _, root := range localRepositoryRoots(symlink) {
 		if strings.HasPrefix(fullPath, root) == false {
 			continue
 		}
@@ -51,7 +51,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) *LocalRepository {
 	var localRepository *LocalRepository
 
 	// Find existing local repository first
-	walkLocalRepositories(func(repo *LocalRepository) {
+	walkLocalRepositories(false, func(repo *LocalRepository) {
 		if repo.RelPath == relPath {
 			localRepository = repo
 		}
@@ -137,8 +137,8 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 
 var vcsDirs = []string{".git", ".svn", ".hg", "_darcs"}
 
-func walkLocalRepositories(callback func(*LocalRepository)) {
-	for _, root := range localRepositoryRoots() {
+func walkLocalRepositories(symlink bool, callback func(*LocalRepository)) {
+	for _, root := range localRepositoryRoots(symlink) {
 		filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
 			if err != nil || fileInfo == nil || fileInfo.IsDir() == false {
 				return nil
@@ -157,7 +157,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 				return nil
 			}
 
-			repo, err := LocalRepositoryFromFullPath(path)
+			repo, err := LocalRepositoryFromFullPath(path, symlink)
 			if err != nil {
 				return nil
 			}
@@ -181,7 +181,7 @@ var _localRepositoryRoots []string
 //   - Otherwise, fallback to the default root, `~/.ghq`.
 //
 // TODO: More fancy default directory path?
-func localRepositoryRoots() []string {
+func localRepositoryRoots(symlink bool) []string {
 	if len(_localRepositoryRoots) != 0 {
 		return _localRepositoryRoots
 	}
@@ -205,8 +205,12 @@ func localRepositoryRoots() []string {
 	for i, v := range _localRepositoryRoots {
 		path := filepath.Clean(v)
 		if _, err := os.Stat(path); err == nil {
-			_localRepositoryRoots[i], err = filepath.EvalSymlinks(path)
-			utils.PanicIf(err)
+			if symlink {
+				_localRepositoryRoots[i], err = filepath.EvalSymlinks(path)
+				utils.PanicIf(err)
+			} else {
+				_localRepositoryRoots[i] = path
+			}
 		} else {
 			_localRepositoryRoots[i] = path
 		}
@@ -216,5 +220,5 @@ func localRepositoryRoots() []string {
 }
 
 func primaryLocalRepositoryRoot() string {
-	return localRepositoryRoots()[0]
+	return localRepositoryRoots(false)[0]
 }

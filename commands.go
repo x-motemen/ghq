@@ -56,6 +56,7 @@ var commandList = cli.Command{
 	Flags: []cli.Flag{
 		cli.BoolFlag{Name: "exact, e", Usage: "Perform an exact match"},
 		cli.BoolFlag{Name: "full-path, p", Usage: "Print full paths"},
+		cli.BoolFlag{Name: "ignore-symlink", Usage: "Print full paths to ignore the symbolic link"},
 		cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
 	},
 }
@@ -143,7 +144,7 @@ func doGet(c *cli.Context) {
 			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
 
 			var repoPath string
-			for _, r := range localRepositoryRoots() {
+			for _, r := range localRepositoryRoots(false) {
 				p := strings.TrimPrefix(path, r+string(filepath.Separator))
 				if p != path && (repoPath == "" || len(p) < len(repoPath)) {
 					repoPath = p
@@ -227,6 +228,7 @@ func doList(c *cli.Context) {
 	exact := c.Bool("exact")
 	printFullPaths := c.Bool("full-path")
 	printUniquePaths := c.Bool("unique")
+	printFullPathIgnoreSymlink := c.Bool("ignore-symlink")
 
 	var filterFn func(*LocalRepository) bool
 	if query == "" {
@@ -245,7 +247,7 @@ func doList(c *cli.Context) {
 
 	repos := []*LocalRepository{}
 
-	walkLocalRepositories(func(repo *LocalRepository) {
+	walkLocalRepositories(!printFullPathIgnoreSymlink, func(repo *LocalRepository) {
 		if filterFn(repo) == false {
 			return
 		}
@@ -300,7 +302,7 @@ func doLook(c *cli.Context) {
 	}
 
 	reposFound := []*LocalRepository{}
-	walkLocalRepositories(func(repo *LocalRepository) {
+	walkLocalRepositories(false, func(repo *LocalRepository) {
 		if repo.Matches(name) {
 			reposFound = append(reposFound, repo)
 		}
@@ -442,7 +444,7 @@ func doImport(c *cli.Context) {
 func doRoot(c *cli.Context) {
 	all := c.Bool("all")
 	if all {
-		for _, root := range localRepositoryRoots() {
+		for _, root := range localRepositoryRoots(false) {
 			fmt.Println(root)
 		}
 	} else {
