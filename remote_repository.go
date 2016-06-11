@@ -168,10 +168,10 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 	}
 
 	// Detect VCS backend automatically
-	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
-		return MercurialBackend
-	} else if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
+	if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
 		return GitBackend
+	} else if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
+		return MercurialBackend
 	} else if utils.RunSilently("svn", "info", repo.url.String()) == nil {
 		return SubversionBackend
 	} else {
