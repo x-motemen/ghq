@@ -140,7 +140,22 @@ var vcsDirs = []string{".git", ".svn", ".hg", "_darcs"}
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
 		filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
-			if err != nil || fileInfo == nil || fileInfo.IsDir() == false {
+			if err != nil || fileInfo == nil {
+				return nil
+			}
+
+			if fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+				realpath, err := filepath.EvalSymlinks(path)
+				if err != nil {
+					return nil
+				}
+				fileInfo, err = os.Stat(realpath)
+				if err != nil {
+					return nil
+				}
+			}
+
+			if fileInfo.IsDir() == false {
 				return nil
 			}
 
