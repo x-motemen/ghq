@@ -102,3 +102,33 @@ func TestList_Symlink(t *testing.T) {
 
 	Expect(paths).To(HaveLen(2))
 }
+
+func TestList_SymlinkedRepository(t *testing.T) {
+	RegisterTestingT(t)
+
+	root, err := ioutil.TempDir("", "")
+	Expect(err).To(BeNil())
+
+	for _, repo := range []string{"10hoge", "20hoge", "30hoge"} {
+		err := os.MkdirAll(filepath.Join(root, repo, ".git"), 0777)
+		Expect(err).To(BeNil())
+	}
+
+	originalDir, err := ioutil.TempDir("", "")
+	Expect(err).To(BeNil())
+
+	err = os.MkdirAll(filepath.Join(originalDir, ".git"), 0777)
+	Expect(err).To(BeNil())
+
+	err = os.Symlink(originalDir, filepath.Join(root, "15target"))
+	Expect(err).To(BeNil())
+
+	_localRepositoryRoots = []string{root}
+
+	paths := []string{}
+	walkLocalRepositories(func(repo *LocalRepository) {
+		paths = append(paths, repo.RelPath)
+	})
+
+	Expect(paths).To(Equal([]string{"10hoge", "15target", "20hoge", "30hoge"}))
+}
