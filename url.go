@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -30,7 +32,10 @@ func NewURL(ref string) (*url.URL, error) {
 
 	if !url.IsAbs() {
 		if !strings.Contains(url.Path, "/") {
-			url.Path = url.Path + "/" + url.Path
+			url.Path, err = fillUsernameToPath(url.Path)
+			if err != nil {
+				return url, err
+			}
 		}
 		url.Scheme = "https"
 		url.Host = "github.com"
@@ -45,4 +50,28 @@ func NewURL(ref string) (*url.URL, error) {
 func ConvertGitURLHTTPToSSH(url *url.URL) (*url.URL, error) {
 	sshURL := fmt.Sprintf("ssh://git@%s/%s", url.Host, url.Path)
 	return url.Parse(sshURL)
+}
+
+func fillUsernameToPath(path string) (string, error) {
+	user, err := GitConfigSingle("ghq.user")
+	if err != nil {
+		return path, err
+	}
+	if user == "" {
+		user = os.Getenv("GITHUB_USER")
+	}
+	if user == "" {
+		switch runtime.GOOS {
+		case "windows":
+			user = os.Getenv("USERNAME")
+		default:
+			user = os.Getenv("USER")
+		}
+	}
+	if user == "" {
+		// Make the error if it does not match any pattern
+		return path, fmt.Errorf("set ghq.user to your gitconfig")
+	}
+	path = user + "/" + path
+	return path, nil
 }
