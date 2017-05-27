@@ -126,12 +126,12 @@ Local repositories are placed under 'ghq.root' with named github.com/_user_/_rep
 |   `-- p/
 |       `-- vim/
 `-- github.com/
-    |-- codegangsta/
-    |   `-- cli/
     |-- google/
     |   `-- go-github/
-    `-- motemen/
-        `-- ghq/
+    |-- motemen/
+    |   `-- ghq/
+    `-- urfave/
+        `-- cli/
 ....
 
 
