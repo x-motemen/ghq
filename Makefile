@@ -3,7 +3,7 @@ VERBOSE_FLAG = $(if $(VERBOSE),-v)
 VERSION = $$(git describe --tags --always --dirty) ($$(git name-rev --name-only HEAD))
 
 BUILD_FLAGS = -ldflags "\
-	      -X main.Version \"$(VERSION)\" \
+	      -X \"main.Version=$(VERSION)\" \
 	      "
 
 build: deps
