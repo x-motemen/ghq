@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 var Version string = "0.7.6"
