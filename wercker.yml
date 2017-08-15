@@ -15,6 +15,16 @@ build:
         name: go test
         code: |
           go test -v ./...
+    - script:
+        name: go test w/cover
+        code: |
+          go get github.com/axw/gocov/gocov
+          go get github.com/mattn/goveralls
+
+          go test --covermode=count -coverprofile=profile.cov
+
+          GIT_BRANCH=$WERCKER_GIT_BRANCH
+          goveralls -coverprofile=profile.cov -service=wercker.com -repotoken $COVERALLS_TOKEN
 deploy:
   steps:
     - setup-go-workspace
