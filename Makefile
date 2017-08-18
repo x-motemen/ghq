@@ -21,4 +21,11 @@ testdeps:
 install: deps
 	go install $(VERBOSE_FLAG) $(BUILD_FLAGS)
 
+bump-minor:
+	git diff --quiet && git diff --cached --quiet
+	new_version=$$(gobump minor -w -r -v) && \
+	test -n "$$new_version" && \
+	git commit -a -m "bump version to $$new_version" && \
+	git tag v$$new_version
+
 .PHONY: build test deps testdeps install
