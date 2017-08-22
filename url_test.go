@@ -3,6 +3,7 @@ package main
 import (
 	. "github.com/onsi/gomega"
 	"net/url"
+	"os"
 	"testing"
 )
 
@@ -36,8 +37,9 @@ func TestNewURL(t *testing.T) {
 	Expect(differentNameRepository.Host).To(Equal("github.com"))
 	Expect(err).To(BeNil())
 
+	os.Setenv("GITHUB_USER", "ghq-test")
 	sameNameRepository, err := NewURL("same-name-ghq")
-	Expect(sameNameRepository.String()).To(Equal("https://github.com/same-name-ghq/same-name-ghq"))
+	Expect(sameNameRepository.String()).To(Equal("https://github.com/ghq-test/same-name-ghq"))
 	Expect(sameNameRepository.Host).To(Equal("github.com"))
 	Expect(err).To(BeNil())
 }

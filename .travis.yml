@@ -1,7 +1,8 @@
 language: go
 
 go:
-  - 1.2
+  - 1.8
+  - 1.9
   - tip
 
 script: make test VERBOSE=1

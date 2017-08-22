@@ -10,7 +10,7 @@ build: deps
 	go build $(VERBOSE_FLAG) $(BUILD_FLAGS)
 
 test: testdeps
-	go test $(VERBOSE_FLAG) ./...
+	go test $(VERBOSE_FLAG) $(go list ./... | grep -v '^github.com/motemen/ghq/vendor/')
 
 deps:
 	go get -d $(VERBOSE_FLAG)
