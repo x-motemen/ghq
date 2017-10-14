@@ -10,6 +10,7 @@ import (
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/motemen/ghq/utils"
+	"regexp"
 )
 
 type LocalRepository struct {
@@ -42,9 +43,19 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	return &LocalRepository{fullPath, filepath.ToSlash(relPath), pathParts}, nil
 }
 
-func LocalRepositoryFromURL(remoteURL *url.URL) *LocalRepository {
+var repositoryPathPattern = regexp.MustCompile(`^/(.+)/(.+)$`)
+
+func LocalRepositoryFromURL(remoteURL *url.URL, directory string) *LocalRepository {
+	localPath := remoteURL.Path
+	if directory != "" {
+		matched := repositoryPathPattern.FindStringSubmatch(remoteURL.Path)
+		username := matched[1]
+		reponame := matched[2]
+		localPath = strings.Replace(localPath, username + "/" + reponame, username + "/" + directory, -1)
+	}
+
 	pathParts := append(
-		[]string{remoteURL.Host}, strings.Split(remoteURL.Path, "/")...,
+		[]string{remoteURL.Host}, strings.Split(localPath, "/")...,
 	)
 	relPath := strings.TrimSuffix(path.Join(pathParts...), ".git")
 

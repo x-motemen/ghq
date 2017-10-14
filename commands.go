@@ -33,7 +33,8 @@ var commandGet = cli.Command{
 	Name:  "get",
 	Usage: "Clone/sync with a remote repository",
 	Description: `
-    Clone a GitHub repository under ghq root direcotry. If the repository is
+    Clone a GitHub repository under ghq root direcotry. You can specify
+	directory name with <directory>. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed.
     When you use '-p' option, the repository is cloned via SSH.
@@ -91,7 +92,7 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] <repository URL> | [-u] [-p] <user>/<project>"},
+	"get":    {"", "[-u] <repository URL> [<directory>] | [-u] [-p] <user>/<project> [<directory>]"},
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"look":   {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 	"import": {"", "< file"},
@@ -127,6 +128,7 @@ OPTIONS:
 
 func doGet(c *cli.Context) error {
 	argURL := c.Args().Get(0)
+	directory := c.Args().Get(1)
 	doUpdate := c.Bool("update")
 	isShallow := c.Bool("shallow")
 
@@ -176,16 +178,16 @@ func doGet(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	getRemoteRepository(remote, doUpdate, isShallow)
+	getRemoteRepository(remote, directory, doUpdate, isShallow)
 	return nil
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool) {
+func getRemoteRepository(remote RemoteRepository, directory string, doUpdate bool, isShallow bool) {
 	remoteURL := remote.URL()
-	local := LocalRepositoryFromURL(remoteURL)
+	local := LocalRepositoryFromURL(remoteURL, directory)
 
 	path := local.FullPath
 	newPath := false
@@ -312,7 +314,7 @@ func doLook(c *cli.Context) error {
 		url, err := NewURL(name)
 
 		if err == nil {
-			repo := LocalRepositoryFromURL(url)
+			repo := LocalRepositoryFromURL(url, "")
 			_, err := os.Stat(repo.FullPath)
 
 			// if the directory exists
@@ -432,7 +434,7 @@ func doImport(c *cli.Context) error {
 			continue
 		}
 
-		getRemoteRepository(remote, doUpdate, isShallow)
+		getRemoteRepository(remote, "", doUpdate, isShallow)
 	}
 	if err := scanner.Err(); err != nil {
 		utils.Log("error", fmt.Sprintf("While reading input: %s", err))
