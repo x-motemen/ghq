@@ -162,7 +162,7 @@ func doGet(c *cli.Context) error {
 	utils.DieIf(err)
 
 	isSSH := c.Bool("p")
-	if isSSH {
+	if isSSH && (getVCSSetting() == "git" || getVCSSetting() == "") {
 		// Assume Git repository if `-p` is given.
 		url, err = ConvertGitURLHTTPToSSH(url)
 		utils.DieIf(err)
@@ -178,6 +178,15 @@ func doGet(c *cli.Context) error {
 
 	getRemoteRepository(remote, doUpdate, isShallow)
 	return nil
+}
+
+func getVCSSetting()(string) {
+	vcs, err := GitConfig("--global", "ghq.vcs")
+	if err != nil {
+		utils.Log("error", fmt.Sprintf("Specify option ghq.vcs"))
+		os.Exit(1)
+	}
+	return vcs
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
@@ -415,7 +424,7 @@ func doImport(c *cli.Context) error {
 			utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", line, err))
 			continue
 		}
-		if isSSH {
+		if isSSH && (getVCSSetting() == "git" || getVCSSetting() == "") {
 			url, err = ConvertGitURLHTTPToSSH(url)
 			if err != nil {
 				utils.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", url, err))
