@@ -110,6 +110,17 @@ ghq.ghe.host::
     each hostnames. +
     This option is DEPRECATED, so use "ghq.<url>.vcs" configuration instead.
 
+ghq.user::
+    The name to override your GITHUB_USER or USER (USERNAME in windows).
+    ghq predicts the URL on it when your argument contains neither scheme and
+    _/_.
+    For example in .gitconfig:
+
+....
+[ghq]
+user = <user>
+....
+
 == ENVIRONMENT VARIABLES
 
 GHQ_ROOT::
