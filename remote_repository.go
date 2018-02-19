@@ -163,6 +163,10 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 		if vcs == "darcs" {
 			return DarcsBackend
 		}
+
+		if vcs == "fossil" {
+			return FossilBackend
+		}
 	} else {
 		utils.Log("warning", "This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
 	}
