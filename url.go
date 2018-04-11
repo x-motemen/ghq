@@ -48,7 +48,11 @@ func NewURL(ref string) (*url.URL, error) {
 }
 
 func ConvertGitURLHTTPToSSH(url *url.URL) (*url.URL, error) {
-	sshURL := fmt.Sprintf("ssh://git@%s%s", url.Host, url.Path)
+	user := url.User.Username()
+	if user == "" {
+		user = "git"
+	}
+	sshURL := fmt.Sprintf("ssh://%s@%s%s", user, url.Host, url.Path)
 	return url.Parse(sshURL)
 }
 
