@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/karrick/godirwalk"
 	"github.com/mitchellh/go-homedir"
 	"github.com/motemen/ghq/utils"
 )
@@ -139,34 +140,36 @@ var vcsDirs = []string{".git", ".svn", ".hg", "_darcs"}
 
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
-		filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
-			if err != nil || fileInfo == nil || fileInfo.IsDir() == false {
-				return nil
-			}
-
-			vcsDirFound := false
-			for _, d := range vcsDirs {
-				_, err := os.Stat(filepath.Join(path, d))
-				if err == nil {
-					vcsDirFound = true
-					break
+		godirwalk.Walk(root, &godirwalk.Options{
+			Callback: func(path string, de *godirwalk.Dirent) error {
+				if de.IsDir() == false {
+					return nil
 				}
-			}
 
-			if !vcsDirFound {
-				return nil
-			}
+				vcsDirFound := false
+				for _, d := range vcsDirs {
+					_, err := os.Stat(filepath.Join(path, d))
+					if err == nil {
+						vcsDirFound = true
+						break
+					}
+				}
 
-			repo, err := LocalRepositoryFromFullPath(path)
-			if err != nil {
-				return nil
-			}
+				if !vcsDirFound {
+					return nil
+				}
 
-			if repo == nil {
-				return nil
-			}
-			callback(repo)
-			return filepath.SkipDir
+				repo, err := LocalRepositoryFromFullPath(path)
+				if err != nil {
+					return nil
+				}
+
+				if repo == nil {
+					return nil
+				}
+				callback(repo)
+				return filepath.SkipDir
+			},
 		})
 	}
 }
