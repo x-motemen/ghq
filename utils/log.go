@@ -6,7 +6,7 @@ import (
 	"github.com/motemen/go-colorine"
 )
 
-var logger = &colorine.Logger{
+var logger = colorine.NewLogger(
 	colorine.Prefixes{
 		"git":      colorine.Verbose,
 		"hg":       colorine.Verbose,
@@ -23,10 +23,7 @@ var logger = &colorine.Logger{
 		"authorized": colorine.Notice,
 
 		"error": colorine.Error,
-
-		"": colorine.Info,
-	},
-}
+	}, colorine.Info)
 
 func Log(prefix, message string) {
 	logger.Log(prefix, message)
