@@ -81,7 +81,7 @@ var commandRoot = cli.Command{
 	Usage:  "Show repositories' root",
 	Action: doRoot,
 	Flags: []cli.Flag{
-		cli.BoolFlag{Name: "all", Usage: "Show all roots"},
+		cli.BoolTFlag{Name: "all", Usage: "Show all roots"},
 	},
 }
 
