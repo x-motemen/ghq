@@ -22,6 +22,7 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 'ghq' import [-u] [-p] < FILE
 'ghq' import <subcommand> [<args>...]
 'ghq' root [--all]
+'ghq' remove (<project> | <path/to/project>) [--force]
 
 == COMMANDS
 
@@ -60,6 +61,11 @@ import::
 root::
     Prints repositories' root (i.e. `ghq.root`). Without '--all' option, the
     primary one is shown.
+
+remove::
+    Removes a repository from under ghq.root. Without the --force option, will
+    only allow a user to remove a directory directly under VCS. The force option
+    allows the user to remove any directory from under ghq.root.
 
 == CONFIGURATION
 

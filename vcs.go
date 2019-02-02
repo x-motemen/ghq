@@ -10,13 +10,20 @@ import (
 
 // A VCSBackend represents a VCS backend.
 type VCSBackend struct {
+	// Name of the specific VCSBackend type
+	Type string
 	// Clones a remote repository to local path.
 	Clone func(*url.URL, string, bool) error
 	// Updates a cloned local repository.
 	Update func(string) error
 }
 
+func (v VCSBackend) String() string {
+	return v.Type
+}
+
 var GitBackend = &VCSBackend{
+	Type: "git",
 	Clone: func(remote *url.URL, local string, shallow bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
@@ -38,6 +45,7 @@ var GitBackend = &VCSBackend{
 }
 
 var SubversionBackend = &VCSBackend{
+	Type: "subversion",
 	Clone: func(remote *url.URL, local string, shallow bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
@@ -59,6 +67,7 @@ var SubversionBackend = &VCSBackend{
 }
 
 var GitsvnBackend = &VCSBackend{
+	Type: "git-svn",
 	// git-svn seems not supporting shallow clone currently.
 	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
 		dir, _ := filepath.Split(local)
@@ -75,6 +84,7 @@ var GitsvnBackend = &VCSBackend{
 }
 
 var MercurialBackend = &VCSBackend{
+	Type: "mercurial",
 	// Mercurial seems not supporting shallow clone currently.
 	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
 		dir, _ := filepath.Split(local)
@@ -91,6 +101,7 @@ var MercurialBackend = &VCSBackend{
 }
 
 var DarcsBackend = &VCSBackend{
+	Type: "darcs",
 	Clone: func(remote *url.URL, local string, shallow bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)

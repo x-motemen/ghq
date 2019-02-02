@@ -11,8 +11,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/urfave/cli"
 	"github.com/motemen/ghq/utils"
+	"github.com/urfave/cli"
 )
 
 var Commands = []cli.Command{
@@ -21,6 +21,7 @@ var Commands = []cli.Command{
 	commandLook,
 	commandImport,
 	commandRoot,
+	commandRemove,
 }
 
 var cloneFlags = []cli.Flag{
@@ -85,6 +86,15 @@ var commandRoot = cli.Command{
 	},
 }
 
+var commandRemove = cli.Command{
+	Name:   "remove",
+	Usage:  "Remove a repository",
+	Action: doRemove,
+	Flags: []cli.Flag{
+		cli.BoolFlag{Name: "force", Usage: "Force remove directory"},
+	},
+}
+
 type commandDoc struct {
 	Parent    string
 	Arguments string
@@ -96,6 +106,7 @@ var commandDocs = map[string]commandDoc{
 	"look":   {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 	"import": {"", "< file"},
 	"root":   {"", ""},
+	"remove": {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 }
 
 // Makes template conditionals to generate per-command documents.
@@ -354,7 +365,7 @@ func doLook(c *cli.Context) error {
 		}
 
 	default:
-		utils.Log("error", "More than one repositories are found; Try more precise name")
+		utils.Log("error", "More than one repository found; Try a more precise name")
 		for _, repo := range reposFound {
 			utils.Log("error", "- "+strings.Join(repo.PathParts, "/"))
 		}
@@ -451,6 +462,83 @@ func doRoot(c *cli.Context) error {
 		}
 	} else {
 		fmt.Println(primaryLocalRepositoryRoot())
+	}
+	return nil
+}
+
+func doRemove(c *cli.Context) error {
+	name := c.Args().First()
+	force := c.Bool("force")
+
+	if name == "" {
+		cli.ShowCommandHelp(c, "remove")
+		os.Exit(1)
+	}
+
+	reposFound := []*LocalRepository{}
+	walkLocalRepositories(func(repo *LocalRepository) {
+		if repo.Matches(name) {
+			reposFound = append(reposFound, repo)
+		}
+	})
+
+	if len(reposFound) == 0 {
+		url, err := NewURL(name)
+
+		if err == nil {
+			repo := LocalRepositoryFromURL(url)
+			_, err := os.Stat(repo.FullPath)
+
+			// if the directory exists
+			if err == nil {
+				reposFound = append(reposFound, repo)
+			}
+		}
+	}
+
+	switch len(reposFound) {
+	case 0:
+		utils.Log("error", "No repository found")
+		os.Exit(1)
+
+	case 1:
+		// If the directory we found doesn't have a VCS name:
+		// it's likely that the user has specified a directory that is directly
+		// under the ghq.root, meaning that all child dirs would also be removed.
+		// allow this to be removed only with the --force option
+		if reposFound[0].VCS() == nil && !force {
+			utils.Log("warning", fmt.Sprintf("%s looks like a top level directory", reposFound[0].FullPath))
+			utils.Log("warning", "If you are sure this is what you want, run remove with the --force flag to remove it")
+			os.Exit(1)
+		}
+
+		if runtime.GOOS == "windows" {
+			err := os.RemoveAll(reposFound[0].FullPath)
+			if err != nil {
+				utils.Log("error", fmt.Sprintf("Could not remove %s", reposFound[0].FullPath))
+				os.Exit(1)
+			}
+			return nil
+
+		} else {
+			shell := os.Getenv("SHELL")
+			if shell == "" {
+				shell = "/bin/sh"
+			}
+
+			utils.Log("rm", reposFound[0].FullPath)
+			err := os.RemoveAll(reposFound[0].FullPath)
+			utils.PanicIf(err)
+
+			env := append(syscall.Environ(), "GHQ_REMOVE="+reposFound[0].RelPath)
+			syscall.Exec(shell, []string{shell}, env)
+		}
+
+	default:
+		utils.Log("error", "More than one repository found; Try a more precise name")
+		for _, repo := range reposFound {
+			utils.Log("error", "- "+strings.Join(repo.PathParts, "/"))
+		}
 	}
 	return nil
 }
