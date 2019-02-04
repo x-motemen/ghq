@@ -247,3 +247,31 @@ func TestDarcsBackend(t *testing.T) {
 		"darcs", "pull",
 	}))
 }
+
+func TestCvsBackend(t *testing.T) {
+	RegisterTestingT(t)
+
+	tempDir, err := ioutil.TempDir("", "ghq-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	localDir := filepath.Join(tempDir, "repo")
+
+	remoteURL, err := url.Parse("https://example.com/git/repo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = CvsBackend.Clone(remoteURL, localDir, false)
+
+	Expect(err).To(HaveOccurred())
+
+	err = CvsBackend.Clone(remoteURL, localDir, true)
+
+	Expect(err).To(HaveOccurred())
+
+	err = CvsBackend.Update(localDir)
+
+	Expect(err).To(HaveOccurred())
+}
