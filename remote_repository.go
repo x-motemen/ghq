@@ -170,13 +170,23 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 	// Detect VCS backend automatically
 	if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
 		return GitBackend, repo.URL()
-	} else if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
-		return MercurialBackend, repo.URL()
-	} else if utils.RunSilently("svn", "info", repo.url.String()) == nil {
-		return SubversionBackend, repo.URL()
-	} else {
-		return nil, nil
 	}
+
+	vcs, repoURL, err := detectGoImport(repo.url)
+	if err == nil {
+		// vcs == "mod" (modproxy) not supported yet
+		return vcsBackendMap[vcs], repoURL
+	}
+
+	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
+		return MercurialBackend, repo.URL()
+	}
+
+	if utils.RunSilently("svn", "info", repo.url.String()) == nil {
+		return SubversionBackend, repo.URL()
+	}
+
+	return nil, nil
 }
 
 func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
