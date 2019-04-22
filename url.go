@@ -12,8 +12,11 @@ import (
 // Convert SCP-like URL to SSH URL(e.g. [user@]host.xz:path/to/repo.git/)
 // ref. http://git-scm.com/docs/git-fetch#_git_urls
 // (golang hasn't supported Perl-like negative look-behind match)
-var hasSchemePattern = regexp.MustCompile("^[^:]+://")
-var scpLikeUrlPattern = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
+var (
+	hasSchemePattern          = regexp.MustCompile("^[^:]+://")
+	scpLikeUrlPattern         = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
+	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?`)
+)
 
 func NewURL(ref string) (*url.URL, error) {
 	if !hasSchemePattern.MatchString(ref) && scpLikeUrlPattern.MatchString(ref) {
@@ -35,6 +38,12 @@ func NewURL(ref string) (*url.URL, error) {
 			url.Path, err = fillUsernameToPath(url.Path)
 			if err != nil {
 				return url, err
+			}
+		} else if url.Host == "" {
+			// If ref is like "github.com/motemen/ghq" consider it as "https://github.com/motemen/ghq"
+			paths := strings.Split(ref, "/")
+			if looksLikeAuthorityPattern.MatchString(paths[0]) {
+				return url.Parse("https://" + ref)
 			}
 		}
 		url.Scheme = "https"
