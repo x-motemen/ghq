@@ -27,6 +27,7 @@ var cloneFlags = []cli.Flag{
 	cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
 	cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
 	cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
+	cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
 	cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
 }
 
@@ -130,6 +131,7 @@ func doGet(c *cli.Context) error {
 	argURL := c.Args().Get(0)
 	doUpdate := c.Bool("update")
 	isShallow := c.Bool("shallow")
+	andLook := c.Bool("look")
 	vcsBackend := c.String("vcs")
 
 	if argURL == "" {
@@ -179,6 +181,9 @@ func doGet(c *cli.Context) error {
 	}
 
 	getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
+	if andLook {
+		doLook(c)
+	}
 	return nil
 }
 
