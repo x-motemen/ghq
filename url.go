@@ -15,7 +15,7 @@ import (
 var (
 	hasSchemePattern          = regexp.MustCompile("^[^:]+://")
 	scpLikeUrlPattern         = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
-	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?`)
+	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?$`)
 )
 
 func NewURL(ref string) (*url.URL, error) {
