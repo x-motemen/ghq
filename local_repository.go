@@ -132,11 +132,6 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		return DarcsBackend
 	}
 
-	fi, err = os.Stat(filepath.Join(repo.FullPath, "CVS"))
-	if err == nil && fi.IsDir() {
-		return CvsDummyBackend
-	}
-
 	fi, err = os.Stat(filepath.Join(repo.FullPath, ".fslckout"))
 	if err == nil && fi.IsDir() {
 		return FossilBackend
@@ -147,6 +142,10 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		return FossilBackend
 	}
 
+	fi, err = os.Stat(filepath.Join(repo.FullPath, "CVS"))
+	if err == nil && fi.IsDir() {
+		return CvsDummyBackend
+	}
 	return nil
 }
 
