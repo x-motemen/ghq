@@ -137,3 +137,15 @@ var FossilBackend = &VCSBackend{
 		return utils.RunInDir(local, "fossil", "update")
 	},
 }
+
+var vcsRegistry = map[string]*VCSBackend{
+	"git":        GitBackend,
+	"github":     GitBackend,
+	"svn":        SubversionBackend,
+	"subversion": SubversionBackend,
+	"git-svn":    GitsvnBackend,
+	"hg":         MercurialBackend,
+	"mercurial":  MercurialBackend,
+	"darcs":      DarcsBackend,
+	"fossil":     FossilBackend,
+}
