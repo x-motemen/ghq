@@ -134,13 +134,23 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 
 	fi, err = os.Stat(filepath.Join(repo.FullPath, "CVS"))
 	if err == nil && fi.IsDir() {
-		return CvsBackend
+		return CvsDummyBackend
+  }
+
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".fslckout"))
+	if err == nil && fi.IsDir() {
+		return FossilBackend
+	}
+
+	fi, err = os.Stat(filepath.Join(repo.FullPath, "_FOSSIL_"))
+	if err == nil && fi.IsDir() {
+		return FossilBackend
 	}
 
 	return nil
 }
 
-var vcsDirs = []string{".git", ".svn", ".hg", "_darcs", "CVS"}
+var vcsDirs = []string{".git", ".svn", ".hg", "_darcs", ".fslckout", "_FOSSIL_", "CVS"}
 
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
