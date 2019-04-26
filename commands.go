@@ -6,12 +6,13 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"syscall"
 
-	"github.com/codegangsta/cli"
 	"github.com/motemen/ghq/utils"
+	"github.com/urfave/cli"
 )
 
 var Commands = []cli.Command{
@@ -33,7 +34,7 @@ var commandGet = cli.Command{
 	Name:  "get",
 	Usage: "Clone/sync with a remote repository",
 	Description: `
-    Clone a GitHub repository under ghq root direcotry. If the repository is
+    Clone a GitHub repository under ghq root directory. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed.
     When you use '-p' option, the repository is cloned via SSH.
@@ -125,7 +126,7 @@ OPTIONS:
 {{end}}`
 }
 
-func doGet(c *cli.Context) {
+func doGet(c *cli.Context) error {
 	argURL := c.Args().Get(0)
 	doUpdate := c.Bool("update")
 	isShallow := c.Bool("shallow")
@@ -134,6 +135,29 @@ func doGet(c *cli.Context) {
 	if argURL == "" {
 		cli.ShowCommandHelp(c, "get")
 		os.Exit(1)
+	}
+
+	// If argURL is a "./foo" or "../bar" form,
+	// find repository name trailing after github.com/USER/.
+	parts := strings.Split(argURL, string(filepath.Separator))
+	if parts[0] == "." || parts[0] == ".." {
+		if wd, err := os.Getwd(); err == nil {
+			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
+
+			var repoPath string
+			for _, r := range localRepositoryRoots() {
+				p := strings.TrimPrefix(path, r+string(filepath.Separator))
+				if p != path && (repoPath == "" || len(p) < len(repoPath)) {
+					repoPath = p
+				}
+			}
+
+			if repoPath != "" {
+				// Guess it
+				utils.Log("resolved", fmt.Sprintf("relative %q to %q", argURL, "https://"+repoPath))
+				argURL = "https://" + repoPath
+			}
+		}
 	}
 
 	url, err := NewURL(argURL)
@@ -155,6 +179,7 @@ func doGet(c *cli.Context) {
 	}
 
 	getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
+	return nil
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
@@ -180,15 +205,16 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 		utils.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
 
 		vcs := vcsRegistry[vcsBackend]
+		repoURL := remoteURL
 		if vcs == nil {
-			vcs = remote.VCS()
-		}
-		if vcs == nil {
-			utils.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
-			os.Exit(1)
+			vcs, repoURL = remote.VCS()
+			if vcs == nil {
+				utils.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
+				os.Exit(1)
+			}
 		}
 
-		err := vcs.Clone(remoteURL, path, isShallow)
+		err := vcs.Clone(repoURL, path, isShallow)
 		if err != nil {
 			utils.Log("error", err.Error())
 			os.Exit(1)
@@ -203,7 +229,7 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 	}
 }
 
-func doList(c *cli.Context) {
+func doList(c *cli.Context) error {
 	query := c.Args().First()
 	exact := c.Bool("exact")
 	printFullPaths := c.Bool("full-path")
@@ -270,9 +296,10 @@ func doList(c *cli.Context) {
 			}
 		}
 	}
+	return nil
 }
 
-func doLook(c *cli.Context) {
+func doLook(c *cli.Context) error {
 	name := c.Args().First()
 
 	if name == "" {
@@ -338,9 +365,10 @@ func doLook(c *cli.Context) {
 			utils.Log("error", "- "+strings.Join(repo.PathParts, "/"))
 		}
 	}
+	return nil
 }
 
-func doImport(c *cli.Context) {
+func doImport(c *cli.Context) error {
 	var (
 		doUpdate   = c.Bool("update")
 		isSSH      = c.Bool("p")
@@ -419,9 +447,10 @@ func doImport(c *cli.Context) {
 	}
 
 	utils.DieIf(finalize())
+	return nil
 }
 
-func doRoot(c *cli.Context) {
+func doRoot(c *cli.Context) error {
 	all := c.Bool("all")
 	if all {
 		for _, root := range localRepositoryRoots() {
@@ -430,4 +459,5 @@ func doRoot(c *cli.Context) {
 	} else {
 		fmt.Println(primaryLocalRepositoryRoot())
 	}
+	return nil
 }

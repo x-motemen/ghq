@@ -2,7 +2,9 @@ package main
 
 import (
 	"net/url"
+	"os"
 	"testing"
+
 	. "github.com/onsi/gomega"
 )
 
@@ -36,8 +38,19 @@ func TestNewURL(t *testing.T) {
 	Expect(differentNameRepository.Host).To(Equal("github.com"))
 	Expect(err).To(BeNil())
 
+	withAuthorityRepository, err := NewURL("github.com/motemen/gore")
+	Expect(withAuthorityRepository.String()).To(Equal("https://github.com/motemen/gore"))
+	Expect(withAuthorityRepository.Host).To(Equal("github.com"))
+	Expect(err).To(BeNil())
+
+	withAuthorityRepository2, err := NewURL("golang.org/x/crypto")
+	Expect(withAuthorityRepository2.String()).To(Equal("https://golang.org/x/crypto"))
+	Expect(withAuthorityRepository2.Host).To(Equal("golang.org"))
+	Expect(err).To(BeNil())
+
+	os.Setenv("GITHUB_USER", "ghq-test")
 	sameNameRepository, err := NewURL("same-name-ghq")
-	Expect(sameNameRepository.String()).To(Equal("https://github.com/same-name-ghq/same-name-ghq"))
+	Expect(sameNameRepository.String()).To(Equal("https://github.com/ghq-test/same-name-ghq"))
 	Expect(sameNameRepository.Host).To(Equal("github.com"))
 	Expect(err).To(BeNil())
 }

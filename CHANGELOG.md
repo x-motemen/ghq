@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 (2017-08-22)
+
+- [breaking feature] If given URL does not contain / character, treat the URL as `https://github.com/<USERNAME>/<URL>`, where USERNAME is GitHub username obtained from `ghq.user` Git configuration variable, GITHUB_USER or USER (USERNAME in Windows) environment variables thanks to @b4b4r07 (#81)
+- [maintenance] Fix building configuration thanks to @south37 (#85), @smizy (#82)
+
+## 0.7
+
+<History lost>
+
 ## 0.4 (2014-06-26)
 
 - [feature] Support per-URL configuration variables e.g. `ghq.<URL>.vcs` to skip VCS backend auto-detection

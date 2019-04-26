@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
-var Version string = "0.7.2"
+var Version string = "0.9.0"
 
 func main() {
 	newApp().Run(os.Args)

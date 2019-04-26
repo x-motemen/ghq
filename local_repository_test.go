@@ -63,12 +63,15 @@ func TestNewLocalRepository(t *testing.T) {
 func TestLocalRepositoryRoots(t *testing.T) {
 	RegisterTestingT(t)
 
-	_localRepositoryRoots = nil
-
 	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
-	os.Setenv("GHQ_ROOT", "/path/to/ghqroot")
 
+	_localRepositoryRoots = nil
+	os.Setenv("GHQ_ROOT", "/path/to/ghqroot")
 	Expect(localRepositoryRoots()).To(Equal([]string{"/path/to/ghqroot"}))
+
+	_localRepositoryRoots = nil
+	os.Setenv("GHQ_ROOT", "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
+	Expect(localRepositoryRoots()).To(Equal([]string{"/path/to/ghqroot1", "/path/to/ghqroot2"}))
 }
 
 // https://gist.github.com/kyanny/c231f48e5d08b98ff2c3
