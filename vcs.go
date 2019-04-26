@@ -111,8 +111,13 @@ var DarcsBackend = &VCSBackend{
 	},
 }
 
-var vcsBackendMap = map[string]*VCSBackend{
-	"git": GitBackend,
-	"hg":  MercurialBackend,
-	"svn": SubversionBackend,
+var vcsRegistry = map[string]*VCSBackend{
+	"git":        GitBackend,
+	"github":     GitBackend,
+	"svn":        SubversionBackend,
+	"subversion": SubversionBackend,
+	"git-svn":    GitsvnBackend,
+	"hg":         MercurialBackend,
+	"mercurial":  MercurialBackend,
+	"darcs":      DarcsBackend,
 }

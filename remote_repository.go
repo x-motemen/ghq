@@ -175,7 +175,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 	vcs, repoURL, err := detectGoImport(repo.url)
 	if err == nil {
 		// vcs == "mod" (modproxy) not supported yet
-		return vcsBackendMap[vcs], repoURL
+		return vcsRegistry[vcs], repoURL
 	}
 
 	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
