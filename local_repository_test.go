@@ -1,10 +1,11 @@
 package main
 
 import (
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	. "github.com/onsi/gomega"
 )
 
 import (

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -108,6 +109,15 @@ var DarcsBackend = &VCSBackend{
 	},
 	Update: func(local string) error {
 		return utils.RunInDir(local, "darcs", "pull")
+	},
+}
+
+var cvsDummyBackend = &VCSBackend{
+	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
+		return errors.New("CVS clone is not supported")
+	},
+	Update: func(local string) error {
+		return errors.New("CVS update is not supported")
 	},
 }
 
