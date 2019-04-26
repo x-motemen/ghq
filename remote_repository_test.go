@@ -28,12 +28,14 @@ func TestNewRemoteRepositoryGitHub(t *testing.T) {
 	repo, err = NewRemoteRepository(parseURL("https://github.com/motemen/pusheen-explorer"))
 	Expect(err).To(BeNil())
 	Expect(repo.IsValid()).To(Equal(true))
-	Expect(repo.VCS()).To(Equal(GitBackend))
+	vcs, _ := repo.VCS()
+	Expect(vcs).To(Equal(GitBackend))
 
 	repo, err = NewRemoteRepository(parseURL("https://github.com/motemen/pusheen-explorer/"))
 	Expect(err).To(BeNil())
 	Expect(repo.IsValid()).To(Equal(true))
-	Expect(repo.VCS()).To(Equal(GitBackend))
+	vcs, _ = repo.VCS()
+	Expect(vcs).To(Equal(GitBackend))
 
 	repo, err = NewRemoteRepository(parseURL("https://github.com/motemen/pusheen-explorer/blob/master/README.md"))
 	Expect(err).To(BeNil())
@@ -55,7 +57,8 @@ func TestNewRemoteRepositoryGitHubGist(t *testing.T) {
 	repo, err = NewRemoteRepository(parseURL("https://gist.github.com/motemen/9733745"))
 	Expect(err).To(BeNil())
 	Expect(repo.IsValid()).To(Equal(true))
-	Expect(repo.VCS()).To(Equal(GitBackend))
+	vcs, _ := repo.VCS()
+	Expect(vcs).To(Equal(GitBackend))
 }
 
 func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
@@ -73,7 +76,8 @@ func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
 		"hg identify":   nil,
 		"git ls-remote": errors.New(""),
 	})
-	Expect(repo.VCS()).To(Equal(MercurialBackend))
+	vcs, _ := repo.VCS()
+	Expect(vcs).To(Equal(MercurialBackend))
 
 	repo, err = NewRemoteRepository(parseURL("https://code.google.com/p/git-core"))
 	Expect(err).To(BeNil())
@@ -82,7 +86,8 @@ func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
 		"hg identify":   errors.New(""),
 		"git ls-remote": nil,
 	})
-	Expect(repo.VCS()).To(Equal(GitBackend))
+	vcs, _ = repo.VCS()
+	Expect(vcs).To(Equal(GitBackend))
 }
 
 func TestNewRemoteRepositoryDarcsHub(t *testing.T) {
@@ -91,5 +96,6 @@ func TestNewRemoteRepositoryDarcsHub(t *testing.T) {
 	repo, err := NewRemoteRepository(parseURL("http://hub.darcs.net/foo/bar"))
 	Expect(err).To(BeNil())
 	Expect(repo.IsValid()).To(Equal(true))
-	Expect(repo.VCS()).To(Equal(DarcsBackend))
+	vcs, _ := repo.VCS()
+	Expect(vcs).To(Equal(DarcsBackend))
 }

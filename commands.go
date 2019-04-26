@@ -11,8 +11,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/urfave/cli"
 	"github.com/motemen/ghq/utils"
+	"github.com/urfave/cli"
 )
 
 var Commands = []cli.Command{
@@ -202,13 +202,13 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool)
 	if newPath {
 		utils.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
 
-		vcs := remote.VCS()
+		vcs, repoURL := remote.VCS()
 		if vcs == nil {
 			utils.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
 			os.Exit(1)
 		}
 
-		err := vcs.Clone(remoteURL, path, isShallow)
+		err := vcs.Clone(repoURL, path, isShallow)
 		if err != nil {
 			utils.Log("error", err.Error())
 			os.Exit(1)
