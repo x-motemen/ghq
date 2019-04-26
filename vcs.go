@@ -111,6 +111,33 @@ var DarcsBackend = &VCSBackend{
 	},
 }
 
+const fossilRepoName = ".fossil" // same as Go
+
+var FossilBackend = &VCSBackend{
+	Clone: func(remote *url.URL, local string, shallow bool) error {
+		dir, _ := filepath.Split(local)
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+
+		err = utils.Run("fossil", "clone", remote.String(), filepath.Join(dir, fossilRepoName))
+		if err != nil {
+			return err
+		}
+
+		err = os.Chdir(dir)
+		if err != nil {
+			return err
+		}
+
+		return utils.Run("fossile", "open", fossilRepoName)
+	},
+	Update: func(local string) error {
+		return utils.RunInDir(local, "fossil", "update")
+	},
+}
+
 var vcsRegistry = map[string]*VCSBackend{
 	"git":        GitBackend,
 	"github":     GitBackend,
@@ -120,4 +147,5 @@ var vcsRegistry = map[string]*VCSBackend{
 	"hg":         MercurialBackend,
 	"mercurial":  MercurialBackend,
 	"darcs":      DarcsBackend,
+	"fossil":     FossilBackend,
 }
