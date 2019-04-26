@@ -11,8 +11,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/urfave/cli"
 	"github.com/motemen/ghq/utils"
+	"github.com/urfave/cli"
 )
 
 var Commands = []cli.Command{
@@ -28,6 +28,7 @@ var cloneFlags = []cli.Flag{
 	cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
 	cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
 	cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
+	cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
 }
 
 var commandGet = cli.Command{
@@ -92,7 +93,7 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] <repository URL> | [-u] [-p] <user>/<project>"},
+	"get":    {"", "[-u] [--vcs <vcs>] <repository URL> | [-u] [-p] <user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"look":   {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 	"import": {"", "< file"},
@@ -131,6 +132,7 @@ func doGet(c *cli.Context) error {
 	doUpdate := c.Bool("update")
 	isShallow := c.Bool("shallow")
 	andLook := c.Bool("look")
+	vcsBackend := c.String("vcs")
 
 	if argURL == "" {
 		cli.ShowCommandHelp(c, "get")
@@ -178,7 +180,7 @@ func doGet(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	getRemoteRepository(remote, doUpdate, isShallow)
+	getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
 	if andLook {
 		doLook(c)
 	}
@@ -188,7 +190,7 @@ func doGet(c *cli.Context) error {
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool) {
+func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool, vcsBackend string) {
 	remoteURL := remote.URL()
 	local := LocalRepositoryFromURL(remoteURL)
 
@@ -207,13 +209,17 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool)
 	if newPath {
 		utils.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
 
-		vcs := remote.VCS()
+		vcs := vcsRegistry[vcsBackend]
+		repoURL := remoteURL
 		if vcs == nil {
-			utils.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
-			os.Exit(1)
+			vcs, repoURL = remote.VCS()
+			if vcs == nil {
+				utils.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
+				os.Exit(1)
+			}
 		}
 
-		err := vcs.Clone(remoteURL, path, isShallow)
+		err := vcs.Clone(repoURL, path, isShallow)
 		if err != nil {
 			utils.Log("error", err.Error())
 			os.Exit(1)
@@ -369,9 +375,10 @@ func doLook(c *cli.Context) error {
 
 func doImport(c *cli.Context) error {
 	var (
-		doUpdate  = c.Bool("update")
-		isSSH     = c.Bool("p")
-		isShallow = c.Bool("shallow")
+		doUpdate   = c.Bool("update")
+		isSSH      = c.Bool("p")
+		isShallow  = c.Bool("shallow")
+		vcsBackend = c.String("vcs")
 	)
 
 	var (
@@ -437,7 +444,7 @@ func doImport(c *cli.Context) error {
 			continue
 		}
 
-		getRemoteRepository(remote, doUpdate, isShallow)
+		getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
 	}
 	if err := scanner.Err(); err != nil {
 		utils.Log("error", fmt.Sprintf("While reading input: %s", err))
