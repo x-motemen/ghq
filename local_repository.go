@@ -144,7 +144,7 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 
 	fi, err = os.Stat(filepath.Join(repo.FullPath, "CVS"))
 	if err == nil && fi.IsDir() {
-		return CvsDummyBackend
+		return cvsDummyBackend
 	}
 	return nil
 }

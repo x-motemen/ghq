@@ -248,7 +248,7 @@ func TestDarcsBackend(t *testing.T) {
 	}))
 }
 
-func TestCvsBackend(t *testing.T) {
+func TestCvsDummyBackend(t *testing.T) {
 	RegisterTestingT(t)
 
 	tempDir, err := ioutil.TempDir("", "ghq-test")
@@ -263,15 +263,15 @@ func TestCvsBackend(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = CvsBackend.Clone(remoteURL, localDir, false)
+	err = cvsDummyBackend.Clone(remoteURL, localDir, false)
 
 	Expect(err).To(HaveOccurred())
 
-	err = CvsBackend.Clone(remoteURL, localDir, true)
+	err = cvsDummyBackend.Clone(remoteURL, localDir, true)
 
 	Expect(err).To(HaveOccurred())
 
-	err = CvsBackend.Update(localDir)
+	err = cvsDummyBackend.Update(localDir)
 
 	Expect(err).To(HaveOccurred())
 }

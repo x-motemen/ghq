@@ -112,7 +112,7 @@ var DarcsBackend = &VCSBackend{
 	},
 }
 
-var CvsDummyBackend = &VCSBackend{
+var cvsDummyBackend = &VCSBackend{
 	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
 		return errors.New("CVS clone is not supported")
 	},
