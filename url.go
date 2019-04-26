@@ -62,6 +62,14 @@ func ConvertGitURLHTTPToSSH(url *url.URL) (*url.URL, error) {
 }
 
 func fillUsernameToPath(path string) (string, error) {
+	completeUser, err := GitConfigSingle("ghq.completeUser")
+	if err != nil {
+		return path, err
+	}
+	if completeUser == "false" {
+		return path + "/" + path, nil
+	}
+
 	user, err := GitConfigSingle("ghq.user")
 	if err != nil {
 		return path, err
