@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.10.1](https://github.com/motemen/ghq/compare/v0.10.0...v0.10.1) (2019-04-28)
+
+* Remove panics [#130](https://github.com/motemen/ghq/pull/130) ([Songmu](https://github.com/Songmu))
+* generally loggers should output STDERR by default [#129](https://github.com/motemen/ghq/pull/129) ([Songmu](https://github.com/Songmu))
+* Care the case if the query contains a hostname in list subcommand [#128](https://github.com/motemen/ghq/pull/128) ([Songmu](https://github.com/Songmu))
+* don't panic when the current working directory doesn't exist. [#127](https://github.com/motemen/ghq/pull/127) ([Songmu](https://github.com/Songmu))
+* canonicalize root paths to absolute [#126](https://github.com/motemen/ghq/pull/126) ([Songmu](https://github.com/Songmu))
+* List symlinks to repos [#125](https://github.com/motemen/ghq/pull/125) ([Songmu](https://github.com/Songmu))
+* rename package s/utils/cmdutil/ [#124](https://github.com/motemen/ghq/pull/124) ([Songmu](https://github.com/Songmu))
+* separate logger package from utils [#123](https://github.com/motemen/ghq/pull/123) ([Songmu](https://github.com/Songmu))
+
 ## [v0.10.0](https://github.com/motemen/ghq/compare/v0.9.0...v0.10.0) (2019-04-27)
 
 * drop mitchellh/go-homedir dependency [#122](https://github.com/motemen/ghq/pull/122) ([Songmu](https://github.com/Songmu))
