@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/cmdutil"
 )
 
-func NewFakeRunner(dispatch map[string]error) utils.RunFunc {
+func NewFakeRunner(dispatch map[string]error) cmdutil.RunFunc {
 	return func(cmd *exec.Cmd) error {
 		cmdString := strings.Join(cmd.Args, " ")
 		for cmdPrefix, err := range dispatch {

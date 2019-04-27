@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/logger"
 )
 
 // GitConfigSingle fetches single git-config variable.
@@ -77,7 +77,7 @@ func gitVersionOutputSatisfies(gitVersionOutput string, baseVersionParts []uint)
 
 	for i, v := range baseVersionParts {
 		thisV64, err := strconv.ParseUint(versionStrings[i+1], 10, 0)
-		utils.PanicIf(err)
+		logger.PanicIf(err)
 
 		thisV := uint(thisV64)
 

@@ -1,11 +1,12 @@
 package main
 
 import (
+	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/cmdutil"
 )
 
 // A VCSBackend represents a VCS backend.
@@ -30,10 +31,10 @@ var GitBackend = &VCSBackend{
 		}
 		args = append(args, remote.String(), local)
 
-		return utils.Run("git", args...)
+		return cmdutil.Run("git", args...)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "git", "pull", "--ff-only")
+		return cmdutil.RunInDir(local, "git", "pull", "--ff-only")
 	},
 }
 
@@ -51,10 +52,10 @@ var SubversionBackend = &VCSBackend{
 		}
 		args = append(args, remote.String(), local)
 
-		return utils.Run("svn", args...)
+		return cmdutil.Run("svn", args...)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "svn", "update")
+		return cmdutil.RunInDir(local, "svn", "update")
 	},
 }
 
@@ -67,10 +68,10 @@ var GitsvnBackend = &VCSBackend{
 			return err
 		}
 
-		return utils.Run("git", "svn", "clone", remote.String(), local)
+		return cmdutil.Run("git", "svn", "clone", remote.String(), local)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "git", "svn", "rebase")
+		return cmdutil.RunInDir(local, "git", "svn", "rebase")
 	},
 }
 
@@ -83,10 +84,10 @@ var MercurialBackend = &VCSBackend{
 			return err
 		}
 
-		return utils.Run("hg", "clone", remote.String(), local)
+		return cmdutil.Run("hg", "clone", remote.String(), local)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "hg", "pull", "--update")
+		return cmdutil.RunInDir(local, "hg", "pull", "--update")
 	},
 }
 
@@ -104,9 +105,57 @@ var DarcsBackend = &VCSBackend{
 		}
 		args = append(args, remote.String(), local)
 
-		return utils.Run("darcs", args...)
+		return cmdutil.Run("darcs", args...)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "darcs", "pull")
+		return cmdutil.RunInDir(local, "darcs", "pull")
 	},
+}
+
+var cvsDummyBackend = &VCSBackend{
+	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
+		return errors.New("CVS clone is not supported")
+	},
+	Update: func(local string) error {
+		return errors.New("CVS update is not supported")
+	},
+}
+
+const fossilRepoName = ".fossil" // same as Go
+
+var FossilBackend = &VCSBackend{
+	Clone: func(remote *url.URL, local string, shallow bool) error {
+		dir, _ := filepath.Split(local)
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+
+		err = cmdutil.Run("fossil", "clone", remote.String(), filepath.Join(dir, fossilRepoName))
+		if err != nil {
+			return err
+		}
+
+		err = os.Chdir(dir)
+		if err != nil {
+			return err
+		}
+
+		return cmdutil.Run("fossile", "open", fossilRepoName)
+	},
+	Update: func(local string) error {
+		return cmdutil.RunInDir(local, "fossil", "update")
+	},
+}
+
+var vcsRegistry = map[string]*VCSBackend{
+	"git":        GitBackend,
+	"github":     GitBackend,
+	"svn":        SubversionBackend,
+	"subversion": SubversionBackend,
+	"git-svn":    GitsvnBackend,
+	"hg":         MercurialBackend,
+	"mercurial":  MercurialBackend,
+	"darcs":      DarcsBackend,
+	"fossil":     FossilBackend,
 }

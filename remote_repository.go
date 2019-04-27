@@ -6,7 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/logger"
+	"github.com/motemen/ghq/cmdutil"
 )
 
 // A RemoteRepository represents a remote repository.
@@ -16,7 +17,7 @@ type RemoteRepository interface {
 	// Checks if the URL is valid.
 	IsValid() bool
 	// The VCS backend that hosts the repository.
-	VCS() *VCSBackend
+	VCS() (*VCSBackend, *url.URL)
 }
 
 // A GitHubRepository represents a GitHub repository. Impliments RemoteRepository.
@@ -42,8 +43,8 @@ func (repo *GitHubRepository) IsValid() bool {
 	return true
 }
 
-func (repo *GitHubRepository) VCS() *VCSBackend {
-	return GitBackend
+func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL) {
+	return GitBackend, repo.URL()
 }
 
 // A GitHubGistRepository represents a GitHub Gist repository.
@@ -59,8 +60,8 @@ func (repo *GitHubGistRepository) IsValid() bool {
 	return true
 }
 
-func (repo *GitHubGistRepository) VCS() *VCSBackend {
-	return GitBackend
+func (repo *GitHubGistRepository) VCS() (*VCSBackend, *url.URL) {
+	return GitBackend, repo.URL()
 }
 
 type GoogleCodeRepository struct {
@@ -77,13 +78,13 @@ func (repo *GoogleCodeRepository) IsValid() bool {
 	return validGoogleCodePathPattern.MatchString(repo.url.Path)
 }
 
-func (repo *GoogleCodeRepository) VCS() *VCSBackend {
-	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
-		return MercurialBackend
-	} else if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
-		return GitBackend
+func (repo *GoogleCodeRepository) VCS() (*VCSBackend, *url.URL) {
+	if cmdutil.RunSilently("hg", "identify", repo.url.String()) == nil {
+		return MercurialBackend, repo.URL()
+	} else if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
+		return GitBackend, repo.URL()
 	} else {
-		return nil
+		return nil, nil
 	}
 }
 
@@ -99,8 +100,8 @@ func (repo *DarksHubRepository) IsValid() bool {
 	return strings.Count(repo.url.Path, "/") == 2
 }
 
-func (repo *DarksHubRepository) VCS() *VCSBackend {
-	return DarcsBackend
+func (repo *DarksHubRepository) VCS() (*VCSBackend, *url.URL) {
+	return DarcsBackend, repo.URL()
 }
 
 type BluemixRepository struct {
@@ -117,8 +118,8 @@ func (repo *BluemixRepository) IsValid() bool {
 	return validBluemixPathPattern.MatchString(repo.url.Path)
 }
 
-func (repo *BluemixRepository) VCS() *VCSBackend {
-	return GitBackend
+func (repo *BluemixRepository) VCS() (*VCSBackend, *url.URL) {
+	return GitBackend, repo.URL()
 }
 
 type OtherRepository struct {
@@ -133,7 +134,7 @@ func (repo *OtherRepository) IsValid() bool {
 	return true
 }
 
-func (repo *OtherRepository) VCS() *VCSBackend {
+func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 	if GitHasFeatureConfigURLMatch() {
 		// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
 		// (in gitconfig:)
@@ -141,42 +142,56 @@ func (repo *OtherRepository) VCS() *VCSBackend {
 		//     vcs = github
 		vcs, err := GitConfig("--get-urlmatch", "ghq.vcs", repo.URL().String())
 		if err != nil {
-			utils.Log("error", err.Error())
+			logger.Log("error", err.Error())
 		}
 
 		if vcs == "git" || vcs == "github" {
-			return GitBackend
+			return GitBackend, repo.URL()
 		}
 
 		if vcs == "svn" || vcs == "subversion" {
-			return SubversionBackend
+			return SubversionBackend, repo.URL()
 		}
 
 		if vcs == "git-svn" {
-			return GitsvnBackend
+			return GitsvnBackend, repo.URL()
 		}
 
 		if vcs == "hg" || vcs == "mercurial" {
-			return MercurialBackend
+			return MercurialBackend, repo.URL()
 		}
 
 		if vcs == "darcs" {
-			return DarcsBackend
+			return DarcsBackend, repo.URL()
+		}
+
+		if vcs == "fossil" {
+			return FossilBackend, repo.URL()
 		}
 	} else {
-		utils.Log("warning", "This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
+		logger.Log("warning", "This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
 	}
 
 	// Detect VCS backend automatically
-	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
-		return MercurialBackend
-	} else if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
-		return GitBackend
-	} else if utils.RunSilently("svn", "info", repo.url.String()) == nil {
-		return SubversionBackend
-	} else {
-		return nil
+	if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
+		return GitBackend, repo.URL()
 	}
+
+	vcs, repoURL, err := detectGoImport(repo.url)
+	if err == nil {
+		// vcs == "mod" (modproxy) not supported yet
+		return vcsRegistry[vcs], repoURL
+	}
+
+	if cmdutil.RunSilently("hg", "identify", repo.url.String()) == nil {
+		return MercurialBackend, repo.URL()
+	}
+
+	if cmdutil.RunSilently("svn", "info", repo.url.String()) == nil {
+		return SubversionBackend, repo.URL()
+	}
+
+	return nil, nil
 }
 
 func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {

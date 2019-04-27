@@ -1,7 +1,8 @@
 language: go
-
 go:
-  - 1.2
-  - tip
-
-script: make test VERBOSE=1
+- 1.x
+- tip
+script:
+- make test VERBOSE=1
+after_script:
+- make cover

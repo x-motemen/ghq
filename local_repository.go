@@ -8,8 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mitchellh/go-homedir"
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/logger"
 )
 
 type LocalRepository struct {
@@ -132,10 +131,24 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 		return DarcsBackend
 	}
 
+	fi, err = os.Stat(filepath.Join(repo.FullPath, ".fslckout"))
+	if err == nil && fi.IsDir() {
+		return FossilBackend
+	}
+
+	fi, err = os.Stat(filepath.Join(repo.FullPath, "_FOSSIL_"))
+	if err == nil && fi.IsDir() {
+		return FossilBackend
+	}
+
+	fi, err = os.Stat(filepath.Join(repo.FullPath, "CVS"))
+	if err == nil && fi.IsDir() {
+		return cvsDummyBackend
+	}
 	return nil
 }
 
-var vcsDirs = []string{".git", ".svn", ".hg", "_darcs"}
+var vcsDirs = []string{".git", ".svn", ".hg", "_darcs", ".fslckout", "_FOSSIL_", "CVS"}
 
 func walkLocalRepositories(callback func(*LocalRepository)) {
 	for _, root := range localRepositoryRoots() {
@@ -207,12 +220,12 @@ func localRepositoryRoots() []string {
 	} else {
 		var err error
 		_localRepositoryRoots, err = GitConfigAll("ghq.root")
-		utils.PanicIf(err)
+		logger.PanicIf(err)
 	}
 
 	if len(_localRepositoryRoots) == 0 {
-		homeDir, err := homedir.Dir()
-		utils.PanicIf(err)
+		homeDir, err := os.UserHomeDir()
+		logger.PanicIf(err)
 
 		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
 	}
@@ -221,7 +234,7 @@ func localRepositoryRoots() []string {
 		path := filepath.Clean(v)
 		if _, err := os.Stat(path); err == nil {
 			_localRepositoryRoots[i], err = filepath.EvalSymlinks(path)
-			utils.PanicIf(err)
+			logger.PanicIf(err)
 		} else {
 			_localRepositoryRoots[i] = path
 		}

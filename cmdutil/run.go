@@ -1,4 +1,4 @@
-package utils
+package cmdutil
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/motemen/ghq/logger"
 )
 
 func Run(command string, args ...string) error {
@@ -40,10 +42,13 @@ var CommandRunner = func(cmd *exec.Cmd) error {
 }
 
 func RunCommand(cmd *exec.Cmd) error {
-	Log(cmd.Args[0], strings.Join(cmd.Args[1:], " "))
+	logger.Log(cmd.Args[0], strings.Join(cmd.Args[1:], " "))
 
 	err := CommandRunner(cmd)
 	if err != nil {
+		if execErr, ok := err.(*exec.Error); ok {
+			logger.Log("warning", fmt.Sprintf("%q: %s", execErr.Name, execErr.Err))
+		}
 		return &RunError{cmd, err}
 	}
 
