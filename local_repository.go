@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/motemen/ghq/utils"
 )
 
@@ -210,7 +209,7 @@ func localRepositoryRoots() []string {
 	}
 
 	if len(_localRepositoryRoots) == 0 {
-		homeDir, err := homedir.Dir()
+		homeDir, err := os.UserHomeDir()
 		utils.PanicIf(err)
 
 		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
