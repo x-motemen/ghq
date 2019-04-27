@@ -232,11 +232,15 @@ func localRepositoryRoots() []string {
 	for i, v := range _localRepositoryRoots {
 		path := filepath.Clean(v)
 		if _, err := os.Stat(path); err == nil {
-			_localRepositoryRoots[i], err = filepath.EvalSymlinks(path)
+			path, err = filepath.EvalSymlinks(path)
 			logger.PanicIf(err)
-		} else {
-			_localRepositoryRoots[i] = path
 		}
+		if !filepath.IsAbs(path) {
+			var err error
+			path, err = filepath.Abs(path)
+			logger.PanicIf(err)
+		}
+		_localRepositoryRoots[i] = path
 	}
 
 	return _localRepositoryRoots
