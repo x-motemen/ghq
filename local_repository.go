@@ -219,7 +219,10 @@ func localRepositoryRoots() []string {
 	} else {
 		var err error
 		_localRepositoryRoots, err = GitConfigAll("ghq.root")
-		logger.PanicIf(err)
+		if err != nil {
+			logger.Log("error", err.Error())
+			os.Exit(1)
+		}
 	}
 
 	if len(_localRepositoryRoots) == 0 {
