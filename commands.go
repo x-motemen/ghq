@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
 )
 
@@ -156,27 +156,27 @@ func doGet(c *cli.Context) error {
 
 			if repoPath != "" {
 				// Guess it
-				utils.Log("resolved", fmt.Sprintf("relative %q to %q", argURL, "https://"+repoPath))
+				logger.Log("resolved", fmt.Sprintf("relative %q to %q", argURL, "https://"+repoPath))
 				argURL = "https://" + repoPath
 			}
 		}
 	}
 
 	url, err := NewURL(argURL)
-	utils.DieIf(err)
+	logger.DieIf(err)
 
 	isSSH := c.Bool("p")
 	if isSSH {
 		// Assume Git repository if `-p` is given.
 		url, err = ConvertGitURLHTTPToSSH(url)
-		utils.DieIf(err)
+		logger.DieIf(err)
 	}
 
 	remote, err := NewRemoteRepository(url)
-	utils.DieIf(err)
+	logger.DieIf(err)
 
 	if remote.IsValid() == false {
-		utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
+		logger.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
 		os.Exit(1)
 	}
 
@@ -203,33 +203,33 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 			newPath = true
 			err = nil
 		}
-		utils.PanicIf(err)
+		logger.PanicIf(err)
 	}
 
 	if newPath {
-		utils.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
+		logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
 
 		vcs := vcsRegistry[vcsBackend]
 		repoURL := remoteURL
 		if vcs == nil {
 			vcs, repoURL = remote.VCS()
 			if vcs == nil {
-				utils.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
+				logger.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
 				os.Exit(1)
 			}
 		}
 
 		err := vcs.Clone(repoURL, path, isShallow)
 		if err != nil {
-			utils.Log("error", err.Error())
+			logger.Log("error", err.Error())
 			os.Exit(1)
 		}
 	} else {
 		if doUpdate {
-			utils.Log("update", path)
+			logger.Log("update", path)
 			local.VCS().Update(path)
 		} else {
-			utils.Log("exists", path)
+			logger.Log("exists", path)
 		}
 	}
 }
@@ -335,7 +335,7 @@ func doLook(c *cli.Context) error {
 
 	switch len(reposFound) {
 	case 0:
-		utils.Log("error", "No repository found")
+		logger.Log("error", "No repository found")
 		os.Exit(1)
 
 	case 1:
@@ -356,18 +356,18 @@ func doLook(c *cli.Context) error {
 				shell = "/bin/sh"
 			}
 
-			utils.Log("cd", reposFound[0].FullPath)
+			logger.Log("cd", reposFound[0].FullPath)
 			err := os.Chdir(reposFound[0].FullPath)
-			utils.PanicIf(err)
+			logger.PanicIf(err)
 
 			env := append(syscall.Environ(), "GHQ_LOOK="+reposFound[0].RelPath)
 			syscall.Exec(shell, []string{shell}, env)
 		}
 
 	default:
-		utils.Log("error", "More than one repositories are found; Try more precise name")
+		logger.Log("error", "More than one repositories are found; Try more precise name")
 		for _, repo := range reposFound {
-			utils.Log("error", "- "+strings.Join(repo.PathParts, "/"))
+			logger.Log("error", "- "+strings.Join(repo.PathParts, "/"))
 		}
 	}
 	return nil
@@ -398,23 +398,23 @@ func doImport(c *cli.Context) error {
 		if err == nil && command == "" {
 			err = fmt.Errorf("ghq.import.%s configuration not found", subCommand)
 		}
-		utils.DieIf(err)
+		logger.DieIf(err)
 
 		// execute `sh -c 'COMMAND "$@"' -- ARG...`
 		// TODO: Windows
 		command = strings.TrimLeft(command, "!")
 		shellCommand := append([]string{"sh", "-c", command + ` "$@"`, "--"}, c.Args().Tail()...)
 
-		utils.Log("run", strings.Join(append([]string{command}, c.Args().Tail()...), " "))
+		logger.Log("run", strings.Join(append([]string{command}, c.Args().Tail()...), " "))
 
 		cmd := exec.Command(shellCommand[0], shellCommand[1:]...)
 		cmd.Stderr = os.Stderr
 
 		in, err = cmd.StdoutPipe()
-		utils.DieIf(err)
+		logger.DieIf(err)
 
 		err = cmd.Start()
-		utils.DieIf(err)
+		logger.DieIf(err)
 
 		finalize = cmd.Wait
 	}
@@ -424,34 +424,34 @@ func doImport(c *cli.Context) error {
 		line := scanner.Text()
 		url, err := NewURL(line)
 		if err != nil {
-			utils.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", line, err))
+			logger.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", line, err))
 			continue
 		}
 		if isSSH {
 			url, err = ConvertGitURLHTTPToSSH(url)
 			if err != nil {
-				utils.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", url, err))
+				logger.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", url, err))
 				continue
 			}
 		}
 
 		remote, err := NewRemoteRepository(url)
-		if utils.ErrorIf(err) {
+		if logger.ErrorIf(err) {
 			continue
 		}
 		if remote.IsValid() == false {
-			utils.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
+			logger.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
 			continue
 		}
 
 		getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
 	}
 	if err := scanner.Err(); err != nil {
-		utils.Log("error", fmt.Sprintf("While reading input: %s", err))
+		logger.Log("error", fmt.Sprintf("While reading input: %s", err))
 		os.Exit(1)
 	}
 
-	utils.DieIf(finalize())
+	logger.DieIf(finalize())
 	return nil
 }
 
