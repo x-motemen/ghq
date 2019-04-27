@@ -34,5 +34,4 @@ ghr \
     -username motemen \
     -repository ghq \
     -token "$GITHUB_TOKEN" \
-    -draft \
     "$version" "$distdir"
