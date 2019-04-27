@@ -20,6 +20,7 @@ devel-deps: deps
 	  github.com/mattn/goveralls                \
 	  github.com/Songmu/godzil/cmd/godzil       \
 	  github.com/Songmu/goxz/cmd/goxz           \
+	  github.com/Songmu/ghch/cmd/ghch           \
 	  github.com/Songmu/gocredits/cmd/gocredits \
 	  github.com/tcnksm/ghr
 
@@ -61,7 +62,7 @@ crossbuild: CREDITS
 
 .PHONY: upload
 upload:
-	ghr v$(VERSION) dist/snapshot
+	ghr -body="$(shell ghch --latest -F markdown)" v$(VERSION) dist/snapshot
 
 .PHONY: release
 release: bump crossbuild upload
