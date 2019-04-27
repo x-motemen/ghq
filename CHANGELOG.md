@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.10.0](https://github.com/motemen/ghq/compare/v0.9.0...v0.10.0) (2019-04-27)
+
+* drop mitchellh/go-homedir dependency [#122](https://github.com/motemen/ghq/pull/122) ([Songmu](https://github.com/Songmu))
+* introduce Go Modules and adjust releng files [#121](https://github.com/motemen/ghq/pull/121) ([Songmu](https://github.com/Songmu))
+* Add a dummy CVS backend to recognize and skip CVS working directories [#115](https://github.com/motemen/ghq/pull/115) ([knu](https://github.com/knu))
+* add -l option on get command which immediately look after get [#112](https://github.com/motemen/ghq/pull/112) ([kuboon](https://github.com/kuboon))
+* add support for Fossil SCM [#98](https://github.com/motemen/ghq/pull/98) ([motemen](https://github.com/motemen))
+* Use parsed username also with ssh for Git [#101](https://github.com/motemen/ghq/pull/101) ([jjv](https://github.com/jjv))
+* Add ghq.completeUser config to disable user completion of `ghq get` [#118](https://github.com/motemen/ghq/pull/118) ([k0kubun](https://github.com/k0kubun))
+* ghq get --vcs=<vcs> [#72](https://github.com/motemen/ghq/pull/72) ([motemen](https://github.com/motemen))
+* warn if executable was not found when RunCommand [#70](https://github.com/motemen/ghq/pull/70) ([motemen](https://github.com/motemen))
+* support `meta name="go-import"` to detect Go repository [#120](https://github.com/motemen/ghq/pull/120) ([Songmu](https://github.com/Songmu))
+* support refs which start with URL Authority in ghq get [#119](https://github.com/motemen/ghq/pull/119) ([Songmu](https://github.com/Songmu))
+
 ## [v0.9.0](https://github.com/motemen/ghq/compare/v0.8.0...v0.9.0) (2018-11-26)
 
 * Use new constructor for logger [#104](https://github.com/motemen/ghq/pull/104) ([raviqqe](https://github.com/raviqqe))
