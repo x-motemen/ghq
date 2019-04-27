@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
 )
 
@@ -12,7 +13,14 @@ const Version = "0.10.0"
 var revision = "HEAD"
 
 func main() {
-	newApp().Run(os.Args)
+	if err := newApp().Run(os.Args); err != nil {
+		exitCode := 1
+		if excoder, ok := err.(cli.ExitCoder); ok {
+			exitCode = excoder.ExitCode()
+		}
+		logger.Log("error", err.Error())
+		os.Exit(exitCode)
+	}
 }
 
 func newApp() *cli.App {

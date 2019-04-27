@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/logger"
 )
 
 type LocalRepository struct {
@@ -205,12 +205,12 @@ func localRepositoryRoots() []string {
 	} else {
 		var err error
 		_localRepositoryRoots, err = GitConfigAll("ghq.root")
-		utils.PanicIf(err)
+		logger.PanicIf(err)
 	}
 
 	if len(_localRepositoryRoots) == 0 {
 		homeDir, err := os.UserHomeDir()
-		utils.PanicIf(err)
+		logger.PanicIf(err)
 
 		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
 	}
@@ -219,7 +219,7 @@ func localRepositoryRoots() []string {
 		path := filepath.Clean(v)
 		if _, err := os.Stat(path); err == nil {
 			_localRepositoryRoots[i], err = filepath.EvalSymlinks(path)
-			utils.PanicIf(err)
+			logger.PanicIf(err)
 		} else {
 			_localRepositoryRoots[i] = path
 		}

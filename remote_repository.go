@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/motemen/ghq/logger"
 	"github.com/motemen/ghq/utils"
 )
 
@@ -141,7 +142,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		//     vcs = github
 		vcs, err := GitConfig("--get-urlmatch", "ghq.vcs", repo.URL().String())
 		if err != nil {
-			utils.Log("error", err.Error())
+			logger.Log("error", err.Error())
 		}
 
 		if vcs == "git" || vcs == "github" {
@@ -168,7 +169,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 			return FossilBackend, repo.URL()
 		}
 	} else {
-		utils.Log("warning", "This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
+		logger.Log("warning", "This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
 	}
 
 	// Detect VCS backend automatically
