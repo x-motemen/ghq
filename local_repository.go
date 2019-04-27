@@ -21,7 +21,7 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	var relPath string
 
 	for _, root := range localRepositoryRoots() {
-		if strings.HasPrefix(fullPath, root) == false {
+		if !strings.HasPrefix(fullPath, root) {
 			continue
 		}
 
@@ -167,8 +167,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 					return nil
 				}
 			}
-
-			if fileInfo.IsDir() == false {
+			if !fileInfo.IsDir() {
 				return nil
 			}
 
