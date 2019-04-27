@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"os"
+
 	"github.com/motemen/go-colorine"
 )
 
@@ -22,6 +24,10 @@ var logger = colorine.NewLogger(
 
 		"error": colorine.Error,
 	}, colorine.Info)
+
+func init() {
+	logger.SetOutput(os.Stderr)
+}
 
 func Log(prefix, message string) {
 	logger.Log(prefix, message)
