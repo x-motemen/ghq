@@ -257,8 +257,15 @@ func doList(c *cli.Context) error {
 			return repo.Matches(query)
 		}
 	} else {
+		var host string
+		paths := strings.Split(query, "/")
+		if len(paths) > 1 && looksLikeAuthorityPattern.MatchString(paths[0]) {
+			query = strings.Join(paths[1:], "/")
+			host = paths[0]
+		}
 		filterFn = func(repo *LocalRepository) bool {
-			return strings.Contains(repo.NonHostPath(), query)
+			return strings.Contains(repo.NonHostPath(), query) &&
+				(host == "" || repo.PathParts[0] == host)
 		}
 	}
 
