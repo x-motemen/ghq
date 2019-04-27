@@ -15,7 +15,7 @@ func TestGitConfigAll(t *testing.T) {
 func TestGitConfigURL(t *testing.T) {
 	RegisterTestingT(t)
 
-	if GitHasFeatureConfigURLMatch() == false {
+	if GitHasFeatureConfigURLMatch() != nil {
 		t.Skip("Git does not have config --get-urlmatch feature")
 	}
 
@@ -45,43 +45,4 @@ vcs = hg
 	value, err = GitConfig("--get-urlmatch", "ghq.vcs", "https://example.com")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(value).To(Equal(""))
-}
-
-func TestGitVersionOutputSatisfies(t *testing.T) {
-	RegisterTestingT(t)
-
-	Expect(
-		gitVersionOutputSatisfies(
-			"git version 1.7.9",
-			[]uint{1, 8, 5},
-		),
-	).To(BeFalse())
-
-	Expect(
-		gitVersionOutputSatisfies(
-			"git version 1.8.2.3",
-			[]uint{1, 8, 5},
-		),
-	).To(BeFalse())
-
-	Expect(
-		gitVersionOutputSatisfies(
-			"git version 1.8.5",
-			[]uint{1, 8, 5},
-		),
-	).To(BeTrue())
-
-	Expect(
-		gitVersionOutputSatisfies(
-			"git version 1.9.1",
-			[]uint{1, 8, 5},
-		),
-	).To(BeTrue())
-
-	Expect(
-		gitVersionOutputSatisfies(
-			"git version 2.0.0",
-			[]uint{1, 8, 5},
-		),
-	).To(BeTrue())
 }
