@@ -6,7 +6,9 @@ import (
 	"github.com/urfave/cli"
 )
 
-var Version string = "0.9.0"
+const Version = "0.9.0"
+
+var revision = "HEAD"
 
 func main() {
 	newApp().Run(os.Args)

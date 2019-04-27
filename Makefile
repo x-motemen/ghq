@@ -1,33 +1,67 @@
-GO = go
-
+VERSION = $(shell godzil show-version)
+CURRENT_REVISION = $(shell git rev-parse --short HEAD)
+BUILD_LDFLAGS = "-s -w -X main.revision=$(CURRENT_REVISION)"
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
+ifdef update
+  u=-u
+endif
 
-VERSION = $$(git describe --tags --always --dirty) ($$(git name-rev --name-only HEAD))
+export GO111MODULE=on
 
-BUILD_FLAGS = -ldflags "\
-	      -X \"main.Version=$(VERSION)\" \
-	      "
-
-build: deps
-	$(GO) build $(VERBOSE_FLAG) $(BUILD_FLAGS)
-
-test: testdeps
-	$(GO) test $(VERBOSE_FLAG) $($(GO) list ./... | grep -v '^github.com/motemen/ghq/vendor/')
-
+.PHONY: deps
 deps:
-	$(GO) get -d $(VERBOSE_FLAG)
+	go get ${u} -d $(VERBOSE_FLAG)
+	go mod tidy
 
-testdeps:
-	$(GO) get -d -t $(VERBOSE_FLAG)
+.PHONY: devel-deps
+devel-deps: deps
+	GO111MODULE=off go get ${u} \
+	  golang.org/x/lint/golint                  \
+	  github.com/mattn/goveralls                \
+	  github.com/Songmu/godzil/cmd/godzil       \
+	  github.com/Songmu/goxz/cmd/goxz           \
+	  github.com/Songmu/gocredits/cmd/gocredits \
+	  github.com/tcnksm/ghr
 
+.PHONY: test
+test: deps
+	go test $(VERBOSE_FLAG) ./...
+
+.PHONY: lint
+lint: devel-deps
+	go vet ./...
+	golint -set_exit_status ./...
+
+.PHONY: cover
+cover: devel-deps
+	goveralls
+
+.PHONY: build
+build: deps
+	go build $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS) ./cmd/*
+
+.PHONY: install
 install: deps
-	$(GO) install $(VERBOSE_FLAG) $(BUILD_FLAGS)
+	go install $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS) ./cmd/*
 
-bump-minor:
-	git diff --quiet && git diff --cached --quiet
-	new_version=$$(gobump minor -w -r -v) && \
-	test -n "$$new_version" && \
-	git commit -a -m "bump version to $$new_version" && \
-	git tag v$$new_version
+.PHONY: bump
+bump: devel-deps
+	godzil release
 
-.PHONY: build test deps testdeps install
+CREDITS: devel-deps go.sum
+	gocredits -w
+
+.PHONY: crossbuild
+crossbuild: CREDITS
+	rm -rf dist/snapshot
+	cp ghq.txt README.txt
+	goxz -arch=386,amd64 -build-ldflags=$(BUILD_LDFLAGS) \
+      -include='zsh/_ghq' -z -d dist/snapshot
+	cd dist/snapshot && shasum $$(find * -type f -maxdepth 0) > SHASUMS
+
+.PHONY: upload
+upload:
+	ghr v$(VERSION) dist/snapshot
+
+.PHONY: release
+release: bump crossbuild upload
