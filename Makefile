@@ -38,11 +38,11 @@ cover: devel-deps
 
 .PHONY: build
 build: deps
-	go build $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS) ./cmd/*
+	go build $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS)
 
 .PHONY: install
 install: deps
-	go install $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS) ./cmd/*
+	go install $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS)
 
 .PHONY: bump
 bump: devel-deps
