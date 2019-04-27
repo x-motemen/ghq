@@ -209,7 +209,9 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 			newPath = true
 			err = nil
 		}
-		logger.PanicIf(err)
+		if err != nil {
+			return err
+		}
 	}
 
 	if newPath {
@@ -360,9 +362,9 @@ func doLook(c *cli.Context) error {
 			}
 
 			logger.Log("cd", reposFound[0].FullPath)
-			err := os.Chdir(reposFound[0].FullPath)
-			logger.PanicIf(err)
-
+			if err := os.Chdir(reposFound[0].FullPath); err != nil {
+				return err
+			}
 			env := append(syscall.Environ(), "GHQ_LOOK="+reposFound[0].RelPath)
 			syscall.Exec(shell, []string{shell}, env)
 		}
