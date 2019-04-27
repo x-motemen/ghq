@@ -1,8 +1,6 @@
 package logger
 
 import (
-	"os"
-
 	"github.com/motemen/go-colorine"
 )
 
@@ -34,15 +32,7 @@ func ErrorIf(err error) bool {
 		Log("error", err.Error())
 		return true
 	}
-
 	return false
-}
-
-func DieIf(err error) {
-	if err != nil {
-		Log("error", err.Error())
-		os.Exit(1)
-	}
 }
 
 func PanicIf(err error) {

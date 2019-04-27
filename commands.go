@@ -163,24 +163,30 @@ func doGet(c *cli.Context) error {
 	}
 
 	url, err := NewURL(argURL)
-	logger.DieIf(err)
+	if err != nil {
+		return err
+	}
 
 	isSSH := c.Bool("p")
 	if isSSH {
 		// Assume Git repository if `-p` is given.
-		url, err = ConvertGitURLHTTPToSSH(url)
-		logger.DieIf(err)
+		if url, err = ConvertGitURLHTTPToSSH(url); err != nil {
+			return err
+		}
 	}
 
 	remote, err := NewRemoteRepository(url)
-	logger.DieIf(err)
-
-	if remote.IsValid() == false {
-		logger.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
-		os.Exit(1)
+	if err != nil {
+		return err
 	}
 
-	getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
+	if remote.IsValid() == false {
+		return fmt.Errorf("Not a valid repository: %s", url)
+	}
+
+	if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend); err != nil {
+		return err
+	}
 	if andLook {
 		doLook(c)
 	}
@@ -190,7 +196,7 @@ func doGet(c *cli.Context) error {
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool, vcsBackend string) {
+func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool, vcsBackend string) error {
 	remoteURL := remote.URL()
 	local := LocalRepositoryFromURL(remoteURL)
 
@@ -214,15 +220,13 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 		if vcs == nil {
 			vcs, repoURL = remote.VCS()
 			if vcs == nil {
-				logger.Log("error", fmt.Sprintf("Could not find version control system: %s", remoteURL))
-				os.Exit(1)
+				return fmt.Errorf("Could not find version control system: %s", remoteURL)
 			}
 		}
 
 		err := vcs.Clone(repoURL, path, isShallow)
 		if err != nil {
-			logger.Log("error", err.Error())
-			os.Exit(1)
+			return err
 		}
 	} else {
 		if doUpdate {
@@ -232,6 +236,7 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 			logger.Log("exists", path)
 		}
 	}
+	return nil
 }
 
 func doList(c *cli.Context) error {
@@ -335,9 +340,7 @@ func doLook(c *cli.Context) error {
 
 	switch len(reposFound) {
 	case 0:
-		logger.Log("error", "No repository found")
-		os.Exit(1)
-
+		return fmt.Errorf("No repository found")
 	case 1:
 		if runtime.GOOS == "windows" {
 			cmd := exec.Command(os.Getenv("COMSPEC"))
@@ -348,7 +351,7 @@ func doLook(c *cli.Context) error {
 			err := cmd.Start()
 			if err == nil {
 				cmd.Wait()
-				os.Exit(0)
+				return nil
 			}
 		} else {
 			shell := os.Getenv("SHELL")
@@ -398,7 +401,9 @@ func doImport(c *cli.Context) error {
 		if err == nil && command == "" {
 			err = fmt.Errorf("ghq.import.%s configuration not found", subCommand)
 		}
-		logger.DieIf(err)
+		if err != nil {
+			return err
+		}
 
 		// execute `sh -c 'COMMAND "$@"' -- ARG...`
 		// TODO: Windows
@@ -411,10 +416,13 @@ func doImport(c *cli.Context) error {
 		cmd.Stderr = os.Stderr
 
 		in, err = cmd.StdoutPipe()
-		logger.DieIf(err)
+		if err != nil {
+			return err
+		}
 
-		err = cmd.Start()
-		logger.DieIf(err)
+		if err := cmd.Start(); err != nil {
+			return err
+		}
 
 		finalize = cmd.Wait
 	}
@@ -444,15 +452,15 @@ func doImport(c *cli.Context) error {
 			continue
 		}
 
-		getRemoteRepository(remote, doUpdate, isShallow, vcsBackend)
+		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend); err != nil {
+			return err
+		}
 	}
 	if err := scanner.Err(); err != nil {
-		logger.Log("error", fmt.Sprintf("While reading input: %s", err))
-		os.Exit(1)
+		return fmt.Errorf("While reading input: %s", err)
 	}
 
-	logger.DieIf(finalize())
-	return nil
+	return finalize()
 }
 
 func doRoot(c *cli.Context) error {
