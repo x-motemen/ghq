@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/motemen/ghq/logger"
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/cmdutil"
 )
 
 // A RemoteRepository represents a remote repository.
@@ -79,9 +79,9 @@ func (repo *GoogleCodeRepository) IsValid() bool {
 }
 
 func (repo *GoogleCodeRepository) VCS() (*VCSBackend, *url.URL) {
-	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
+	if cmdutil.RunSilently("hg", "identify", repo.url.String()) == nil {
 		return MercurialBackend, repo.URL()
-	} else if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
+	} else if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
 		return GitBackend, repo.URL()
 	} else {
 		return nil, nil
@@ -173,7 +173,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 	}
 
 	// Detect VCS backend automatically
-	if utils.RunSilently("git", "ls-remote", repo.url.String()) == nil {
+	if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
 		return GitBackend, repo.URL()
 	}
 
@@ -183,11 +183,11 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		return vcsRegistry[vcs], repoURL
 	}
 
-	if utils.RunSilently("hg", "identify", repo.url.String()) == nil {
+	if cmdutil.RunSilently("hg", "identify", repo.url.String()) == nil {
 		return MercurialBackend, repo.URL()
 	}
 
-	if utils.RunSilently("svn", "info", repo.url.String()) == nil {
+	if cmdutil.RunSilently("svn", "info", repo.url.String()) == nil {
 		return SubversionBackend, repo.URL()
 	}
 
