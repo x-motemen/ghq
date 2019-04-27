@@ -442,7 +442,8 @@ func doImport(c *cli.Context) error {
 		}
 
 		remote, err := NewRemoteRepository(url)
-		if logger.ErrorIf(err) {
+		if err != nil {
+			logger.Log("error", err.Error())
 			continue
 		}
 		if remote.IsValid() == false {

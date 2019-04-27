@@ -27,14 +27,6 @@ func Log(prefix, message string) {
 	logger.Log(prefix, message)
 }
 
-func ErrorIf(err error) bool {
-	if err != nil {
-		Log("error", err.Error())
-		return true
-	}
-	return false
-}
-
 func PanicIf(err error) {
 	if err != nil {
 		panic(err)
