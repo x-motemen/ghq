@@ -350,25 +350,21 @@ func doLook(c *cli.Context) error {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			cmd.Dir = reposFound[0].FullPath
-			err := cmd.Start()
-			if err == nil {
-				cmd.Wait()
-				return nil
-			}
-		} else {
-			shell := os.Getenv("SHELL")
-			if shell == "" {
-				shell = "/bin/sh"
-			}
-
-			logger.Log("cd", reposFound[0].FullPath)
-			if err := os.Chdir(reposFound[0].FullPath); err != nil {
+			if err := cmd.Start(); err != nil {
 				return err
 			}
-			env := append(syscall.Environ(), "GHQ_LOOK="+reposFound[0].RelPath)
-			syscall.Exec(shell, []string{shell}, env)
+			return cmd.Wait()
 		}
-
+		shell := os.Getenv("SHELL")
+		if shell == "" {
+			shell = "/bin/sh"
+		}
+		logger.Log("cd", reposFound[0].FullPath)
+		if err := os.Chdir(reposFound[0].FullPath); err != nil {
+			return err
+		}
+		env := append(syscall.Environ(), "GHQ_LOOK="+reposFound[0].RelPath)
+		syscall.Exec(shell, []string{shell}, env)
 	default:
 		logger.Log("error", "More than one repositories are found; Try more precise name")
 		for _, repo := range reposFound {
