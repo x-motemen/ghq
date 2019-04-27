@@ -65,3 +65,13 @@ upload:
 
 .PHONY: release
 release: bump crossbuild upload
+
+.PHONY: docker-release
+docker-release: bump
+	@docker run \
+      -v $(PWD):/go/src/github.com/motemen/ghq \
+      -w /go/src/github.com/motemen/ghq \
+      -e GITHUB_TOKEN="$(GITHUB_TOKEN)" \
+      --rm        \
+      golang:1.12 \
+	  make crossbuild upload
