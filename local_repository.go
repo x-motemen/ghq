@@ -7,8 +7,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/motemen/ghq/logger"
 )
 
 type LocalRepository struct {
@@ -20,7 +18,11 @@ type LocalRepository struct {
 func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	var relPath string
 
-	for _, root := range localRepositoryRoots() {
+	roots, err := localRepositoryRoots()
+	if err != nil {
+		return nil, err
+	}
+	for _, root := range roots {
 		if !strings.HasPrefix(fullPath, root) {
 			continue
 		}
@@ -38,10 +40,13 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 
 	pathParts := strings.Split(relPath, string(filepath.Separator))
 
-	return &LocalRepository{fullPath, filepath.ToSlash(relPath), pathParts}, nil
+	return &LocalRepository{
+		FullPath:  fullPath,
+		RelPath:   filepath.ToSlash(relPath),
+		PathParts: pathParts}, nil
 }
 
-func LocalRepositoryFromURL(remoteURL *url.URL) *LocalRepository {
+func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	pathParts := append(
 		[]string{remoteURL.Host}, strings.Split(remoteURL.Path, "/")...,
 	)
@@ -50,22 +55,28 @@ func LocalRepositoryFromURL(remoteURL *url.URL) *LocalRepository {
 	var localRepository *LocalRepository
 
 	// Find existing local repository first
-	walkLocalRepositories(func(repo *LocalRepository) {
+	if err := walkLocalRepositories(func(repo *LocalRepository) {
 		if repo.RelPath == relPath {
 			localRepository = repo
 		}
-	})
+	}); err != nil {
+		return nil, err
+	}
 
 	if localRepository != nil {
-		return localRepository
+		return localRepository, nil
 	}
 
+	prim, err := primaryLocalRepositoryRoot()
+	if err != nil {
+		return nil, err
+	}
 	// No local repository found, returning new one
 	return &LocalRepository{
-		path.Join(primaryLocalRepositoryRoot(), relPath),
-		relPath,
-		pathParts,
-	}
+		FullPath:  path.Join(prim, relPath),
+		RelPath:   relPath,
+		PathParts: pathParts,
+	}, nil
 }
 
 // Subpaths returns lists of tail parts of relative path from the root directory (shortest first)
@@ -85,7 +96,11 @@ func (repo *LocalRepository) NonHostPath() string {
 }
 
 func (repo *LocalRepository) IsUnderPrimaryRoot() bool {
-	return strings.HasPrefix(repo.FullPath, primaryLocalRepositoryRoot())
+	prim, err := primaryLocalRepositoryRoot()
+	if err != nil {
+		return false
+	}
+	return strings.HasPrefix(repo.FullPath, prim)
 }
 
 // Matches checks if any subpath of the local repository equals the query.
@@ -150,9 +165,13 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 
 var vcsDirs = []string{".git", ".svn", ".hg", "_darcs", ".fslckout", "_FOSSIL_", "CVS"}
 
-func walkLocalRepositories(callback func(*LocalRepository)) {
-	for _, root := range localRepositoryRoots() {
-		filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
+func walkLocalRepositories(callback func(*LocalRepository)) error {
+	roots, err := localRepositoryRoots()
+	if err != nil {
+		return err
+	}
+	for _, root := range roots {
+		if err := filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
 			if err != nil || fileInfo == nil {
 				return nil
 			}
@@ -194,8 +213,11 @@ func walkLocalRepositories(callback func(*LocalRepository)) {
 			}
 			callback(repo)
 			return filepath.SkipDir
-		})
+		}); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 var _localRepositoryRoots []string
@@ -206,11 +228,9 @@ var _localRepositoryRoots []string
 //   - If GHQ_ROOT environment variable is nonempty, use it as the only root dir.
 //   - Otherwise, use the result of `git config --get-all ghq.root` as the dirs.
 //   - Otherwise, fallback to the default root, `~/.ghq`.
-//
-// TODO: More fancy default directory path?
-func localRepositoryRoots() []string {
+func localRepositoryRoots() ([]string, error) {
 	if len(_localRepositoryRoots) != 0 {
-		return _localRepositoryRoots
+		return _localRepositoryRoots, nil
 	}
 
 	envRoot := os.Getenv("GHQ_ROOT")
@@ -218,37 +238,42 @@ func localRepositoryRoots() []string {
 		_localRepositoryRoots = filepath.SplitList(envRoot)
 	} else {
 		var err error
-		_localRepositoryRoots, err = GitConfigAll("ghq.root")
-		if err != nil {
-			logger.Log("error", err.Error())
-			os.Exit(1)
+		if _localRepositoryRoots, err = GitConfigAll("ghq.root"); err != nil {
+			return nil, err
 		}
 	}
 
 	if len(_localRepositoryRoots) == 0 {
 		homeDir, err := os.UserHomeDir()
-		logger.PanicIf(err)
-
+		if err != nil {
+			return nil, err
+		}
 		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
 	}
 
 	for i, v := range _localRepositoryRoots {
 		path := filepath.Clean(v)
 		if _, err := os.Stat(path); err == nil {
-			path, err = filepath.EvalSymlinks(path)
-			logger.PanicIf(err)
+			if path, err = filepath.EvalSymlinks(path); err != nil {
+				return nil, err
+			}
 		}
 		if !filepath.IsAbs(path) {
 			var err error
-			path, err = filepath.Abs(path)
-			logger.PanicIf(err)
+			if path, err = filepath.Abs(path); err != nil {
+				return nil, err
+			}
 		}
 		_localRepositoryRoots[i] = path
 	}
 
-	return _localRepositoryRoots
+	return _localRepositoryRoots, nil
 }
 
-func primaryLocalRepositoryRoot() string {
-	return localRepositoryRoots()[0]
+func primaryLocalRepositoryRoot() (string, error) {
+	roots, err := localRepositoryRoots()
+	if err != nil {
+		return "", err
+	}
+	return roots[0], nil
 }

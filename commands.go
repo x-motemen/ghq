@@ -147,7 +147,11 @@ func doGet(c *cli.Context) error {
 			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
 
 			var repoPath string
-			for _, r := range localRepositoryRoots() {
+			roots, err := localRepositoryRoots()
+			if err != nil {
+				return err
+			}
+			for _, r := range roots {
 				p := strings.TrimPrefix(path, r+string(filepath.Separator))
 				if p != path && (repoPath == "" || len(p) < len(repoPath)) {
 					repoPath = p
@@ -198,12 +202,15 @@ func doGet(c *cli.Context) error {
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
 func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool, vcsBackend string) error {
 	remoteURL := remote.URL()
-	local := LocalRepositoryFromURL(remoteURL)
+	local, err := LocalRepositoryFromURL(remoteURL)
+	if err != nil {
+		return err
+	}
 
 	path := local.FullPath
 	newPath := false
 
-	_, err := os.Stat(path)
+	_, err = os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			newPath = true
@@ -270,14 +277,14 @@ func doList(c *cli.Context) error {
 	}
 
 	repos := []*LocalRepository{}
-
-	walkLocalRepositories(func(repo *LocalRepository) {
+	if err := walkLocalRepositories(func(repo *LocalRepository) {
 		if filterFn(repo) == false {
 			return
 		}
-
 		repos = append(repos, repo)
-	})
+	}); err != nil {
+		return err
+	}
 
 	if printUniquePaths {
 		subpathCount := map[string]int{} // Count duplicated subpaths (ex. foo/dotfiles and bar/dotfiles)
@@ -327,18 +334,21 @@ func doLook(c *cli.Context) error {
 	}
 
 	reposFound := []*LocalRepository{}
-	walkLocalRepositories(func(repo *LocalRepository) {
+	if err := walkLocalRepositories(func(repo *LocalRepository) {
 		if repo.Matches(name) {
 			reposFound = append(reposFound, repo)
 		}
-	})
+	}); err != nil {
+		return err
+	}
 
 	if len(reposFound) == 0 {
-		url, err := NewURL(name)
-
-		if err == nil {
-			repo := LocalRepositoryFromURL(url)
-			_, err := os.Stat(repo.FullPath)
+		if url, err := NewURL(name); err == nil {
+			repo, err := LocalRepositoryFromURL(url)
+			if err != nil {
+				return err
+			}
+			_, err = os.Stat(repo.FullPath)
 
 			// if the directory exists
 			if err == nil {
@@ -472,7 +482,11 @@ func doImport(c *cli.Context) error {
 func doRoot(c *cli.Context) error {
 	all := c.Bool("all")
 	if all {
-		for _, root := range localRepositoryRoots() {
+		roots, err := localRepositoryRoots()
+		if err != nil {
+			return err
+		}
+		for _, root := range roots {
 			fmt.Println(root)
 		}
 	} else {

@@ -1,14 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 	"syscall"
 
-	"github.com/motemen/ghq/logger"
+	"github.com/blang/semver"
 )
 
 // GitConfigSingle fetches single git-config variable.
@@ -54,41 +54,33 @@ func GitConfig(args ...string) (string, error) {
 	return strings.TrimRight(string(buf), "\000"), nil
 }
 
-var versionRx = regexp.MustCompile(`(\d+)\.(\d+)\.(\d+)`)
+var (
+	versionRx                    = regexp.MustCompile(`((?:\d+)\.(?:\d+)\.(?:\d+))`)
+	featureConfigURLMatchVersion = semver.MustParse("1.8.5")
+)
 
-var featureConfigURLMatchVersion = []uint{1, 8, 5}
-
-func GitHasFeatureConfigURLMatch() bool {
+func GitHasFeatureConfigURLMatch() error {
 	cmd := exec.Command("git", "--version")
 	buf, err := cmd.Output()
 
 	if err != nil {
-		return false
+		return fmt.Errorf("failed to execute %q: %s", "git --version", err)
 	}
 
 	return gitVersionOutputSatisfies(string(buf), featureConfigURLMatchVersion)
 }
 
-func gitVersionOutputSatisfies(gitVersionOutput string, baseVersionParts []uint) bool {
+func gitVersionOutputSatisfies(gitVersionOutput string, baseVersion semver.Version) error {
 	versionStrings := versionRx.FindStringSubmatch(gitVersionOutput)
-	if versionStrings == nil {
-		return false
+	if len(versionStrings) == 0 {
+		return fmt.Errorf("failed to detect git version from %q", gitVersionOutput)
 	}
-
-	for i, v := range baseVersionParts {
-		thisV64, err := strconv.ParseUint(versionStrings[i+1], 10, 0)
-		logger.PanicIf(err)
-
-		thisV := uint(thisV64)
-
-		if thisV > v {
-			return true
-		} else if v == thisV {
-			continue
-		} else {
-			return false
-		}
+	ver, err := semver.Parse(versionStrings[1])
+	if err != nil {
+		return fmt.Errorf("failed to parse version string %q: %s", versionStrings[1], err)
 	}
-
-	return true
+	if ver.LT(baseVersion) {
+		return fmt.Errorf("This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
+	}
+	return nil
 }

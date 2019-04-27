@@ -1,3 +1,5 @@
+github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
+github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/daviddengcn/go-colortext v0.0.0-20180409174941-186a3d44e920 h1:d/cVoZOrJPJHKH1NdeUjyVAWKp4OpOT+Q+6T1sH7jeU=
 github.com/daviddengcn/go-colortext v0.0.0-20180409174941-186a3d44e920/go.mod h1:dv4zxwHi5C/8AeI+4gX4dCWOIvNi7I6JCSX0HvlKPgE=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=

@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/motemen/ghq/logger"
 	"github.com/motemen/ghq/cmdutil"
+	"github.com/motemen/ghq/logger"
 )
 
 // A RemoteRepository represents a remote repository.
@@ -135,7 +135,9 @@ func (repo *OtherRepository) IsValid() bool {
 }
 
 func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
-	if GitHasFeatureConfigURLMatch() {
+	if err := GitHasFeatureConfigURLMatch(); err != nil {
+		logger.Log("warning", err.Error())
+	} else {
 		// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
 		// (in gitconfig:)
 		//     [ghq "https://ghe.example.com/"]
@@ -168,8 +170,6 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		if vcs == "fossil" {
 			return FossilBackend, repo.URL()
 		}
-	} else {
-		logger.Log("warning", "This version of Git does not support `config --get-urlmatch`; per-URL settings are not available")
 	}
 
 	// Detect VCS backend automatically

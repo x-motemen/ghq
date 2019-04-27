@@ -32,9 +32,3 @@ func init() {
 func Log(prefix, message string) {
 	logger.Log(prefix, message)
 }
-
-func PanicIf(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
