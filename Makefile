@@ -67,7 +67,7 @@ upload:
 release: bump crossbuild upload
 
 .PHONY: docker-release
-docker-release: bump
+docker-release:
 	@docker run \
       -v $(PWD):/go/src/github.com/motemen/ghq \
       -w /go/src/github.com/motemen/ghq \
