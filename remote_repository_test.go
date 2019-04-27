@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/url"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/cmdutil"
 	. "github.com/onsi/gomega"
 )
 import "testing"
@@ -72,7 +72,7 @@ func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
 	repo, err = NewRemoteRepository(parseURL("https://code.google.com/p/vim/"))
 	Expect(err).To(BeNil())
 	Expect(repo.IsValid()).To(Equal(true))
-	utils.CommandRunner = NewFakeRunner(map[string]error{
+	cmdutil.CommandRunner = NewFakeRunner(map[string]error{
 		"hg identify":   nil,
 		"git ls-remote": errors.New(""),
 	})
@@ -82,7 +82,7 @@ func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
 	repo, err = NewRemoteRepository(parseURL("https://code.google.com/p/git-core"))
 	Expect(err).To(BeNil())
 	Expect(repo.IsValid()).To(Equal(true))
-	utils.CommandRunner = NewFakeRunner(map[string]error{
+	cmdutil.CommandRunner = NewFakeRunner(map[string]error{
 		"hg identify":   errors.New(""),
 		"git ls-remote": nil,
 	})

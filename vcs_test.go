@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/cmdutil"
 	. "github.com/onsi/gomega"
 )
 
@@ -28,7 +28,7 @@ func TestGitBackend(t *testing.T) {
 
 	commands := []*exec.Cmd{}
 	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	utils.CommandRunner = func(cmd *exec.Cmd) error {
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 		commands = append(commands, cmd)
 		return nil
 	}
@@ -76,7 +76,7 @@ func TestSubversionBackend(t *testing.T) {
 
 	commands := []*exec.Cmd{}
 	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	utils.CommandRunner = func(cmd *exec.Cmd) error {
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 		commands = append(commands, cmd)
 		return nil
 	}
@@ -124,7 +124,7 @@ func TestGitsvnBackend(t *testing.T) {
 
 	commands := []*exec.Cmd{}
 	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	utils.CommandRunner = func(cmd *exec.Cmd) error {
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 		commands = append(commands, cmd)
 		return nil
 	}
@@ -171,7 +171,7 @@ func TestMercurialBackend(t *testing.T) {
 
 	commands := []*exec.Cmd{}
 	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	utils.CommandRunner = func(cmd *exec.Cmd) error {
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 		commands = append(commands, cmd)
 		return nil
 	}
@@ -218,7 +218,7 @@ func TestDarcsBackend(t *testing.T) {
 
 	commands := []*exec.Cmd{}
 	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	utils.CommandRunner = func(cmd *exec.Cmd) error {
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 		commands = append(commands, cmd)
 		return nil
 	}

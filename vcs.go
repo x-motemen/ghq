@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/motemen/ghq/utils"
+	"github.com/motemen/ghq/cmdutil"
 )
 
 // A VCSBackend represents a VCS backend.
@@ -31,10 +31,10 @@ var GitBackend = &VCSBackend{
 		}
 		args = append(args, remote.String(), local)
 
-		return utils.Run("git", args...)
+		return cmdutil.Run("git", args...)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "git", "pull", "--ff-only")
+		return cmdutil.RunInDir(local, "git", "pull", "--ff-only")
 	},
 }
 
@@ -52,10 +52,10 @@ var SubversionBackend = &VCSBackend{
 		}
 		args = append(args, remote.String(), local)
 
-		return utils.Run("svn", args...)
+		return cmdutil.Run("svn", args...)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "svn", "update")
+		return cmdutil.RunInDir(local, "svn", "update")
 	},
 }
 
@@ -68,10 +68,10 @@ var GitsvnBackend = &VCSBackend{
 			return err
 		}
 
-		return utils.Run("git", "svn", "clone", remote.String(), local)
+		return cmdutil.Run("git", "svn", "clone", remote.String(), local)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "git", "svn", "rebase")
+		return cmdutil.RunInDir(local, "git", "svn", "rebase")
 	},
 }
 
@@ -84,10 +84,10 @@ var MercurialBackend = &VCSBackend{
 			return err
 		}
 
-		return utils.Run("hg", "clone", remote.String(), local)
+		return cmdutil.Run("hg", "clone", remote.String(), local)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "hg", "pull", "--update")
+		return cmdutil.RunInDir(local, "hg", "pull", "--update")
 	},
 }
 
@@ -105,10 +105,10 @@ var DarcsBackend = &VCSBackend{
 		}
 		args = append(args, remote.String(), local)
 
-		return utils.Run("darcs", args...)
+		return cmdutil.Run("darcs", args...)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "darcs", "pull")
+		return cmdutil.RunInDir(local, "darcs", "pull")
 	},
 }
 
@@ -131,7 +131,7 @@ var FossilBackend = &VCSBackend{
 			return err
 		}
 
-		err = utils.Run("fossil", "clone", remote.String(), filepath.Join(dir, fossilRepoName))
+		err = cmdutil.Run("fossil", "clone", remote.String(), filepath.Join(dir, fossilRepoName))
 		if err != nil {
 			return err
 		}
@@ -141,10 +141,10 @@ var FossilBackend = &VCSBackend{
 			return err
 		}
 
-		return utils.Run("fossile", "open", fossilRepoName)
+		return cmdutil.Run("fossile", "open", fossilRepoName)
 	},
 	Update: func(local string) error {
-		return utils.RunInDir(local, "fossil", "update")
+		return cmdutil.RunInDir(local, "fossil", "update")
 	},
 }
 
