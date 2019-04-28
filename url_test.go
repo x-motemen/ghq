@@ -24,7 +24,7 @@ func TestNewURL(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	scpUrlWithRoot, err := NewURL("git@github.com:/motemen/pusheen-explorer.git")
-	Expect(scpUrlWithRoot.String()).To(Equal("ssh://git@github.com/motemen/pusheen-explorer.git"))
+	Expect(scpUrlWithRoot.String()).To(Equal("ssh://git@github.com//motemen/pusheen-explorer.git"))
 	Expect(scpUrlWithRoot.Host).To(Equal("github.com"))
 	Expect(err).To(BeNil())
 
