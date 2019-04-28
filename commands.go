@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
@@ -371,27 +370,22 @@ func doLook(c *cli.Context) error {
 	case 0:
 		return fmt.Errorf("No repository found")
 	case 1:
-		if runtime.GOOS == "windows" {
-			cmd := exec.Command(os.Getenv("COMSPEC"))
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			cmd.Dir = reposFound[0].FullPath
-			if err := cmd.Start(); err != nil {
-				return err
-			}
-			return cmd.Wait()
-		}
 		shell := os.Getenv("SHELL")
 		if shell == "" {
-			shell = "/bin/sh"
+			if runtime.GOOS == "windows" {
+				shell = os.Getenv("COMSPEC")
+			} else {
+				shell = "/bin/sh"
+			}
 		}
-		logger.Log("cd", reposFound[0].FullPath)
-		if err := os.Chdir(reposFound[0].FullPath); err != nil {
-			return err
-		}
-		env := append(syscall.Environ(), "GHQ_LOOK="+reposFound[0].RelPath)
-		syscall.Exec(shell, []string{shell}, env)
+		repo := reposFound[0]
+		cmd := exec.Command(shell)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Dir = repo.FullPath
+		cmd.Env = append(os.Environ(), "GHQ_LOOK="+repo.RelPath)
+		return cmd.Run()
 	default:
 		logger.Log("error", "More than one repositories are found; Try more precise name")
 		for _, repo := range reposFound {
