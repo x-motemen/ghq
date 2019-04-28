@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.10.2](https://github.com/motemen/ghq/compare/v0.10.1...v0.10.2) (2019-04-28)
+
+* Fix `ghq root` [#131](https://github.com/motemen/ghq/pull/131) ([knu](https://github.com/knu))
+
 ## [v0.10.1](https://github.com/motemen/ghq/compare/v0.10.0...v0.10.1) (2019-04-28)
 
 * Remove panics [#130](https://github.com/motemen/ghq/pull/130) ([Songmu](https://github.com/Songmu))
