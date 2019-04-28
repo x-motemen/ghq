@@ -192,7 +192,7 @@ func doGet(c *cli.Context) error {
 		return err
 	}
 	if andLook {
-		doLook(c)
+		return doLook(c)
 	}
 	return nil
 }
@@ -259,26 +259,36 @@ func doList(c *cli.Context) error {
 		filterFn = func(_ *LocalRepository) bool {
 			return true
 		}
-	} else if exact {
-		filterFn = func(repo *LocalRepository) bool {
-			return repo.Matches(query)
-		}
 	} else {
-		var host string
-		paths := strings.Split(query, "/")
-		if len(paths) > 1 && looksLikeAuthorityPattern.MatchString(paths[0]) {
-			query = strings.Join(paths[1:], "/")
-			host = paths[0]
+		if hasSchemePattern.MatchString(query) || scpLikeUrlPattern.MatchString(query) {
+			if url, err := NewURL(query); err == nil {
+				if repo, err := LocalRepositoryFromURL(url); err == nil {
+					query = repo.RelPath
+				}
+			}
 		}
-		filterFn = func(repo *LocalRepository) bool {
-			return strings.Contains(repo.NonHostPath(), query) &&
-				(host == "" || repo.PathParts[0] == host)
+
+		if exact {
+			filterFn = func(repo *LocalRepository) bool {
+				return repo.Matches(query)
+			}
+		} else {
+			var host string
+			paths := strings.Split(query, "/")
+			if len(paths) > 1 && looksLikeAuthorityPattern.MatchString(paths[0]) {
+				query = strings.Join(paths[1:], "/")
+				host = paths[0]
+			}
+			filterFn = func(repo *LocalRepository) bool {
+				return strings.Contains(repo.NonHostPath(), query) &&
+					(host == "" || repo.PathParts[0] == host)
+			}
 		}
 	}
 
 	repos := []*LocalRepository{}
 	if err := walkLocalRepositories(func(repo *LocalRepository) {
-		if filterFn(repo) == false {
+		if !filterFn(repo) {
 			return
 		}
 		repos = append(repos, repo)
