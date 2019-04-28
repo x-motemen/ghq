@@ -2,15 +2,12 @@ package main
 
 import (
 	"io/ioutil"
+	"net/url"
+	"os"
 	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/gomega"
-)
-
-import (
-	"net/url"
-	"os"
 )
 
 func TestNewLocalRepository(t *testing.T) {
