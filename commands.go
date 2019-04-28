@@ -490,7 +490,11 @@ func doRoot(c *cli.Context) error {
 			fmt.Println(root)
 		}
 	} else {
-		fmt.Println(primaryLocalRepositoryRoot())
+		root, err := primaryLocalRepositoryRoot()
+		if err != nil {
+			return err
+		}
+		fmt.Println(root)
 	}
 	return nil
 }
