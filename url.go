@@ -14,18 +14,26 @@ import (
 // (golang hasn't supported Perl-like negative look-behind match)
 var (
 	hasSchemePattern          = regexp.MustCompile("^[^:]+://")
-	scpLikeUrlPattern         = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
+	scpLikeUrlPattern         = regexp.MustCompile("^([^@]+@)?([^:]+):(/?.+)$")
 	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?$`)
 )
 
 func NewURL(ref string) (*url.URL, error) {
-	if !hasSchemePattern.MatchString(ref) && scpLikeUrlPattern.MatchString(ref) {
-		matched := scpLikeUrlPattern.FindStringSubmatch(ref)
-		user := matched[1]
-		host := matched[2]
-		path := matched[3]
+	if !hasSchemePattern.MatchString(ref) {
+		if scpLikeUrlPattern.MatchString(ref) {
+			matched := scpLikeUrlPattern.FindStringSubmatch(ref)
+			user := matched[1]
+			host := matched[2]
+			path := matched[3]
 
-		ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
+			ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
+		} else {
+			// If ref is like "github.com/motemen/ghq" convert to "https://github.com/motemen/ghq"
+			paths := strings.Split(ref, "/")
+			if len(paths) > 1 && looksLikeAuthorityPattern.MatchString(paths[0]) {
+				ref = "https://" + ref
+			}
+		}
 	}
 
 	url, err := url.Parse(ref)
@@ -38,12 +46,6 @@ func NewURL(ref string) (*url.URL, error) {
 			url.Path, err = fillUsernameToPath(url.Path)
 			if err != nil {
 				return url, err
-			}
-		} else if url.Host == "" {
-			// If ref is like "github.com/motemen/ghq" consider it as "https://github.com/motemen/ghq"
-			paths := strings.Split(ref, "/")
-			if looksLikeAuthorityPattern.MatchString(paths[0]) {
-				return url.Parse("https://" + ref)
 			}
 		}
 		url.Scheme = "https"

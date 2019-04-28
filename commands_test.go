@@ -6,14 +6,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-
-	"github.com/urfave/cli"
-)
-
-import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"github.com/urfave/cli"
 )
 
 func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
