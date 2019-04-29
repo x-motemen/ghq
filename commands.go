@@ -12,6 +12,7 @@ import (
 
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
+	"golang.org/x/sync/errgroup"
 )
 
 var Commands = []cli.Command{
@@ -75,7 +76,8 @@ var commandImport = cli.Command{
 	Name:   "import",
 	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
-	Flags:  cloneFlags,
+	Flags: append(cloneFlags,
+		cli.BoolFlag{Name: "parallel, P", Usage: "[Experimental] Import parallely"}),
 }
 
 var commandRoot = cli.Command{
@@ -406,7 +408,12 @@ func doImport(c *cli.Context) error {
 		isShallow  = c.Bool("shallow")
 		isSilent   = c.Bool("silent")
 		vcsBackend = c.String("vcs")
+		parallel   = c.Bool("parallel")
 	)
+	if parallel {
+		// force silent in parallel import
+		isSilent = true
+	}
 
 	var (
 		in       io.Reader
@@ -451,41 +458,63 @@ func doImport(c *cli.Context) error {
 		finalize = cmd.Wait
 	}
 
-	scanner := bufio.NewScanner(in)
-	for scanner.Scan() {
-		line := scanner.Text()
+	processLine := func(line string) error {
 		url, err := NewURL(line)
 		if err != nil {
-			logger.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", line, err))
-			continue
+			return fmt.Errorf("Could not parse URL <%s>: %s", line, err)
 		}
 		if isSSH {
 			url, err = ConvertGitURLHTTPToSSH(url)
 			if err != nil {
-				logger.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", url, err))
-				continue
+				return fmt.Errorf("Could not convert URL <%s>: %s", url, err)
 			}
 		}
 
 		remote, err := NewRemoteRepository(url)
 		if err != nil {
-			logger.Log("error", err.Error())
-			continue
+			return err
 		}
 		if !remote.IsValid() {
-			logger.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
-			continue
+			return fmt.Errorf("Not a valid repository: %s", url)
 		}
 
 		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
-			logger.Log("error", fmt.Sprintf("failed to getRemoteRepository %q: %s",
-				remote.URL(), err))
+			return fmt.Errorf("failed to getRemoteRepository %q: %s", remote.URL(), err)
+		}
+		return nil
+	}
+
+	var (
+		eg  *errgroup.Group
+		sem chan (struct{})
+	)
+	if parallel {
+		eg = &errgroup.Group{}
+		sem = make(chan struct{}, 6)
+	}
+	scanner := bufio.NewScanner(in)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if parallel {
+			eg.Go(func() error {
+				sem <- struct{}{}
+				defer func() { <-sem }()
+				return processLine(line)
+			})
+		} else {
+			if err := processLine(line); err != nil {
+				logger.Log("error", err.Error())
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("While reading input: %s", err)
 	}
-
+	if parallel {
+		if err := eg.Wait(); err != nil {
+			logger.Log("error", err.Error())
+		}
+	}
 	return finalize()
 }
 
