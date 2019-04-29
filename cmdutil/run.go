@@ -35,6 +35,15 @@ func RunInDir(dir, command string, args ...string) error {
 	return RunCommand(cmd)
 }
 
+func RunInDirSilently(dir, command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	cmd.Stdout = ioutil.Discard
+	cmd.Stderr = ioutil.Discard
+	cmd.Dir = dir
+
+	return RunCommand(cmd)
+}
+
 type RunFunc func(*exec.Cmd) error
 
 var CommandRunner = func(cmd *exec.Cmd) error {
