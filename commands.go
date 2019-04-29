@@ -236,14 +236,14 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 			}
 		}
 
-		err := vcs.Clone(repoURL, path, isShallow)
+		err := vcs.Clone(repoURL, path, isShallow, isSilent)
 		if err != nil {
 			return err
 		}
 	} else {
 		if doUpdate {
 			logger.Log("update", path)
-			local.VCS().Update(path)
+			local.VCS().Update(path, isSilent)
 		} else {
 			logger.Log("exists", path)
 		}

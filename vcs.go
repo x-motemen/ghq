@@ -12,13 +12,13 @@ import (
 // A VCSBackend represents a VCS backend.
 type VCSBackend struct {
 	// Clones a remote repository to local path.
-	Clone func(*url.URL, string, bool) error
+	Clone func(*url.URL, string, bool, bool) error
 	// Updates a cloned local repository.
-	Update func(string) error
+	Update func(string, bool) error
 }
 
 var GitBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, shallow bool) error {
+	Clone: func(remote *url.URL, local string, shallow, silent bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -33,13 +33,13 @@ var GitBackend = &VCSBackend{
 
 		return cmdutil.Run("git", args...)
 	},
-	Update: func(local string) error {
+	Update: func(local string, silent bool) error {
 		return cmdutil.RunInDir(local, "git", "pull", "--ff-only")
 	},
 }
 
 var SubversionBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, shallow bool) error {
+	Clone: func(remote *url.URL, local string, shallow, silent bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -54,14 +54,14 @@ var SubversionBackend = &VCSBackend{
 
 		return cmdutil.Run("svn", args...)
 	},
-	Update: func(local string) error {
+	Update: func(local string, silent bool) error {
 		return cmdutil.RunInDir(local, "svn", "update")
 	},
 }
 
 var GitsvnBackend = &VCSBackend{
 	// git-svn seems not supporting shallow clone currently.
-	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
+	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -70,14 +70,14 @@ var GitsvnBackend = &VCSBackend{
 
 		return cmdutil.Run("git", "svn", "clone", remote.String(), local)
 	},
-	Update: func(local string) error {
+	Update: func(local string, silent bool) error {
 		return cmdutil.RunInDir(local, "git", "svn", "rebase")
 	},
 }
 
 var MercurialBackend = &VCSBackend{
 	// Mercurial seems not supporting shallow clone currently.
-	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
+	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -86,13 +86,13 @@ var MercurialBackend = &VCSBackend{
 
 		return cmdutil.Run("hg", "clone", remote.String(), local)
 	},
-	Update: func(local string) error {
+	Update: func(local string, silent bool) error {
 		return cmdutil.RunInDir(local, "hg", "pull", "--update")
 	},
 }
 
 var DarcsBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, shallow bool) error {
+	Clone: func(remote *url.URL, local string, shallow, silent bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -107,16 +107,16 @@ var DarcsBackend = &VCSBackend{
 
 		return cmdutil.Run("darcs", args...)
 	},
-	Update: func(local string) error {
+	Update: func(local string, silent bool) error {
 		return cmdutil.RunInDir(local, "darcs", "pull")
 	},
 }
 
 var cvsDummyBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, ignoredShallow bool) error {
+	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool) error {
 		return errors.New("CVS clone is not supported")
 	},
-	Update: func(local string) error {
+	Update: func(local string, silent bool) error {
 		return errors.New("CVS update is not supported")
 	},
 }
@@ -124,7 +124,7 @@ var cvsDummyBackend = &VCSBackend{
 const fossilRepoName = ".fossil" // same as Go
 
 var FossilBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, shallow bool) error {
+	Clone: func(remote *url.URL, local string, shallow, silent bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -143,7 +143,7 @@ var FossilBackend = &VCSBackend{
 
 		return cmdutil.Run("fossile", "open", fossilRepoName)
 	},
-	Update: func(local string) error {
+	Update: func(local string, silent bool) error {
 		return cmdutil.RunInDir(local, "fossil", "update")
 	},
 }
