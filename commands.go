@@ -12,6 +12,7 @@ import (
 
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
+	"golang.org/x/sync/errgroup"
 )
 
 var Commands = []cli.Command{
@@ -406,8 +407,12 @@ func doImport(c *cli.Context) error {
 		isShallow  = c.Bool("shallow")
 		isSilent   = c.Bool("silent")
 		vcsBackend = c.String("vcs")
-		// parallel   = c.String("parallel")
+		parallel   = c.Bool("parallel")
 	)
+	if parallel {
+		// force silent in parallel import
+		isSilent = true
+	}
 
 	var (
 		in       io.Reader
@@ -478,18 +483,33 @@ func doImport(c *cli.Context) error {
 		return nil
 	}
 
+	var (
+		eg  = &errgroup.Group{}
+		sem = make(chan struct{}, 6)
+	)
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		line := scanner.Text()
-		err := processLine(line)
-		if err != nil {
-			logger.Log("error", err.Error())
+		if parallel {
+			sem <- struct{}{}
+			eg.Go(func() error {
+				defer func() { <-sem }()
+				return processLine(line)
+			})
+		} else {
+			if err := processLine(line); err != nil {
+				logger.Log("error", err.Error())
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("While reading input: %s", err)
 	}
-
+	if parallel {
+		if err := eg.Wait(); err != nil {
+			logger.Log("error", err.Error())
+		}
+	}
 	return finalize()
 }
 
