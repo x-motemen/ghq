@@ -499,7 +499,10 @@ func doImport(c *cli.Context) error {
 			eg.Go(func() error {
 				sem <- struct{}{}
 				defer func() { <-sem }()
-				return processLine(line)
+				if err := processLine(line); err != nil {
+					logger.Log("error", err.Error())
+				}
+				return nil
 			})
 		} else {
 			if err := processLine(line); err != nil {
