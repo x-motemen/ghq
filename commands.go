@@ -76,7 +76,8 @@ var commandImport = cli.Command{
 	Name:   "import",
 	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
-	Flags:  append(cloneFlags, cli.BoolFlag{Name: "parallel, P", Usage: "Import parallely"}),
+	Flags: append(cloneFlags,
+		cli.BoolFlag{Name: "parallel, P", Usage: "[Experimental] Import parallely"}),
 }
 
 var commandRoot = cli.Command{
