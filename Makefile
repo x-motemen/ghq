@@ -62,7 +62,7 @@ crossbuild: CREDITS
 
 .PHONY: upload
 upload:
-	ghr -body="$(shell ghch --latest -F markdown)" v$(VERSION) dist/snapshot
+	ghr -body="$$(ghch --latest -F markdown)" v$(VERSION) dist/snapshot
 
 .PHONY: release
 release: bump crossbuild upload
