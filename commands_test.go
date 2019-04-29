@@ -123,7 +123,7 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 
 	var originalGitBackend = GitBackend
 	GitBackend = &VCSBackend{
-		Clone: func(remote *url.URL, local string, shallow bool) error {
+		Clone: func(remote *url.URL, local string, shallow, silent bool) error {
 			cloneArgs = _cloneArgs{
 				remote:  remote,
 				local:   filepath.FromSlash(local),
@@ -131,7 +131,7 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 			}
 			return nil
 		},
-		Update: func(local string) error {
+		Update: func(local string, silent bool) error {
 			updateArgs = _updateArgs{
 				local: local,
 			}

@@ -33,7 +33,7 @@ func TestGitBackend(t *testing.T) {
 		return nil
 	}
 
-	err = GitBackend.Clone(remoteURL, localDir, false)
+	err = GitBackend.Clone(remoteURL, localDir, false, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(1))
@@ -41,7 +41,7 @@ func TestGitBackend(t *testing.T) {
 		"git", "clone", remoteURL.String(), localDir,
 	}))
 
-	err = GitBackend.Clone(remoteURL, localDir, true)
+	err = GitBackend.Clone(remoteURL, localDir, true, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(2))
@@ -49,7 +49,7 @@ func TestGitBackend(t *testing.T) {
 		"git", "clone", "--depth", "1", remoteURL.String(), localDir,
 	}))
 
-	err = GitBackend.Update(localDir)
+	err = GitBackend.Update(localDir, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(3))
@@ -81,7 +81,7 @@ func TestSubversionBackend(t *testing.T) {
 		return nil
 	}
 
-	err = SubversionBackend.Clone(remoteURL, localDir, false)
+	err = SubversionBackend.Clone(remoteURL, localDir, false, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(1))
@@ -89,7 +89,7 @@ func TestSubversionBackend(t *testing.T) {
 		"svn", "checkout", remoteURL.String(), localDir,
 	}))
 
-	err = SubversionBackend.Clone(remoteURL, localDir, true)
+	err = SubversionBackend.Clone(remoteURL, localDir, true, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(2))
@@ -97,7 +97,7 @@ func TestSubversionBackend(t *testing.T) {
 		"svn", "checkout", "--depth", "1", remoteURL.String(), localDir,
 	}))
 
-	err = SubversionBackend.Update(localDir)
+	err = SubversionBackend.Update(localDir, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(3))
@@ -129,7 +129,7 @@ func TestGitsvnBackend(t *testing.T) {
 		return nil
 	}
 
-	err = GitsvnBackend.Clone(remoteURL, localDir, false)
+	err = GitsvnBackend.Clone(remoteURL, localDir, false, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(1))
@@ -137,14 +137,14 @@ func TestGitsvnBackend(t *testing.T) {
 		"git", "svn", "clone", remoteURL.String(), localDir,
 	}))
 
-	err = GitsvnBackend.Clone(remoteURL, localDir, true)
+	err = GitsvnBackend.Clone(remoteURL, localDir, true, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(2))
 	Expect(lastCommand().Args).To(Equal([]string{
 		"git", "svn", "clone", remoteURL.String(), localDir,
 	}))
-	err = GitsvnBackend.Update(localDir)
+	err = GitsvnBackend.Update(localDir, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(3))
@@ -176,7 +176,7 @@ func TestMercurialBackend(t *testing.T) {
 		return nil
 	}
 
-	err = MercurialBackend.Clone(remoteURL, localDir, false)
+	err = MercurialBackend.Clone(remoteURL, localDir, false, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(1))
@@ -184,14 +184,14 @@ func TestMercurialBackend(t *testing.T) {
 		"hg", "clone", remoteURL.String(), localDir,
 	}))
 
-	err = MercurialBackend.Clone(remoteURL, localDir, true)
+	err = MercurialBackend.Clone(remoteURL, localDir, true, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(2))
 	Expect(lastCommand().Args).To(Equal([]string{
 		"hg", "clone", remoteURL.String(), localDir,
 	}))
-	err = MercurialBackend.Update(localDir)
+	err = MercurialBackend.Update(localDir, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(3))
@@ -223,7 +223,7 @@ func TestDarcsBackend(t *testing.T) {
 		return nil
 	}
 
-	err = DarcsBackend.Clone(remoteURL, localDir, false)
+	err = DarcsBackend.Clone(remoteURL, localDir, false, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(1))
@@ -231,7 +231,7 @@ func TestDarcsBackend(t *testing.T) {
 		"darcs", "get", remoteURL.String(), localDir,
 	}))
 
-	err = DarcsBackend.Clone(remoteURL, localDir, true)
+	err = DarcsBackend.Clone(remoteURL, localDir, true, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(2))
@@ -239,7 +239,7 @@ func TestDarcsBackend(t *testing.T) {
 		"darcs", "get", "--lazy", remoteURL.String(), localDir,
 	}))
 
-	err = DarcsBackend.Update(localDir)
+	err = DarcsBackend.Update(localDir, false)
 
 	Expect(err).NotTo(HaveOccurred())
 	Expect(commands).To(HaveLen(3))
@@ -263,15 +263,15 @@ func TestCvsDummyBackend(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = cvsDummyBackend.Clone(remoteURL, localDir, false)
+	err = cvsDummyBackend.Clone(remoteURL, localDir, false, false)
 
 	Expect(err).To(HaveOccurred())
 
-	err = cvsDummyBackend.Clone(remoteURL, localDir, true)
+	err = cvsDummyBackend.Clone(remoteURL, localDir, true, false)
 
 	Expect(err).To(HaveOccurred())
 
-	err = cvsDummyBackend.Update(localDir)
+	err = cvsDummyBackend.Update(localDir, false)
 
 	Expect(err).To(HaveOccurred())
 }

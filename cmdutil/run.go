@@ -15,7 +15,7 @@ func Run(command string, args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return RunCommand(cmd)
+	return RunCommand(cmd, false)
 }
 
 func RunSilently(command string, args ...string) error {
@@ -23,7 +23,7 @@ func RunSilently(command string, args ...string) error {
 	cmd.Stdout = ioutil.Discard
 	cmd.Stderr = ioutil.Discard
 
-	return RunCommand(cmd)
+	return RunCommand(cmd, true)
 }
 
 func RunInDir(dir, command string, args ...string) error {
@@ -32,7 +32,16 @@ func RunInDir(dir, command string, args ...string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Dir = dir
 
-	return RunCommand(cmd)
+	return RunCommand(cmd, false)
+}
+
+func RunInDirSilently(dir, command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	cmd.Stdout = ioutil.Discard
+	cmd.Stderr = ioutil.Discard
+	cmd.Dir = dir
+
+	return RunCommand(cmd, true)
 }
 
 type RunFunc func(*exec.Cmd) error
@@ -41,9 +50,10 @@ var CommandRunner = func(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func RunCommand(cmd *exec.Cmd) error {
-	logger.Log(cmd.Args[0], strings.Join(cmd.Args[1:], " "))
-
+func RunCommand(cmd *exec.Cmd, silent bool) error {
+	if !silent {
+		logger.Log(cmd.Args[0], strings.Join(cmd.Args[1:], " "))
+	}
 	err := CommandRunner(cmd)
 	if err != nil {
 		if execErr, ok := err.(*exec.Error); ok {
