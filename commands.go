@@ -484,15 +484,19 @@ func doImport(c *cli.Context) error {
 	}
 
 	var (
-		eg  = &errgroup.Group{}
-		sem = make(chan struct{}, 6)
+		eg  *errgroup.Group
+		sem chan (struct{})
 	)
+	if parallel {
+		eg = &errgroup.Group{}
+		sem = make(chan struct{}, 6)
+	}
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if parallel {
-			sem <- struct{}{}
 			eg.Go(func() error {
+				sem <- struct{}{}
 				defer func() { <-sem }()
 				return processLine(line)
 			})
