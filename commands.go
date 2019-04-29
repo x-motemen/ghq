@@ -472,13 +472,14 @@ func doImport(c *cli.Context) error {
 			logger.Log("error", err.Error())
 			continue
 		}
-		if remote.IsValid() == false {
+		if !remote.IsValid() {
 			logger.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
 			continue
 		}
 
 		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
-			return err
+			logger.Log("error", fmt.Sprintf("failed to getRemoteRepository %q: %s",
+				remote.URL(), err))
 		}
 	}
 	if err := scanner.Err(); err != nil {
