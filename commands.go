@@ -28,7 +28,7 @@ var cloneFlags = []cli.Flag{
 	cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
 	cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
 	cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
-	cli.BoolFlag{Name: "silent, s", Usage: "clone silently"},
+	cli.BoolFlag{Name: "silent, s", Usage: "clone or update silently"},
 }
 
 var commandGet = cli.Command{
