@@ -51,11 +51,7 @@ look::
 
 import::
     If no extra arguments given, reads repository URLs from stdin line by line
-    and performs 'get' for each of them. +
-    If given a subcommand name e.g. 'ghq import <subcommand> [<args>...]',
-    ghq looks up a configuration 'ghq.import.<subcommand>' for a command, invokes
-    it, and uses its output as URLs list. See below for 'ghq.import.<subcommand>'
-    in CONFIGURATION section.
+    and performs 'get' for each of them.
 
 root::
     Prints repositories' root (i.e. `ghq.root`). Without '--all' option, the
@@ -87,21 +83,6 @@ ghq.<url>.vcs::
 [ghq "https://git.example.com/repos/"]
 vcs = git
 ....
-
-
-ghq.import.<subcommand>::
-    When 'import' is called with extra arguments e.g. 'ghq import <subcommand> [<args>...]',
-    first of them is treated as a subcommand name and this configuration value
-    will be used for a command. The command is invoked with rest arguments
-    and expected to print remote repository URLs line by line. +
-    For example with https://github.com/motemen/github-list-starred[github-list-starred]:
-
-....
-# Invoke as `ghq import starred motemen`
-[ghq "import"]
-starred = github-list-starred
-....
-
 
 ghq.ghe.host::
     The hostname of your GitHub Enterprise installation. A repository that has a
