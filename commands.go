@@ -75,7 +75,7 @@ var commandImport = cli.Command{
 	Name:   "import",
 	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
-	Flags:  cloneFlags,
+	Flags:  append(cloneFlags, cli.BoolFlag{Name: "parallel, P", Usage: "Import parallely"}),
 }
 
 var commandRoot = cli.Command{
@@ -406,6 +406,7 @@ func doImport(c *cli.Context) error {
 		isShallow  = c.Bool("shallow")
 		isSilent   = c.Bool("silent")
 		vcsBackend = c.String("vcs")
+		// parallel   = c.String("parallel")
 	)
 
 	var (
@@ -451,35 +452,38 @@ func doImport(c *cli.Context) error {
 		finalize = cmd.Wait
 	}
 
-	scanner := bufio.NewScanner(in)
-	for scanner.Scan() {
-		line := scanner.Text()
+	processLine := func(line string) error {
 		url, err := NewURL(line)
 		if err != nil {
-			logger.Log("error", fmt.Sprintf("Could not parse URL <%s>: %s", line, err))
-			continue
+			return fmt.Errorf("Could not parse URL <%s>: %s", line, err)
 		}
 		if isSSH {
 			url, err = ConvertGitURLHTTPToSSH(url)
 			if err != nil {
-				logger.Log("error", fmt.Sprintf("Could not convert URL <%s>: %s", url, err))
-				continue
+				return fmt.Errorf("Could not convert URL <%s>: %s", url, err)
 			}
 		}
 
 		remote, err := NewRemoteRepository(url)
 		if err != nil {
-			logger.Log("error", err.Error())
-			continue
+			return err
 		}
 		if !remote.IsValid() {
-			logger.Log("error", fmt.Sprintf("Not a valid repository: %s", url))
-			continue
+			return fmt.Errorf("Not a valid repository: %s", url)
 		}
 
 		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
-			logger.Log("error", fmt.Sprintf("failed to getRemoteRepository %q: %s",
-				remote.URL(), err))
+			return fmt.Errorf("failed to getRemoteRepository %q: %s", remote.URL(), err)
+		}
+		return nil
+	}
+
+	scanner := bufio.NewScanner(in)
+	for scanner.Scan() {
+		line := scanner.Text()
+		err := processLine(line)
+		if err != nil {
+			logger.Log("error", err.Error())
 		}
 	}
 	if err := scanner.Err(); err != nil {
