@@ -28,6 +28,7 @@ var cloneFlags = []cli.Flag{
 	cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
 	cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
 	cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
+	cli.BoolFlag{Name: "silent, s", Usage: "clone silently"},
 }
 
 var commandGet = cli.Command{
@@ -127,11 +128,14 @@ OPTIONS:
 }
 
 func doGet(c *cli.Context) error {
-	argURL := c.Args().Get(0)
-	doUpdate := c.Bool("update")
-	isShallow := c.Bool("shallow")
-	andLook := c.Bool("look")
-	vcsBackend := c.String("vcs")
+	var (
+		argURL     = c.Args().Get(0)
+		doUpdate   = c.Bool("update")
+		isShallow  = c.Bool("shallow")
+		andLook    = c.Bool("look")
+		vcsBackend = c.String("vcs")
+		isSilent   = c.Bool("silent")
+	)
 
 	if argURL == "" {
 		cli.ShowCommandHelp(c, "get")
@@ -187,7 +191,7 @@ func doGet(c *cli.Context) error {
 		return fmt.Errorf("Not a valid repository: %s", url)
 	}
 
-	if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend); err != nil {
+	if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
 		return err
 	}
 	if andLook {
@@ -199,7 +203,7 @@ func doGet(c *cli.Context) error {
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool, vcsBackend string) error {
+func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool, vcsBackend string, isSilent bool) error {
 	remoteURL := remote.URL()
 	local, err := LocalRepositoryFromURL(remoteURL)
 	if err != nil {
@@ -400,6 +404,7 @@ func doImport(c *cli.Context) error {
 		doUpdate   = c.Bool("update")
 		isSSH      = c.Bool("p")
 		isShallow  = c.Bool("shallow")
+		isSilent   = c.Bool("silent")
 		vcsBackend = c.String("vcs")
 	)
 
@@ -472,7 +477,7 @@ func doImport(c *cli.Context) error {
 			continue
 		}
 
-		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend); err != nil {
+		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
 			return err
 		}
 	}
