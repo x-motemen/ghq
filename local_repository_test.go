@@ -5,28 +5,53 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	. "github.com/onsi/gomega"
 )
 
+func TestLocalRepositoryFromFullPath(t *testing.T) {
+	origLocalRepositryRoots := _localRepositoryRoots
+	_localRepositoryRoots = []string{"/repos"}
+	defer func() { _localRepositoryRoots = origLocalRepositryRoots }()
+
+	testCases := []struct {
+		fpath    string
+		expect   string
+		subpaths []string
+	}{{
+		fpath:    "/repos/github.com/motemen/ghq",
+		expect:   "motemen/ghq",
+		subpaths: []string{"ghq", "motemen/ghq", "github.com/motemen/ghq"},
+	}, {
+		fpath:    "/repos/stash.com/scm/motemen/ghq",
+		expect:   "scm/motemen/ghq",
+		subpaths: []string{"ghq", "motemen/ghq", "scm/motemen/ghq", "stash.com/scm/motemen/ghq"},
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.fpath, func(t *testing.T) {
+			r, err := LocalRepositoryFromFullPath(tc.fpath, nil)
+			if err != nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			if r.NonHostPath() != tc.expect {
+				t.Errorf("NonHostPath: got: %s, expect: %s", r.NonHostPath(), tc.expect)
+			}
+			if !reflect.DeepEqual(r.Subpaths(), tc.subpaths) {
+				t.Errorf("Subpaths:\ngot:    %+v\nexpect: %+v", r.Subpaths(), tc.subpaths)
+			}
+		})
+	}
+}
+
 func TestNewLocalRepository(t *testing.T) {
 	RegisterTestingT(t)
-
 	_localRepositoryRoots = []string{"/repos"}
 
-	r, err := LocalRepositoryFromFullPath("/repos/github.com/motemen/ghq", nil)
-	Expect(err).To(BeNil())
-	Expect(r.NonHostPath()).To(Equal("motemen/ghq"))
-	Expect(r.Subpaths()).To(Equal([]string{"ghq", "motemen/ghq", "github.com/motemen/ghq"}))
-
-	r, err = LocalRepositoryFromFullPath("/repos/stash.com/scm/motemen/ghq", nil)
-	Expect(err).To(BeNil())
-	Expect(r.NonHostPath()).To(Equal("scm/motemen/ghq"))
-	Expect(r.Subpaths()).To(Equal([]string{"ghq", "motemen/ghq", "scm/motemen/ghq", "stash.com/scm/motemen/ghq"}))
-
 	githubURL, _ := url.Parse("ssh://git@github.com/motemen/ghq.git")
-	r, err = LocalRepositoryFromURL(githubURL)
+	r, err := LocalRepositoryFromURL(githubURL)
 	Expect(err).To(BeNil())
 	Expect(r.FullPath).To(Equal("/repos/github.com/motemen/ghq"))
 
