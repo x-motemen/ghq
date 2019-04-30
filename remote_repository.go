@@ -171,7 +171,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 			return FossilBackend, repo.URL()
 		}
 
-		if vcs == "bazaar" {
+		if vcs == "bazaar" || vcs == "bzr" {
 			return BazaarBackend, repo.URL()
 		}
 	}

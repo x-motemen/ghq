@@ -43,7 +43,8 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	return &LocalRepository{
 		FullPath:  fullPath,
 		RelPath:   filepath.ToSlash(relPath),
-		PathParts: pathParts}, nil
+		PathParts: pathParts,
+	}, nil
 }
 
 func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
@@ -165,7 +166,6 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 	if err == nil && fi.IsDir() {
 		return BazaarBackend
 	}
-
 
 	return nil
 }

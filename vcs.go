@@ -188,5 +188,6 @@ var vcsRegistry = map[string]*VCSBackend{
 	"mercurial":  MercurialBackend,
 	"darcs":      DarcsBackend,
 	"fossil":     FossilBackend,
+	"bzr":        BazaarBackend,
 	"bazaar":     BazaarBackend,
 }
