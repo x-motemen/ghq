@@ -275,3 +275,51 @@ func TestCvsDummyBackend(t *testing.T) {
 
 	Expect(err).To(HaveOccurred())
 }
+
+func TestBazaarBackend(t *testing.T) {
+	RegisterTestingT(t)
+
+	tempDir, err := ioutil.TempDir("", "ghq-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	localDir := filepath.Join(tempDir, "repo")
+
+	remoteURL, err := url.Parse("https://example.com/git/repo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	commands := []*exec.Cmd{}
+	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+		commands = append(commands, cmd)
+		return nil
+	}
+
+	err = BazaarBackend.Clone(remoteURL, localDir, false, false)
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commands).To(HaveLen(1))
+	Expect(lastCommand().Args).To(Equal([]string{
+		"bzr", "branch", remoteURL.String(), localDir,
+	}))
+
+	err = BazaarBackend.Clone(remoteURL, localDir, true, false)
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commands).To(HaveLen(2))
+	Expect(lastCommand().Args).To(Equal([]string{
+		"bzr", "branch", remoteURL.String(), localDir,
+	}))
+
+	err = BazaarBackend.Update(localDir, false)
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commands).To(HaveLen(3))
+	Expect(lastCommand().Args).To(Equal([]string{
+		"bzr", "pull",
+	}))
+	Expect(lastCommand().Dir).To(Equal(localDir))
+}

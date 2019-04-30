@@ -162,6 +162,22 @@ var FossilBackend = &VCSBackend{
 	},
 }
 
+var BazaarBackend = &VCSBackend{
+	// bazaar seems not supporting shallow clone currently.
+	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool) error {
+		dir, _ := filepath.Split(local)
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+
+		return run(silent)("bzr", "branch", remote.String(), local)
+	},
+	Update: func(local string, silent bool) error {
+		return runInDir(silent)(local, "bzr", "pull")
+	},
+}
+
 var vcsRegistry = map[string]*VCSBackend{
 	"git":        GitBackend,
 	"github":     GitBackend,
@@ -172,4 +188,5 @@ var vcsRegistry = map[string]*VCSBackend{
 	"mercurial":  MercurialBackend,
 	"darcs":      DarcsBackend,
 	"fossil":     FossilBackend,
+	"bazaar":     BazaarBackend,
 }

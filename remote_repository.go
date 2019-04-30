@@ -170,6 +170,10 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		if vcs == "fossil" {
 			return FossilBackend, repo.URL()
 		}
+
+		if vcs == "bazaar" {
+			return BazaarBackend, repo.URL()
+		}
 	}
 
 	// Detect VCS backend automatically
