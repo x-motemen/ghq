@@ -1,17 +1,8 @@
 package main
 
 import (
-	"net/url"
 	"testing"
 )
-
-func mustParseURL(urlString string) *url.URL {
-	u, err := url.Parse(urlString)
-	if err != nil {
-		panic(err)
-	}
-	return u
-}
 
 func TestNewRemoteRepository(t *testing.T) {
 	testCases := []struct {

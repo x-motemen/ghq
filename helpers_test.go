@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,5 +43,14 @@ func WithGitconfigFile(configContent string) (func(), error) {
 
 	return func() {
 		os.Setenv("GIT_CONFIG", prevGitConfigEnv)
+		os.RemoveAll(tmpdir)
 	}, nil
+}
+
+func mustParseURL(urlString string) *url.URL {
+	u, err := url.Parse(urlString)
+	if err != nil {
+		panic(err)
+	}
+	return u
 }

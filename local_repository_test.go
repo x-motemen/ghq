@@ -79,9 +79,11 @@ func TestList_Symlink(t *testing.T) {
 
 	root, err := ioutil.TempDir("", "")
 	Expect(err).To(BeNil())
+	defer os.RemoveAll(root)
 
 	symDir, err := ioutil.TempDir("", "")
 	Expect(err).To(BeNil())
+	defer os.RemoveAll(symDir)
 
 	_localRepositoryRoots = []string{root}
 
