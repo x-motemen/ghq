@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -13,9 +14,11 @@ type LocalRepository struct {
 	FullPath  string
 	RelPath   string
 	PathParts []string
+
+	vcsBackend *VCSBackend
 }
 
-func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
+func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRepository, error) {
 	var relPath string
 
 	roots, err := localRepositoryRoots()
@@ -41,9 +44,10 @@ func LocalRepositoryFromFullPath(fullPath string) (*LocalRepository, error) {
 	pathParts := strings.Split(relPath, string(filepath.Separator))
 
 	return &LocalRepository{
-		FullPath:  fullPath,
-		RelPath:   filepath.ToSlash(relPath),
-		PathParts: pathParts,
+		FullPath:   fullPath,
+		RelPath:    filepath.ToSlash(relPath),
+		PathParts:  pathParts,
+		vcsBackend: backend,
 	}, nil
 }
 
@@ -115,62 +119,45 @@ func (repo *LocalRepository) Matches(pathQuery string) bool {
 	return false
 }
 
-// TODO return err
 func (repo *LocalRepository) VCS() *VCSBackend {
-	var (
-		fi  os.FileInfo
-		err error
-	)
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git/svn"))
-	if err == nil && fi.IsDir() {
-		return GitsvnBackend
+	if repo.vcsBackend == nil {
+		repo.vcsBackend = findVCSBackend(repo.FullPath)
 	}
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, ".git"))
-	if err == nil && fi.IsDir() {
-		return GitBackend
-	}
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, ".svn"))
-	if err == nil && fi.IsDir() {
-		return SubversionBackend
-	}
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, ".hg"))
-	if err == nil && fi.IsDir() {
-		return MercurialBackend
-	}
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, "_darcs"))
-	if err == nil && fi.IsDir() {
-		return DarcsBackend
-	}
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, ".fslckout"))
-	if err == nil && fi.IsDir() {
-		return FossilBackend
-	}
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, "_FOSSIL_"))
-	if err == nil && fi.IsDir() {
-		return FossilBackend
-	}
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, "CVS"))
-	if err == nil && fi.IsDir() {
-		return cvsDummyBackend
-	}
-
-	fi, err = os.Stat(filepath.Join(repo.FullPath, ".bzr"))
-	if err == nil && fi.IsDir() {
-		return BazaarBackend
-	}
-
-	return nil
+	return repo.vcsBackend
 }
 
-var vcsDirs = []string{".git", ".svn", ".hg", "_darcs", ".fslckout", "_FOSSIL_", "CVS", ".bzr"}
+var vcsDirsMap = map[string]*VCSBackend{
+	".git/svn":  GitsvnBackend,
+	".git":      GitBackend,
+	".svn":      SubversionBackend,
+	".hg":       MercurialBackend,
+	"_darcs":    DarcsBackend,
+	".fslckout": FossilBackend,
+	"_FOSSIL_":  FossilBackend,
+	"CVS":       cvsDummyBackend,
+	".bzr":      BazaarBackend,
+}
+
+var vcsDirs = make([]string, 0, len(vcsDirsMap))
+
+func init() {
+	for k := range vcsDirsMap {
+		vcsDirs = append(vcsDirs, k)
+	}
+	sort.Slice(vcsDirs, func(i, j int) bool {
+		return len(vcsDirs[i]) > len(vcsDirs[j])
+	})
+}
+
+func findVCSBackend(fpath string) *VCSBackend {
+	for _, d := range vcsDirs {
+		fi, err := os.Stat(filepath.Join(fpath, d))
+		if err == nil && fi.IsDir() {
+			return vcsDirsMap[d]
+		}
+	}
+	return nil
+}
 
 func walkLocalRepositories(callback func(*LocalRepository)) error {
 	roots, err := localRepositoryRoots()
@@ -178,13 +165,13 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 		return err
 	}
 	for _, root := range roots {
-		if err := filepath.Walk(root, func(path string, fileInfo os.FileInfo, err error) error {
+		if err := filepath.Walk(root, func(fpath string, fileInfo os.FileInfo, err error) error {
 			if err != nil || fileInfo == nil {
 				return nil
 			}
 
 			if fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
-				realpath, err := filepath.EvalSymlinks(path)
+				realpath, err := filepath.EvalSymlinks(fpath)
 				if err != nil {
 					return nil
 				}
@@ -196,21 +183,12 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 			if !fileInfo.IsDir() {
 				return nil
 			}
-
-			vcsDirFound := false
-			for _, d := range vcsDirs {
-				_, err := os.Stat(filepath.Join(path, d))
-				if err == nil {
-					vcsDirFound = true
-					break
-				}
-			}
-
-			if !vcsDirFound {
+			vcsBackend := findVCSBackend(fpath)
+			if vcsBackend == nil {
 				return nil
 			}
 
-			repo, err := LocalRepositoryFromFullPath(path)
+			repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
 			if err != nil {
 				return nil
 			}

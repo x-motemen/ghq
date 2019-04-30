@@ -15,12 +15,12 @@ func TestNewLocalRepository(t *testing.T) {
 
 	_localRepositoryRoots = []string{"/repos"}
 
-	r, err := LocalRepositoryFromFullPath("/repos/github.com/motemen/ghq")
+	r, err := LocalRepositoryFromFullPath("/repos/github.com/motemen/ghq", nil)
 	Expect(err).To(BeNil())
 	Expect(r.NonHostPath()).To(Equal("motemen/ghq"))
 	Expect(r.Subpaths()).To(Equal([]string{"ghq", "motemen/ghq", "github.com/motemen/ghq"}))
 
-	r, err = LocalRepositoryFromFullPath("/repos/stash.com/scm/motemen/ghq")
+	r, err = LocalRepositoryFromFullPath("/repos/stash.com/scm/motemen/ghq", nil)
 	Expect(err).To(BeNil())
 	Expect(r.NonHostPath()).To(Equal("scm/motemen/ghq"))
 	Expect(r.Subpaths()).To(Equal([]string{"ghq", "motemen/ghq", "scm/motemen/ghq", "stash.com/scm/motemen/ghq"}))
