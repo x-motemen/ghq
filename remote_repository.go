@@ -146,33 +146,8 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		if err != nil {
 			logger.Log("error", err.Error())
 		}
-
-		if vcs == "git" || vcs == "github" {
-			return GitBackend, repo.URL()
-		}
-
-		if vcs == "svn" || vcs == "subversion" {
-			return SubversionBackend, repo.URL()
-		}
-
-		if vcs == "git-svn" {
-			return GitsvnBackend, repo.URL()
-		}
-
-		if vcs == "hg" || vcs == "mercurial" {
-			return MercurialBackend, repo.URL()
-		}
-
-		if vcs == "darcs" {
-			return DarcsBackend, repo.URL()
-		}
-
-		if vcs == "fossil" {
-			return FossilBackend, repo.URL()
-		}
-
-		if vcs == "bazaar" {
-			return BazaarBackend, repo.URL()
+		if backend, ok := vcsRegistry[vcs]; ok {
+			return backend, repo.URL()
 		}
 	}
 
