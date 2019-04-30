@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/url"
 	"os"
 	"testing"
 
@@ -56,20 +55,32 @@ func TestNewURL(t *testing.T) {
 }
 
 func TestConvertGitURLHTTPToSSH(t *testing.T) {
-	RegisterTestingT(t)
+	testCases := []struct {
+		url, expect string
+	}{{
+		url:    "https://github.com/motemen/pusheen-explorer",
+		expect: "ssh://git@github.com/motemen/pusheen-explorer",
+	}, {
+		url:    "https://ghe.example.com/motemen/pusheen-explorer",
+		expect: "ssh://git@ghe.example.com/motemen/pusheen-explorer",
+	}, {
+		url:    "https://motemen@ghe.example.com/motemen/pusheen-explorer",
+		expect: "ssh://motemen@ghe.example.com/motemen/pusheen-explorer",
+	}}
 
-	var (
-		httpsURL, sshURL *url.URL
-		err              error
-	)
-
-	httpsURL, err = NewURL("https://github.com/motemen/pusheen-explorer")
-	sshURL, err = ConvertGitURLHTTPToSSH(httpsURL)
-	Expect(err).To(BeNil())
-	Expect(sshURL.String()).To(Equal("ssh://git@github.com/motemen/pusheen-explorer"))
-
-	httpsURL, err = NewURL("https://ghe.example.com/motemen/pusheen-explorer")
-	sshURL, err = ConvertGitURLHTTPToSSH(httpsURL)
-	Expect(err).To(BeNil())
-	Expect(sshURL.String()).To(Equal("ssh://git@ghe.example.com/motemen/pusheen-explorer"))
+	for _, tc := range testCases {
+		t.Run(tc.url, func(t *testing.T) {
+			httpsURL, err := NewURL(tc.url)
+			if err != nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			sshURL, err := ConvertGitURLHTTPToSSH(httpsURL)
+			if err != nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			if sshURL.String() != tc.expect {
+				t.Errorf("got: %s, expect: %s", sshURL.String(), tc.expect)
+			}
+		})
+	}
 }
