@@ -1,13 +1,8 @@
 package main
 
 import (
-	"errors"
 	"net/url"
-
 	"testing"
-
-	"github.com/motemen/ghq/cmdutil"
-	. "github.com/onsi/gomega"
 )
 
 func mustParseURL(urlString string) *url.URL {
@@ -71,33 +66,4 @@ func TestNewRemoteRepository(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestNewRemoteRepositoryGoogleCode(t *testing.T) {
-	RegisterTestingT(t)
-
-	var (
-		repo RemoteRepository
-		err  error
-	)
-
-	repo, err = NewRemoteRepository(mustParseURL("https://code.google.com/p/vim/"))
-	Expect(err).To(BeNil())
-	Expect(repo.IsValid()).To(Equal(true))
-	cmdutil.CommandRunner = NewFakeRunner(map[string]error{
-		"hg identify":   nil,
-		"git ls-remote": errors.New(""),
-	})
-	vcs, _ := repo.VCS()
-	Expect(vcs).To(Equal(MercurialBackend))
-
-	repo, err = NewRemoteRepository(mustParseURL("https://code.google.com/p/git-core"))
-	Expect(err).To(BeNil())
-	Expect(repo.IsValid()).To(Equal(true))
-	cmdutil.CommandRunner = NewFakeRunner(map[string]error{
-		"hg identify":   errors.New(""),
-		"git ls-remote": nil,
-	})
-	vcs, _ = repo.VCS()
-	Expect(vcs).To(Equal(GitBackend))
 }
