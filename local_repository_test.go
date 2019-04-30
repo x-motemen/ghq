@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-
-	. "github.com/onsi/gomega"
 )
 
 func TestLocalRepositoryFromFullPath(t *testing.T) {
@@ -100,46 +98,71 @@ func TestNewLocalRepository(t *testing.T) {
 }
 
 func TestLocalRepositoryRoots(t *testing.T) {
-	RegisterTestingT(t)
-
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
 
-	_localRepositoryRoots = nil
-	os.Setenv("GHQ_ROOT", "/path/to/ghqroot")
-	Expect(localRepositoryRoots()).To(Equal([]string{"/path/to/ghqroot"}))
+	testCases := []struct {
+		root   string
+		expect []string
+	}{{
+		root:   "/path/to/ghqroot",
+		expect: []string{"/path/to/ghqroot"},
+	}, {
+		root:   "/path/to/ghqroot1" + string(os.PathListSeparator) + "/path/to/ghqroot2",
+		expect: []string{"/path/to/ghqroot1", "/path/to/ghqroot2"},
+	}}
 
-	_localRepositoryRoots = nil
-	os.Setenv("GHQ_ROOT", "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
-	Expect(localRepositoryRoots()).To(Equal([]string{"/path/to/ghqroot1", "/path/to/ghqroot2"}))
+	for _, tc := range testCases {
+		t.Run(tc.root, func(t *testing.T) {
+			_localRepositoryRoots = nil
+			os.Setenv("GHQ_ROOT", tc.root)
+			got, err := localRepositoryRoots()
+			if err != nil {
+				t.Errorf("error should be nil, but: %s", err)
+			}
+			if !reflect.DeepEqual(got, tc.expect) {
+				t.Errorf("\ngot:    %+v\nexpect: %+v", got, tc.expect)
+			}
+		})
+	}
 }
 
 // https://gist.github.com/kyanny/c231f48e5d08b98ff2c3
 func TestList_Symlink(t *testing.T) {
-	RegisterTestingT(t)
-
-	root, err := ioutil.TempDir("", "")
-	Expect(err).To(BeNil())
+	root, err := ioutil.TempDir("", "ghq-test")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer os.RemoveAll(root)
 
-	symDir, err := ioutil.TempDir("", "")
-	Expect(err).To(BeNil())
+	symDir, err := ioutil.TempDir("", "ghq-test")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer os.RemoveAll(symDir)
 
+	origLocalRepositryRoots := _localRepositoryRoots
 	_localRepositoryRoots = []string{root}
+	defer func() { _localRepositoryRoots = origLocalRepositryRoots }()
 
-	err = os.MkdirAll(filepath.Join(root, "github.com", "atom", "atom", ".git"), 0777)
-	Expect(err).To(BeNil())
+	if err := os.MkdirAll(filepath.Join(root, "github.com", "atom", "atom", ".git"), 0777); err != nil {
+		t.Fatal(err)
+	}
 
-	err = os.MkdirAll(filepath.Join(root, "github.com", "zabbix", "zabbix", ".git"), 0777)
-	Expect(err).To(BeNil())
+	if err := os.MkdirAll(filepath.Join(root, "github.com", "zabbix", "zabbix", ".git"), 0777); err != nil {
+		t.Fatal(err)
+	}
 
-	err = os.Symlink(symDir, filepath.Join(root, "github.com", "ghq"))
-	Expect(err).To(BeNil())
+	if err := os.Symlink(symDir, filepath.Join(root, "github.com", "ghq")); err != nil {
+		t.Fatal(err)
+	}
 
 	paths := []string{}
 	walkLocalRepositories(func(repo *LocalRepository) {
 		paths = append(paths, repo.RelPath)
 	})
 
-	Expect(paths).To(HaveLen(2))
+	if len(paths) != 2 {
+		t.Errorf("length of paths should be 2, but: %d", len(paths))
+	}
 }
