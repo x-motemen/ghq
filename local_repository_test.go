@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -47,41 +46,57 @@ func TestLocalRepositoryFromFullPath(t *testing.T) {
 }
 
 func TestNewLocalRepository(t *testing.T) {
-	RegisterTestingT(t)
+	origLocalRepositryRoots := _localRepositoryRoots
 	_localRepositoryRoots = []string{"/repos"}
+	defer func() { _localRepositoryRoots = origLocalRepositryRoots }()
 
-	githubURL, _ := url.Parse("ssh://git@github.com/motemen/ghq.git")
-	r, err := LocalRepositoryFromURL(githubURL)
-	Expect(err).To(BeNil())
-	Expect(r.FullPath).To(Equal("/repos/github.com/motemen/ghq"))
+	testCases := []struct {
+		name, url, expect string
+	}{{
+		name:   "GitHub",
+		url:    "ssh://git@github.com/motemen/ghq.git",
+		expect: "/repos/github.com/motemen/ghq",
+	}, {
+		name:   "stash",
+		url:    "ssh://git@stash.com/scm/motemen/ghq.git",
+		expect: "/repos/stash.com/scm/motemen/ghq",
+	}, {
+		name:   "svn Sourceforge",
+		url:    "http://svn.code.sf.net/p/ghq/code/trunk",
+		expect: "/repos/svn.code.sf.net/p/ghq/code/trunk",
+	}, {
+		name:   "git Sourceforge",
+		url:    "http://git.code.sf.net/p/ghq/code",
+		expect: "/repos/git.code.sf.net/p/ghq/code",
+	}, {
+		name:   "svn Sourceforge JP",
+		url:    "http://scm.sourceforge.jp/svnroot/ghq/",
+		expect: "/repos/scm.sourceforge.jp/svnroot/ghq",
+	}, {
+		name:   "git Sourceforge JP",
+		url:    "http://scm.sourceforge.jp/gitroot/ghq/ghq.git",
+		expect: "/repos/scm.sourceforge.jp/gitroot/ghq/ghq",
+	}, {
+		name:   "svn Assembla",
+		url:    "https://subversion.assembla.com/svn/ghq/",
+		expect: "/repos/subversion.assembla.com/svn/ghq",
+	}, {
+		name:   "git Assembla",
+		url:    "https://git.assembla.com/ghq.git",
+		expect: "/repos/git.assembla.com/ghq",
+	}}
 
-	stashURL, _ := url.Parse("ssh://git@stash.com/scm/motemen/ghq")
-	r, _ = LocalRepositoryFromURL(stashURL)
-	Expect(r.FullPath).To(Equal("/repos/stash.com/scm/motemen/ghq"))
-
-	svnSourceforgeURL, _ := url.Parse("http://svn.code.sf.net/p/ghq/code/trunk")
-	r, _ = LocalRepositoryFromURL(svnSourceforgeURL)
-	Expect(r.FullPath).To(Equal("/repos/svn.code.sf.net/p/ghq/code/trunk"))
-
-	gitSourceforgeURL, _ := url.Parse("http://git.code.sf.net/p/ghq/code")
-	r, _ = LocalRepositoryFromURL(gitSourceforgeURL)
-	Expect(r.FullPath).To(Equal("/repos/git.code.sf.net/p/ghq/code"))
-
-	svnSourceforgeJpURL, _ := url.Parse("http://scm.sourceforge.jp/svnroot/ghq/")
-	r, _ = LocalRepositoryFromURL(svnSourceforgeJpURL)
-	Expect(r.FullPath).To(Equal("/repos/scm.sourceforge.jp/svnroot/ghq"))
-
-	gitSourceforgeJpURL, _ := url.Parse("http://scm.sourceforge.jp/gitroot/ghq/ghq.git")
-	r, _ = LocalRepositoryFromURL(gitSourceforgeJpURL)
-	Expect(r.FullPath).To(Equal("/repos/scm.sourceforge.jp/gitroot/ghq/ghq"))
-
-	svnAssemblaURL, _ := url.Parse("https://subversion.assembla.com/svn/ghq/")
-	r, _ = LocalRepositoryFromURL(svnAssemblaURL)
-	Expect(r.FullPath).To(Equal("/repos/subversion.assembla.com/svn/ghq"))
-
-	gitAssemblaURL, _ := url.Parse("https://git.assembla.com/ghq.git")
-	r, _ = LocalRepositoryFromURL(gitAssemblaURL)
-	Expect(r.FullPath).To(Equal("/repos/git.assembla.com/ghq"))
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			r, err := LocalRepositoryFromURL(mustParseURL(tc.url))
+			if err != nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			if r.FullPath != tc.expect {
+				t.Errorf("got: %s, expect: %s", r.FullPath, tc.expect)
+			}
+		})
+	}
 }
 
 func TestLocalRepositoryRoots(t *testing.T) {
