@@ -3,55 +3,77 @@ package main
 import (
 	"os"
 	"testing"
-
-	. "github.com/onsi/gomega"
 )
 
 func TestNewURL(t *testing.T) {
-	RegisterTestingT(t)
+	testCases := []struct {
+		name, url, expect, host string
+		setup                   func() func()
+	}{{
+		name:   "https", // Does nothing when the URL has scheme part
+		url:    "https://github.com/motemen/pusheen-explorer",
+		expect: "https://github.com/motemen/pusheen-explorer",
+		host:   "github.com",
+	}, {
+		name:   "scp", // Convert SCP-like URL to SSH URL
+		url:    "git@github.com:motemen/pusheen-explorer.git",
+		expect: "ssh://git@github.com/motemen/pusheen-explorer.git",
+		host:   "github.com",
+	}, {
+		name:   "scp with root",
+		url:    "git@github.com:/motemen/pusheen-explorer.git",
+		expect: "ssh://git@github.com//motemen/pusheen-explorer.git",
+		host:   "github.com",
+	}, {
+		name:   "scp without user",
+		url:    "github.com:motemen/pusheen-explorer.git",
+		expect: "ssh://github.com/motemen/pusheen-explorer.git",
+		host:   "github.com",
+	}, {
+		name:   "different name repository",
+		url:    "motemen/ghq",
+		expect: "https://github.com/motemen/ghq",
+		host:   "github.com",
+	}, {
+		name:   "with authority repository",
+		url:    "github.com/motemen/gore",
+		expect: "https://github.com/motemen/gore",
+		host:   "github.com",
+	}, {
+		name:   "with authority repository and go-import",
+		url:    "golang.org/x/crypto",
+		expect: "https://golang.org/x/crypto",
+		host:   "golang.org",
+	}, {
+		name: "same name repository",
+		setup: func() func() {
+			key := "GITHUB_USER"
+			orig := os.Getenv(key)
+			os.Setenv(key, "ghq-test")
+			return func() { os.Setenv(key, orig) }
+		},
+		url:    "same-name-ghq",
+		expect: "https://github.com/ghq-test/same-name-ghq",
+		host:   "github.com",
+	}}
 
-	// Does nothing whent the URL has scheme part
-	httpsUrl, err := NewURL("https://github.com/motemen/pusheen-explorer")
-	Expect(httpsUrl.String()).To(Equal("https://github.com/motemen/pusheen-explorer"))
-	Expect(httpsUrl.Host).To(Equal("github.com"))
-	Expect(err).To(BeNil())
-
-	// Convert SCP-like URL to SSH URL
-	scpUrl, err := NewURL("git@github.com:motemen/pusheen-explorer.git")
-	Expect(scpUrl.String()).To(Equal("ssh://git@github.com/motemen/pusheen-explorer.git"))
-	Expect(scpUrl.Host).To(Equal("github.com"))
-	Expect(err).To(BeNil())
-
-	scpUrlWithRoot, err := NewURL("git@github.com:/motemen/pusheen-explorer.git")
-	Expect(scpUrlWithRoot.String()).To(Equal("ssh://git@github.com//motemen/pusheen-explorer.git"))
-	Expect(scpUrlWithRoot.Host).To(Equal("github.com"))
-	Expect(err).To(BeNil())
-
-	scpUrlWithoutUser, err := NewURL("github.com:motemen/pusheen-explorer.git")
-	Expect(scpUrlWithoutUser.String()).To(Equal("ssh://github.com/motemen/pusheen-explorer.git"))
-	Expect(scpUrlWithoutUser.Host).To(Equal("github.com"))
-	Expect(err).To(BeNil())
-
-	differentNameRepository, err := NewURL("motemen/ghq")
-	Expect(differentNameRepository.String()).To(Equal("https://github.com/motemen/ghq"))
-	Expect(differentNameRepository.Host).To(Equal("github.com"))
-	Expect(err).To(BeNil())
-
-	withAuthorityRepository, err := NewURL("github.com/motemen/gore")
-	Expect(withAuthorityRepository.String()).To(Equal("https://github.com/motemen/gore"))
-	Expect(withAuthorityRepository.Host).To(Equal("github.com"))
-	Expect(err).To(BeNil())
-
-	withAuthorityRepository2, err := NewURL("golang.org/x/crypto")
-	Expect(withAuthorityRepository2.String()).To(Equal("https://golang.org/x/crypto"))
-	Expect(withAuthorityRepository2.Host).To(Equal("golang.org"))
-	Expect(err).To(BeNil())
-
-	os.Setenv("GITHUB_USER", "ghq-test")
-	sameNameRepository, err := NewURL("same-name-ghq")
-	Expect(sameNameRepository.String()).To(Equal("https://github.com/ghq-test/same-name-ghq"))
-	Expect(sameNameRepository.Host).To(Equal("github.com"))
-	Expect(err).To(BeNil())
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.setup != nil {
+				defer tc.setup()()
+			}
+			repo, err := NewURL(tc.url)
+			if err != nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			if repo.String() != tc.expect {
+				t.Errorf("url: got: %s, expect: %s", repo.String(), tc.expect)
+			}
+			if repo.Host != tc.host {
+				t.Errorf("host: got: %s, expect: %s", repo.Host, tc.host)
+			}
+		})
+	}
 }
 
 func TestConvertGitURLHTTPToSSH(t *testing.T) {
