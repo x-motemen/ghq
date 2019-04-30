@@ -145,82 +145,97 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 
 func TestCommandGet(t *testing.T) {
 	RegisterTestingT(t)
-
 	app := newApp()
 
-	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+	testCases := []struct {
+		name string
+		f    func(string, *_cloneArgs, *_updateArgs)
+	}{
+		{
+			name: "simple",
+			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
-		app.Run([]string{"", "get", "motemen/ghq-test-repo"})
+				app.Run([]string{"", "get", "motemen/ghq-test-repo"})
 
-		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
-		Expect(cloneArgs.shallow).To(Equal(false))
-	})
+				Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
+				Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
+				Expect(cloneArgs.shallow).To(Equal(false))
+			},
+		},
+		{
+			name: "p option",
+			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
-	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+				app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
 
-		app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
+				Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
+				Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
+				Expect(cloneArgs.shallow).To(Equal(false))
+			},
+		},
+		{
+			name: "already cloned with -u",
+			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+				// mark as "already cloned", the condition may change later
+				os.MkdirAll(filepath.Join(localDir, ".git"), 0755)
 
-		Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
-		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
-	})
+				app.Run([]string{"", "get", "-u", "motemen/ghq-test-repo"})
 
-	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
-		// mark as "already cloned", the condition may change later
-		os.MkdirAll(filepath.Join(localDir, ".git"), 0755)
+				Expect(updateArgs.local).To(Equal(localDir))
+			},
+		},
+		{
+			name: "shallow",
+			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
-		app.Run([]string{"", "get", "-u", "motemen/ghq-test-repo"})
+				app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo"})
 
-		Expect(updateArgs.local).To(Equal(localDir))
-	})
+				Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
+				Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
+				Expect(cloneArgs.shallow).To(Equal(true))
+			},
+		},
+		{
+			name: "dot slach ./",
+			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+				localDir := filepath.Join(tmpRoot, "github.com", "motemen")
+				os.MkdirAll(localDir, 0755)
+				wd, _ := os.Getwd()
+				defer os.Chdir(wd)
+				os.Chdir(localDir)
 
-	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
-		app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
+				app.Run([]string{"", "get", "-u", "." + string(filepath.Separator) + "ghq-test-repo"})
 
-		Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
-		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
-		Expect(cloneArgs.shallow).To(Equal(false))
-	})
+				Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
+				Expect(cloneArgs.local).To(Equal(filepath.Join(localDir, "ghq-test-repo")))
+			},
+		},
+		{
+			name: "dot dot slash ../",
+			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+				os.MkdirAll(localDir, 0755)
+				wd, _ := os.Getwd()
+				defer os.Chdir(wd)
+				os.Chdir(localDir)
 
-	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+				app.Run([]string{"", "get", "-u", ".." + string(filepath.Separator) + "ghq-another-test-repo"})
 
-		app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo"})
+				Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-another-test-repo"))
+				Expect(cloneArgs.local).To(Equal(filepath.Join(tmpRoot, "github.com", "motemen", "ghq-another-test-repo")))
+			},
+		},
+	}
 
-		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-		Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
-		Expect(cloneArgs.shallow).To(Equal(true))
-	})
-
-	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-		localDir := filepath.Join(tmpRoot, "github.com", "motemen")
-		os.MkdirAll(localDir, 0755)
-		wd, _ := os.Getwd()
-		defer os.Chdir(wd)
-		os.Chdir(localDir)
-
-		app.Run([]string{"", "get", "-u", "." + string(filepath.Separator) + "ghq-test-repo"})
-
-		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-		Expect(cloneArgs.local).To(Equal(filepath.Join(localDir, "ghq-test-repo")))
-	})
-
-	withFakeGitBackend(t, func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-		localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
-		os.MkdirAll(localDir, 0755)
-		wd, _ := os.Getwd()
-		defer os.Chdir(wd)
-		os.Chdir(localDir)
-
-		app.Run([]string{"", "get", "-u", ".." + string(filepath.Separator) + "ghq-another-test-repo"})
-
-		Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-another-test-repo"))
-		Expect(cloneArgs.local).To(Equal(filepath.Join(tmpRoot, "github.com", "motemen", "ghq-another-test-repo")))
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			withFakeGitBackend(t, tc.f)
+		})
+	}
 }
 
 func TestCommandList(t *testing.T) {
