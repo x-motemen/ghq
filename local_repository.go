@@ -144,6 +144,8 @@ func init() {
 	for k := range vcsDirsMap {
 		vcsDirs = append(vcsDirs, k)
 	}
+	// Sort in order of length.
+	// This is to check git/svn before git.
 	sort.Slice(vcsDirs, func(i, j int) bool {
 		return len(vcsDirs[i]) > len(vcsDirs[j])
 	})
