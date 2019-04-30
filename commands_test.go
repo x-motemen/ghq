@@ -122,7 +122,7 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 	var updateArgs _updateArgs
 
 	var originalGitBackend = GitBackend
-	GitBackend = &VCSBackend{
+	tmpBackend := &VCSBackend{
 		Clone: func(remote *url.URL, local string, shallow, silent bool) error {
 			cloneArgs = _cloneArgs{
 				remote:  remote,
@@ -138,7 +138,9 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 			return nil
 		},
 	}
-	defer func() { GitBackend = originalGitBackend }()
+	GitBackend = tmpBackend
+	vcsDirsMap[".git"] = tmpBackend
+	defer func() { GitBackend = originalGitBackend; vcsDirsMap[".git"] = originalGitBackend }()
 
 	block(tmpRoot, &cloneArgs, &updateArgs)
 }
