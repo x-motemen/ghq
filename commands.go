@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var Commands = []cli.Command{
+var commands = []cli.Command{
 	commandGet,
 	commandList,
 	commandLook,
@@ -104,7 +104,7 @@ var commandDocs = map[string]commandDoc{
 // Makes template conditionals to generate per-command documents.
 func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
 	template := "{{if false}}"
-	for _, command := range append(Commands) {
+	for _, command := range append(commands) {
 		template = template + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, genTemplate(commandDocs[command.Name]))
 	}
 	return template + "{{end}}"

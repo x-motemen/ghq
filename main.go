@@ -30,6 +30,6 @@ func newApp() *cli.App {
 	app.Version = fmt.Sprintf("%s (rev:%s)", Version, revision)
 	app.Author = "motemen"
 	app.Email = "motemen@gmail.com"
-	app.Commands = Commands
+	app.Commands = commands
 	return app
 }

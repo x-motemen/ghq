@@ -20,13 +20,13 @@ func TestVCSBackend(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
-	commands := []*exec.Cmd{}
-	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
+	_commands := []*exec.Cmd{}
+	lastCommand := func() *exec.Cmd { return _commands[len(_commands)-1] }
 	defer func(orig func(cmd *exec.Cmd) error) {
 		cmdutil.CommandRunner = orig
 	}(cmdutil.CommandRunner)
 	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
-		commands = append(commands, cmd)
+		_commands = append(_commands, cmd)
 		return nil
 	}
 
