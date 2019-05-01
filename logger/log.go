@@ -12,7 +12,7 @@ var logger = colorine.NewLogger(
 		"hg":       colorine.Verbose,
 		"svn":      colorine.Verbose,
 		"darcs":    colorine.Verbose,
-		"bzr"  :    colorine.Verbose,
+		"bzr":      colorine.Verbose,
 		"skip":     colorine.Verbose,
 		"cd":       colorine.Verbose,
 		"resolved": colorine.Verbose,
@@ -30,6 +30,7 @@ func init() {
 	logger.SetOutput(os.Stderr)
 }
 
+// Log output
 func Log(prefix, message string) {
 	logger.Log(prefix, message)
 }
