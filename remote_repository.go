@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/motemen/ghq/cmdutil"
@@ -64,30 +63,6 @@ func (repo *GitHubGistRepository) VCS() (*VCSBackend, *url.URL) {
 	return GitBackend, repo.URL()
 }
 
-type GoogleCodeRepository struct {
-	url *url.URL
-}
-
-func (repo *GoogleCodeRepository) URL() *url.URL {
-	return repo.url
-}
-
-var validGoogleCodePathPattern = regexp.MustCompile(`^/p/[^/]+/?$`)
-
-func (repo *GoogleCodeRepository) IsValid() bool {
-	return validGoogleCodePathPattern.MatchString(repo.url.Path)
-}
-
-func (repo *GoogleCodeRepository) VCS() (*VCSBackend, *url.URL) {
-	if cmdutil.RunSilently("hg", "identify", repo.url.String()) == nil {
-		return MercurialBackend, repo.URL()
-	} else if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
-		return GitBackend, repo.URL()
-	} else {
-		return nil, nil
-	}
-}
-
 type DarksHubRepository struct {
 	url *url.URL
 }
@@ -102,24 +77,6 @@ func (repo *DarksHubRepository) IsValid() bool {
 
 func (repo *DarksHubRepository) VCS() (*VCSBackend, *url.URL) {
 	return DarcsBackend, repo.URL()
-}
-
-type BluemixRepository struct {
-	url *url.URL
-}
-
-func (repo *BluemixRepository) URL() *url.URL {
-	return repo.url
-}
-
-var validBluemixPathPattern = regexp.MustCompile(`^/git/[^/]+/[^/]+$`)
-
-func (repo *BluemixRepository) IsValid() bool {
-	return validBluemixPathPattern.MatchString(repo.url.Path)
-}
-
-func (repo *BluemixRepository) VCS() (*VCSBackend, *url.URL) {
-	return GitBackend, repo.URL()
 }
 
 type OtherRepository struct {
@@ -182,16 +139,8 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 		return &GitHubGistRepository{url}, nil
 	}
 
-	if url.Host == "code.google.com" {
-		return &GoogleCodeRepository{url}, nil
-	}
-
 	if url.Host == "hub.darcs.net" {
 		return &DarksHubRepository{url}, nil
-	}
-
-	if url.Host == "hub.jazz.net" {
-		return &BluemixRepository{url}, nil
 	}
 
 	gheHosts, err := GitConfigAll("ghq.ghe.host")
