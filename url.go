@@ -18,7 +18,7 @@ var (
 	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?$`)
 )
 
-func NewURL(ref string) (*url.URL, error) {
+func newURL(ref string) (*url.URL, error) {
 	if !hasSchemePattern.MatchString(ref) {
 		if scpLikeURLPattern.MatchString(ref) {
 			matched := scpLikeURLPattern.FindStringSubmatch(ref)

@@ -170,7 +170,7 @@ func doGet(c *cli.Context) error {
 		}
 	}
 
-	url, err := NewURL(argURL)
+	url, err := newURL(argURL)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func doList(c *cli.Context) error {
 		}
 	} else {
 		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
-			if url, err := NewURL(query); err == nil {
+			if url, err := newURL(query); err == nil {
 				if repo, err := LocalRepositoryFromURL(url); err == nil {
 					query = repo.RelPath
 				}
@@ -357,7 +357,7 @@ func doLook(c *cli.Context) error {
 	}
 
 	if len(reposFound) == 0 {
-		if url, err := NewURL(name); err == nil {
+		if url, err := newURL(name); err == nil {
 			repo, err := LocalRepositoryFromURL(url)
 			if err != nil {
 				return err
@@ -415,7 +415,7 @@ func doImport(c *cli.Context) error {
 	}
 
 	processLine := func(line string) error {
-		url, err := NewURL(line)
+		url, err := newURL(line)
 		if err != nil {
 			return fmt.Errorf("Could not parse URL <%s>: %s", line, err)
 		}
