@@ -1,20 +1,19 @@
 package main
 
-import (
-	"testing"
-
-	. "github.com/onsi/gomega"
-)
+import "testing"
 
 func TestGitConfigAll(t *testing.T) {
-	RegisterTestingT(t)
-
-	Expect(GitConfigAll("ghq.non.existent.key")).To(HaveLen(0))
+	dummyKey := "ghq.non.existent.key"
+	confs, err := GitConfigAll(dummyKey)
+	if err != nil {
+		t.Errorf("error should be nil but: %s", err)
+	}
+	if len(confs) > 0 {
+		t.Errorf("GitConfigAll(%q) = %v; want %v", dummyKey, confs, nil)
+	}
 }
 
 func TestGitConfigURL(t *testing.T) {
-	RegisterTestingT(t)
-
 	if GitHasFeatureConfigURLMatch() != nil {
 		t.Skip("Git does not have config --get-urlmatch feature")
 	}
@@ -30,19 +29,33 @@ vcs = hg
 	}
 	defer reset()
 
-	var (
-		value string
-	)
+	testCases := []struct {
+		name   string
+		config []string
+		expect string
+	}{{
+		name:   "github",
+		config: []string{"--get-urlmatch", "ghq.vcs", "https://ghe.example.com/foo/bar"},
+		expect: "github",
+	}, {
+		name:   "hg",
+		config: []string{"--get-urlmatch", "ghq.vcs", "https://ghe.example.com/hg/repo"},
+		expect: "hg",
+	}, {
+		name:   "empty",
+		config: []string{"--get-urlmatch", "ghq.vcs", "https://example.com"},
+		expect: "",
+	}}
 
-	value, err = GitConfig("--get-urlmatch", "ghq.vcs", "https://ghe.example.com/foo/bar")
-	Expect(err).NotTo(HaveOccurred())
-	Expect(value).To(Equal("github"))
-
-	value, err = GitConfig("--get-urlmatch", "ghq.vcs", "https://ghe.example.com/hg/repo")
-	Expect(err).NotTo(HaveOccurred())
-	Expect(value).To(Equal("hg"))
-
-	value, err = GitConfig("--get-urlmatch", "ghq.vcs", "https://example.com")
-	Expect(err).NotTo(HaveOccurred())
-	Expect(value).To(Equal(""))
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			value, err := GitConfig(tc.config...)
+			if err != nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			if value != tc.expect {
+				t.Errorf("got: %s, expect: %s", value, tc.expect)
+			}
+		})
+	}
 }

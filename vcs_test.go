@@ -2,324 +2,188 @@ package main
 
 import (
 	"io/ioutil"
-	"net/url"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/motemen/ghq/cmdutil"
-	. "github.com/onsi/gomega"
 )
 
-func TestGitBackend(t *testing.T) {
-	RegisterTestingT(t)
+var remoteDummyURL = mustParseURL("https://example.com/git/repo")
 
+func TestVCSBackend(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "ghq-test")
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
-
-	remoteURL, err := url.Parse("https://example.com/git/repo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	commands := []*exec.Cmd{}
 	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
+	defer func(orig func(cmd *exec.Cmd) error) {
+		cmdutil.CommandRunner = orig
+	}(cmdutil.CommandRunner)
 	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 		commands = append(commands, cmd)
 		return nil
 	}
 
-	err = GitBackend.Clone(remoteURL, localDir, false, false)
+	testCases := []struct {
+		name   string
+		f      func() error
+		expect []string
+		dir    string
+	}{{
+		name: "[git] clone",
+		f: func() error {
+			return GitBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"git", "clone", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[git] shallow clone",
+		f: func() error {
+			return GitBackend.Clone(remoteDummyURL, localDir, true, false)
+		},
+		expect: []string{"git", "clone", "--depth", "1", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[git] update",
+		f: func() error {
+			return GitBackend.Update(localDir, false)
+		},
+		expect: []string{"git", "pull", "--ff-only"},
+		dir:    localDir,
+	}, {
+		name: "[svn] checkout",
+		f: func() error {
+			return SubversionBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"svn", "checkout", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[svn] checkout shallow",
+		f: func() error {
+			return SubversionBackend.Clone(remoteDummyURL, localDir, true, false)
+		},
+		expect: []string{"svn", "checkout", "--depth", "1", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[svn] update",
+		f: func() error {
+			return SubversionBackend.Update(localDir, false)
+		},
+		expect: []string{"svn", "update"},
+		dir:    localDir,
+	}, {
+		name: "[git-svn] clone",
+		f: func() error {
+			return GitsvnBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"git", "svn", "clone", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[git-svn] update",
+		f: func() error {
+			return GitsvnBackend.Update(localDir, false)
+		},
+		expect: []string{"git", "svn", "rebase"},
+		dir:    localDir,
+	}, {
+		name: "[git-svn] clone shallow",
+		f: func() error {
+			return GitsvnBackend.Clone(remoteDummyURL, localDir, true, false)
+		},
+		expect: []string{"git", "svn", "clone", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[hg] clone",
+		f: func() error {
+			return MercurialBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"hg", "clone", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[hg] update",
+		f: func() error {
+			return MercurialBackend.Update(localDir, false)
+		},
+		expect: []string{"hg", "pull", "--update"},
+		dir:    localDir,
+	}, {
+		name: "[hg] clone shallow",
+		f: func() error {
+			return MercurialBackend.Clone(remoteDummyURL, localDir, true, false)
+		},
+		expect: []string{"hg", "clone", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[darcs] clone",
+		f: func() error {
+			return DarcsBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"darcs", "get", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[darcs] clone shallow",
+		f: func() error {
+			return DarcsBackend.Clone(remoteDummyURL, localDir, true, false)
+		},
+		expect: []string{"darcs", "get", "--lazy", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[darcs] update",
+		f: func() error {
+			return DarcsBackend.Update(localDir, false)
+		},
+		expect: []string{"darcs", "pull"},
+		dir:    localDir,
+	}, {
+		name: "[bzr] clone",
+		f: func() error {
+			return BazaarBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"bzr", "branch", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[bzr] update",
+		f: func() error {
+			return BazaarBackend.Update(localDir, false)
+		},
+		expect: []string{"bzr", "pull"},
+		dir:    localDir,
+	}, {
+		name: "[bzr] clone shallow",
+		f: func() error {
+			return BazaarBackend.Clone(remoteDummyURL, localDir, true, false)
+		},
+		expect: []string{"bzr", "branch", remoteDummyURL.String(), localDir},
+	}}
 
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(1))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "clone", remoteURL.String(), localDir,
-	}))
-
-	err = GitBackend.Clone(remoteURL, localDir, true, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(2))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "clone", "--depth", "1", remoteURL.String(), localDir,
-	}))
-
-	err = GitBackend.Update(localDir, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(3))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "pull", "--ff-only",
-	}))
-	Expect(lastCommand().Dir).To(Equal(localDir))
-}
-
-func TestSubversionBackend(t *testing.T) {
-	RegisterTestingT(t)
-
-	tempDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.f(); err != nil {
+				t.Errorf("error should be nil, but: %s", err)
+			}
+			c := lastCommand()
+			if !reflect.DeepEqual(c.Args, tc.expect) {
+				t.Errorf("\ngot:  %+v\nexpect: %+v", c.Args, tc.expect)
+			}
+			if c.Dir != tc.dir {
+				t.Errorf("got: %s, expect: %s", c.Dir, tc.dir)
+			}
+		})
 	}
-
-	localDir := filepath.Join(tempDir, "repo")
-
-	remoteURL, err := url.Parse("https://example.com/git/repo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	commands := []*exec.Cmd{}
-	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
-		commands = append(commands, cmd)
-		return nil
-	}
-
-	err = SubversionBackend.Clone(remoteURL, localDir, false, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(1))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"svn", "checkout", remoteURL.String(), localDir,
-	}))
-
-	err = SubversionBackend.Clone(remoteURL, localDir, true, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(2))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"svn", "checkout", "--depth", "1", remoteURL.String(), localDir,
-	}))
-
-	err = SubversionBackend.Update(localDir, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(3))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"svn", "update",
-	}))
-	Expect(lastCommand().Dir).To(Equal(localDir))
-}
-
-func TestGitsvnBackend(t *testing.T) {
-	RegisterTestingT(t)
-
-	tempDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	localDir := filepath.Join(tempDir, "repo")
-
-	remoteURL, err := url.Parse("https://example.com/git/repo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	commands := []*exec.Cmd{}
-	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
-		commands = append(commands, cmd)
-		return nil
-	}
-
-	err = GitsvnBackend.Clone(remoteURL, localDir, false, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(1))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "svn", "clone", remoteURL.String(), localDir,
-	}))
-
-	err = GitsvnBackend.Clone(remoteURL, localDir, true, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(2))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "svn", "clone", remoteURL.String(), localDir,
-	}))
-	err = GitsvnBackend.Update(localDir, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(3))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "svn", "rebase",
-	}))
-	Expect(lastCommand().Dir).To(Equal(localDir))
-}
-
-func TestMercurialBackend(t *testing.T) {
-	RegisterTestingT(t)
-
-	tempDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	localDir := filepath.Join(tempDir, "repo")
-
-	remoteURL, err := url.Parse("https://example.com/git/repo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	commands := []*exec.Cmd{}
-	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
-		commands = append(commands, cmd)
-		return nil
-	}
-
-	err = MercurialBackend.Clone(remoteURL, localDir, false, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(1))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"hg", "clone", remoteURL.String(), localDir,
-	}))
-
-	err = MercurialBackend.Clone(remoteURL, localDir, true, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(2))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"hg", "clone", remoteURL.String(), localDir,
-	}))
-	err = MercurialBackend.Update(localDir, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(3))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"hg", "pull", "--update",
-	}))
-	Expect(lastCommand().Dir).To(Equal(localDir))
-}
-
-func TestDarcsBackend(t *testing.T) {
-	RegisterTestingT(t)
-
-	tempDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	localDir := filepath.Join(tempDir, "repo")
-
-	remoteURL, err := url.Parse("https://example.com/git/repo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	commands := []*exec.Cmd{}
-	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
-		commands = append(commands, cmd)
-		return nil
-	}
-
-	err = DarcsBackend.Clone(remoteURL, localDir, false, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(1))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"darcs", "get", remoteURL.String(), localDir,
-	}))
-
-	err = DarcsBackend.Clone(remoteURL, localDir, true, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(2))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"darcs", "get", "--lazy", remoteURL.String(), localDir,
-	}))
-
-	err = DarcsBackend.Update(localDir, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(3))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"darcs", "pull",
-	}))
 }
 
 func TestCvsDummyBackend(t *testing.T) {
-	RegisterTestingT(t)
-
 	tempDir, err := ioutil.TempDir("", "ghq-test")
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
 
-	remoteURL, err := url.Parse("https://example.com/git/repo")
-	if err != nil {
-		t.Fatal(err)
+	if err := cvsDummyBackend.Clone(remoteDummyURL, localDir, false, false); err == nil {
+		t.Error("error should be occurred, but nil")
 	}
 
-	err = cvsDummyBackend.Clone(remoteURL, localDir, false, false)
-
-	Expect(err).To(HaveOccurred())
-
-	err = cvsDummyBackend.Clone(remoteURL, localDir, true, false)
-
-	Expect(err).To(HaveOccurred())
-
-	err = cvsDummyBackend.Update(localDir, false)
-
-	Expect(err).To(HaveOccurred())
-}
-
-func TestBazaarBackend(t *testing.T) {
-	RegisterTestingT(t)
-
-	tempDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
+	if err := cvsDummyBackend.Clone(remoteDummyURL, localDir, true, false); err == nil {
+		t.Error("error should be occurred, but nil")
 	}
 
-	localDir := filepath.Join(tempDir, "repo")
-
-	remoteURL, err := url.Parse("https://example.com/git/repo")
-	if err != nil {
-		t.Fatal(err)
+	if err := cvsDummyBackend.Update(localDir, false); err == nil {
+		t.Error("error should be occurred, but nil")
 	}
-
-	commands := []*exec.Cmd{}
-	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
-	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
-		commands = append(commands, cmd)
-		return nil
-	}
-
-	err = BazaarBackend.Clone(remoteURL, localDir, false, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(1))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"bzr", "branch", remoteURL.String(), localDir,
-	}))
-
-	err = BazaarBackend.Clone(remoteURL, localDir, true, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(2))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"bzr", "branch", remoteURL.String(), localDir,
-	}))
-
-	err = BazaarBackend.Update(localDir, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(3))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"bzr", "pull",
-	}))
-	Expect(lastCommand().Dir).To(Equal(localDir))
 }

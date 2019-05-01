@@ -9,7 +9,7 @@ require (
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
-	github.com/onsi/gomega v1.5.0
 	github.com/urfave/cli v1.20.0
-	golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6
+	golang.org/x/net v0.0.0-20190501004415-9ce7a6920f09
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 )
