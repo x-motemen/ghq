@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/motemen/ghq/cmdutil"
@@ -80,24 +79,6 @@ func (repo *DarksHubRepository) VCS() (*VCSBackend, *url.URL) {
 	return DarcsBackend, repo.URL()
 }
 
-type BluemixRepository struct {
-	url *url.URL
-}
-
-func (repo *BluemixRepository) URL() *url.URL {
-	return repo.url
-}
-
-var validBluemixPathPattern = regexp.MustCompile(`^/git/[^/]+/[^/]+$`)
-
-func (repo *BluemixRepository) IsValid() bool {
-	return validBluemixPathPattern.MatchString(repo.url.Path)
-}
-
-func (repo *BluemixRepository) VCS() (*VCSBackend, *url.URL) {
-	return GitBackend, repo.URL()
-}
-
 type OtherRepository struct {
 	url *url.URL
 }
@@ -160,10 +141,6 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 
 	if url.Host == "hub.darcs.net" {
 		return &DarksHubRepository{url}, nil
-	}
-
-	if url.Host == "hub.jazz.net" {
-		return &BluemixRepository{url}, nil
 	}
 
 	gheHosts, err := GitConfigAll("ghq.ghe.host")
