@@ -14,14 +14,14 @@ import (
 // (golang hasn't supported Perl-like negative look-behind match)
 var (
 	hasSchemePattern          = regexp.MustCompile("^[^:]+://")
-	scpLikeUrlPattern         = regexp.MustCompile("^([^@]+@)?([^:]+):(/?.+)$")
+	scpLikeURLPattern         = regexp.MustCompile("^([^@]+@)?([^:]+):(/?.+)$")
 	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?$`)
 )
 
 func NewURL(ref string) (*url.URL, error) {
 	if !hasSchemePattern.MatchString(ref) {
-		if scpLikeUrlPattern.MatchString(ref) {
-			matched := scpLikeUrlPattern.FindStringSubmatch(ref)
+		if scpLikeURLPattern.MatchString(ref) {
+			matched := scpLikeURLPattern.FindStringSubmatch(ref)
 			user := matched[1]
 			host := matched[2]
 			path := matched[3]

@@ -264,7 +264,7 @@ func doList(c *cli.Context) error {
 			return true
 		}
 	} else {
-		if hasSchemePattern.MatchString(query) || scpLikeUrlPattern.MatchString(query) {
+		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
 			if url, err := NewURL(query); err == nil {
 				if repo, err := LocalRepositoryFromURL(url); err == nil {
 					query = repo.RelPath
