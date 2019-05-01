@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/motemen/ghq/cmdutil"
@@ -13,48 +14,75 @@ import (
 
 var remoteDummyURL = mustParseURL("https://example.com/git/repo")
 
-func TestGitBackend(t *testing.T) {
-	RegisterTestingT(t)
+type vcsBackendTest struct {
+	name   string
+	f      func() error
+	expect []string
+	dir    string
+}
 
+func vcsTestSetup() (string, func() *exec.Cmd, func()) {
 	tempDir, err := ioutil.TempDir("", "ghq-test")
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
-	defer os.RemoveAll(tempDir)
 
 	localDir := filepath.Join(tempDir, "repo")
 
 	commands := []*exec.Cmd{}
 	lastCommand := func() *exec.Cmd { return commands[len(commands)-1] }
+
+	orig := cmdutil.CommandRunner
 	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 		commands = append(commands, cmd)
 		return nil
 	}
 
-	err = GitBackend.Clone(remoteDummyURL, localDir, false, false)
+	return localDir, lastCommand, func() {
+		os.RemoveAll(tempDir)
+		cmdutil.CommandRunner = orig
+	}
+}
 
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(1))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "clone", remoteDummyURL.String(), localDir,
-	}))
+func TestGitBackend(t *testing.T) {
+	localDir, lastCommand, teardown := vcsTestSetup()
+	defer teardown()
 
-	err = GitBackend.Clone(remoteDummyURL, localDir, true, false)
+	testCases := []vcsBackendTest{{
+		name: "clone",
+		f: func() error {
+			return GitBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"git", "clone", remoteDummyURL.String(), localDir},
+	}, {
+		name: "shallow clone",
+		f: func() error {
+			return GitBackend.Clone(remoteDummyURL, localDir, true, false)
+		},
+		expect: []string{"git", "clone", "--depth", "1", remoteDummyURL.String(), localDir},
+	}, {
+		name: "update",
+		f: func() error {
+			return GitBackend.Update(localDir, false)
+		},
+		expect: []string{"git", "pull", "--ff-only"},
+		dir:    localDir,
+	}}
 
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(2))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "clone", "--depth", "1", remoteDummyURL.String(), localDir,
-	}))
-
-	err = GitBackend.Update(localDir, false)
-
-	Expect(err).NotTo(HaveOccurred())
-	Expect(commands).To(HaveLen(3))
-	Expect(lastCommand().Args).To(Equal([]string{
-		"git", "pull", "--ff-only",
-	}))
-	Expect(lastCommand().Dir).To(Equal(localDir))
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.f(); err != nil {
+				t.Errorf("error should be nil, but: %s", err)
+			}
+			c := lastCommand()
+			if !reflect.DeepEqual(c.Args, tc.expect) {
+				t.Errorf("\ngot:  %+v\nexpect: %+v", c.Args, tc.expect)
+			}
+			if c.Dir != tc.dir {
+				t.Errorf("got: %s, expect: %s", c.Dir, tc.dir)
+			}
+		})
+	}
 }
 
 func TestSubversionBackend(t *testing.T) {
