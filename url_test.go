@@ -96,7 +96,7 @@ func TestConvertGitURLHTTPToSSH(t *testing.T) {
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
-			sshURL, err := ConvertGitURLHTTPToSSH(httpsURL)
+			sshURL, err := convertGitURLHTTPToSSH(httpsURL)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}

@@ -178,7 +178,7 @@ func doGet(c *cli.Context) error {
 	isSSH := c.Bool("p")
 	if isSSH {
 		// Assume Git repository if `-p` is given.
-		if url, err = ConvertGitURLHTTPToSSH(url); err != nil {
+		if url, err = convertGitURLHTTPToSSH(url); err != nil {
 			return err
 		}
 	}
@@ -420,7 +420,7 @@ func doImport(c *cli.Context) error {
 			return fmt.Errorf("Could not parse URL <%s>: %s", line, err)
 		}
 		if isSSH {
-			url, err = ConvertGitURLHTTPToSSH(url)
+			url, err = convertGitURLHTTPToSSH(url)
 			if err != nil {
 				return fmt.Errorf("Could not convert URL <%s>: %s", url, err)
 			}
