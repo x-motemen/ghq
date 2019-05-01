@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/onsi/gomega"
 	"github.com/urfave/cli"
 )
 
@@ -81,8 +80,8 @@ type _updateArgs struct {
 	local string
 }
 
-func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateArgs)) {
-	tmpRoot, err := ioutil.TempDir("", "ghq")
+func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs, *_updateArgs)) {
+	tmpRoot, err := ioutil.TempDir("", "ghq-test")
 	if err != nil {
 		t.Fatalf("Could not create tempdir: %s", err)
 	}
@@ -115,8 +114,8 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 		return tmpRoot
 	}()
 
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	_localRepositoryRoots = []string{tmpRoot}
-	defer func() { _localRepositoryRoots = []string{} }()
 
 	var cloneArgs _cloneArgs
 	var updateArgs _updateArgs
@@ -142,100 +141,134 @@ func withFakeGitBackend(t *testing.T, block func(string, *_cloneArgs, *_updateAr
 	vcsDirsMap[".git"] = tmpBackend
 	defer func() { GitBackend = originalGitBackend; vcsDirsMap[".git"] = originalGitBackend }()
 
-	block(tmpRoot, &cloneArgs, &updateArgs)
+	block(t, tmpRoot, &cloneArgs, &updateArgs)
 }
 
 func TestCommandGet(t *testing.T) {
-	RegisterTestingT(t)
 	app := newApp()
 
 	testCases := []struct {
-		name string
-		f    func(string, *_cloneArgs, *_updateArgs)
+		name     string
+		scenario func(*testing.T, string, *_cloneArgs, *_updateArgs)
 	}{
 		{
 			name: "simple",
-			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
 				app.Run([]string{"", "get", "motemen/ghq-test-repo"})
 
-				Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-				Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
-				Expect(cloneArgs.shallow).To(Equal(false))
+				expect := "https://github.com/motemen/ghq-test-repo"
+				if cloneArgs.remote.String() != expect {
+					t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+				}
+				if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+					t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+				}
+				if cloneArgs.shallow {
+					t.Errorf("cloneArgs.shallow should be false")
+				}
 			},
 		},
 		{
-			name: "p option",
-			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			name: "-p option",
+			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
 				app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
 
-				Expect(cloneArgs.remote.String()).To(Equal("ssh://git@github.com/motemen/ghq-test-repo"))
-				Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
-				Expect(cloneArgs.shallow).To(Equal(false))
+				expect := "ssh://git@github.com/motemen/ghq-test-repo"
+				if cloneArgs.remote.String() != expect {
+					t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+				}
+				if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+					t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+				}
+				if cloneArgs.shallow {
+					t.Errorf("cloneArgs.shallow should be false")
+				}
 			},
 		},
 		{
 			name: "already cloned with -u",
-			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 				// mark as "already cloned", the condition may change later
 				os.MkdirAll(filepath.Join(localDir, ".git"), 0755)
 
 				app.Run([]string{"", "get", "-u", "motemen/ghq-test-repo"})
 
-				Expect(updateArgs.local).To(Equal(localDir))
+				if updateArgs.local != localDir {
+					t.Errorf("got: %s, expect: %s", updateArgs.local, localDir)
+				}
 			},
 		},
 		{
 			name: "shallow",
-			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
 				app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo"})
 
-				Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-				Expect(filepath.ToSlash(cloneArgs.local)).To(Equal(filepath.ToSlash(localDir)))
-				Expect(cloneArgs.shallow).To(Equal(true))
+				expect := "https://github.com/motemen/ghq-test-repo"
+				if cloneArgs.remote.String() != expect {
+					t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+				}
+				if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+					t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+				}
+				if !cloneArgs.shallow {
+					t.Errorf("cloneArgs.shallow should be true")
+				}
 			},
 		},
 		{
 			name: "dot slach ./",
-			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 				localDir := filepath.Join(tmpRoot, "github.com", "motemen")
 				os.MkdirAll(localDir, 0755)
 				wd, _ := os.Getwd()
-				defer os.Chdir(wd)
 				os.Chdir(localDir)
+				defer os.Chdir(wd)
 
 				app.Run([]string{"", "get", "-u", "." + string(filepath.Separator) + "ghq-test-repo"})
 
-				Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-test-repo"))
-				Expect(cloneArgs.local).To(Equal(filepath.Join(localDir, "ghq-test-repo")))
+				expect := "https://github.com/motemen/ghq-test-repo"
+				if cloneArgs.remote.String() != expect {
+					t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+				}
+				expectDir := filepath.Join(localDir, "ghq-test-repo")
+				if cloneArgs.local != expectDir {
+					t.Errorf("got: %s, expect: %s", cloneArgs.local, expectDir)
+				}
 			},
 		},
 		{
 			name: "dot dot slash ../",
-			f: func(tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 				os.MkdirAll(localDir, 0755)
 				wd, _ := os.Getwd()
-				defer os.Chdir(wd)
 				os.Chdir(localDir)
+				defer os.Chdir(wd)
 
 				app.Run([]string{"", "get", "-u", ".." + string(filepath.Separator) + "ghq-another-test-repo"})
 
-				Expect(cloneArgs.remote.String()).To(Equal("https://github.com/motemen/ghq-another-test-repo"))
-				Expect(cloneArgs.local).To(Equal(filepath.Join(tmpRoot, "github.com", "motemen", "ghq-another-test-repo")))
+				expect := "https://github.com/motemen/ghq-another-test-repo"
+				if cloneArgs.remote.String() != expect {
+					t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+				}
+				expectDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-another-test-repo")
+				if cloneArgs.local != expectDir {
+					t.Errorf("got: %s, expect: %s", cloneArgs.local, expectDir)
+				}
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			withFakeGitBackend(t, tc.f)
+			withFakeGitBackend(t, tc.scenario)
 		})
 	}
 }
