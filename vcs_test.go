@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/motemen/ghq/cmdutil"
-	. "github.com/onsi/gomega"
 )
 
 var remoteDummyURL = mustParseURL("https://example.com/git/repo")
@@ -169,25 +168,22 @@ func TestVCSBackend(t *testing.T) {
 }
 
 func TestCvsDummyBackend(t *testing.T) {
-	RegisterTestingT(t)
-
 	tempDir, err := ioutil.TempDir("", "ghq-test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
-
 	localDir := filepath.Join(tempDir, "repo")
 
-	err = cvsDummyBackend.Clone(remoteDummyURL, localDir, false, false)
+	if err := cvsDummyBackend.Clone(remoteDummyURL, localDir, false, false); err == nil {
+		t.Error("error should be occurred, but nil")
+	}
 
-	Expect(err).To(HaveOccurred())
+	if err := cvsDummyBackend.Clone(remoteDummyURL, localDir, true, false); err == nil {
+		t.Error("error should be occurred, but nil")
+	}
 
-	err = cvsDummyBackend.Clone(remoteDummyURL, localDir, true, false)
-
-	Expect(err).To(HaveOccurred())
-
-	err = cvsDummyBackend.Update(localDir, false)
-
-	Expect(err).To(HaveOccurred())
+	if err := cvsDummyBackend.Update(localDir, false); err == nil {
+		t.Error("error should be occurred, but nil")
+	}
 }
