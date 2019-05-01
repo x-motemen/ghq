@@ -135,7 +135,7 @@ func (repo *OtherRepository) IsValid() bool {
 }
 
 func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
-	if err := GitHasFeatureConfigURLMatch(); err != nil {
+	if err := gitHasFeatureConfigURLMatch(); err != nil {
 		logger.Log("warning", err.Error())
 	} else {
 		// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable

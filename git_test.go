@@ -14,7 +14,7 @@ func TestGitConfigAll(t *testing.T) {
 }
 
 func TestGitConfigURL(t *testing.T) {
-	if GitHasFeatureConfigURLMatch() != nil {
+	if gitHasFeatureConfigURLMatch() != nil {
 		t.Skip("Git does not have config --get-urlmatch feature")
 	}
 

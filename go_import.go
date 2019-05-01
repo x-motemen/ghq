@@ -23,7 +23,7 @@ func detectGoImport(u *url.URL) (string, *url.URL, error) {
 		},
 	}
 	req, _ := http.NewRequest(http.MethodGet, goGetU.String(), nil)
-	req.Header.Add("User-Agent", fmt.Sprintf("ghq/%s (+https://github.com/motemen/ghq)", Version))
+	req.Header.Add("User-Agent", fmt.Sprintf("ghq/%s (+https://github.com/motemen/ghq)", version))
 	resp, err := cli.Do(req)
 	if err != nil {
 		return "", nil, err

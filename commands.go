@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var Commands = []cli.Command{
+var commands = []cli.Command{
 	commandGet,
 	commandList,
 	commandLook,
@@ -104,7 +104,7 @@ var commandDocs = map[string]commandDoc{
 // Makes template conditionals to generate per-command documents.
 func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
 	template := "{{if false}}"
-	for _, command := range append(Commands) {
+	for _, command := range append(commands) {
 		template = template + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, genTemplate(commandDocs[command.Name]))
 	}
 	return template + "{{end}}"
@@ -170,7 +170,7 @@ func doGet(c *cli.Context) error {
 		}
 	}
 
-	url, err := NewURL(argURL)
+	url, err := newURL(argURL)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func doGet(c *cli.Context) error {
 	isSSH := c.Bool("p")
 	if isSSH {
 		// Assume Git repository if `-p` is given.
-		if url, err = ConvertGitURLHTTPToSSH(url); err != nil {
+		if url, err = convertGitURLHTTPToSSH(url); err != nil {
 			return err
 		}
 	}
@@ -264,8 +264,8 @@ func doList(c *cli.Context) error {
 			return true
 		}
 	} else {
-		if hasSchemePattern.MatchString(query) || scpLikeUrlPattern.MatchString(query) {
-			if url, err := NewURL(query); err == nil {
+		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
+			if url, err := newURL(query); err == nil {
 				if repo, err := LocalRepositoryFromURL(url); err == nil {
 					query = repo.RelPath
 				}
@@ -357,7 +357,7 @@ func doLook(c *cli.Context) error {
 	}
 
 	if len(reposFound) == 0 {
-		if url, err := NewURL(name); err == nil {
+		if url, err := newURL(name); err == nil {
 			repo, err := LocalRepositoryFromURL(url)
 			if err != nil {
 				return err
@@ -415,12 +415,12 @@ func doImport(c *cli.Context) error {
 	}
 
 	processLine := func(line string) error {
-		url, err := NewURL(line)
+		url, err := newURL(line)
 		if err != nil {
 			return fmt.Errorf("Could not parse URL <%s>: %s", line, err)
 		}
 		if isSSH {
-			url, err = ConvertGitURLHTTPToSSH(url)
+			url, err = convertGitURLHTTPToSSH(url)
 			if err != nil {
 				return fmt.Errorf("Could not convert URL <%s>: %s", url, err)
 			}

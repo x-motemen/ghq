@@ -62,7 +62,7 @@ func TestNewURL(t *testing.T) {
 			if tc.setup != nil {
 				defer tc.setup()()
 			}
-			repo, err := NewURL(tc.url)
+			repo, err := newURL(tc.url)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
@@ -92,11 +92,11 @@ func TestConvertGitURLHTTPToSSH(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.url, func(t *testing.T) {
-			httpsURL, err := NewURL(tc.url)
+			httpsURL, err := newURL(tc.url)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
-			sshURL, err := ConvertGitURLHTTPToSSH(httpsURL)
+			sshURL, err := convertGitURLHTTPToSSH(httpsURL)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
