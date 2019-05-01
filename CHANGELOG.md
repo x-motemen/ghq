@@ -1,5 +1,21 @@
 # Changelog
 
+## [v0.11.0](https://github.com/motemen/ghq/compare/v0.10.2...v0.11.0) (2019-05-01)
+
+* Delete codes for the services turned down (Google Code and JazzHub) [#144](https://github.com/motemen/ghq/pull/144) ([Songmu](https://github.com/Songmu))
+* reduce linter warnings [#143](https://github.com/motemen/ghq/pull/143) ([Songmu](https://github.com/Songmu))
+* remove ghq.import.<subcommand> feature [#137](https://github.com/motemen/ghq/pull/137) ([Songmu](https://github.com/Songmu))
+* Remove gomega [#142](https://github.com/motemen/ghq/pull/142) ([Songmu](https://github.com/Songmu))
+* Streamline VCS detection for local repositories [#141](https://github.com/motemen/ghq/pull/141) ([Songmu](https://github.com/Songmu))
+* introduce table driven test in TestCommandGet [#140](https://github.com/motemen/ghq/pull/140) ([Songmu](https://github.com/Songmu))
+* "bzr" as Bazaar [#139](https://github.com/motemen/ghq/pull/139) ([Songmu](https://github.com/Songmu))
+* Support bazaar [#87](https://github.com/motemen/ghq/pull/87) ([shigemk2](https://github.com/shigemk2))
+* [experimental] support parallel import by using --parallel option [#136](https://github.com/motemen/ghq/pull/136) ([Songmu](https://github.com/Songmu))
+* add -silent option to get and import [#135](https://github.com/motemen/ghq/pull/135) ([Songmu](https://github.com/Songmu))
+* Stop exec on unix in the look subcommand in order to share code with windows [#134](https://github.com/motemen/ghq/pull/134) ([Songmu](https://github.com/Songmu))
+* [list] accept url as a query [#133](https://github.com/motemen/ghq/pull/133) ([Songmu](https://github.com/Songmu))
+* adjust NewURL() [#132](https://github.com/motemen/ghq/pull/132) ([Songmu](https://github.com/Songmu))
+
 ## [v0.10.2](https://github.com/motemen/ghq/compare/v0.10.1...v0.10.2) (2019-04-28)
 
 * Fix `ghq root` [#131](https://github.com/motemen/ghq/pull/131) ([knu](https://github.com/knu))
