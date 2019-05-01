@@ -59,7 +59,7 @@ var (
 	featureConfigURLMatchVersion = semver.MustParse("1.8.5")
 )
 
-func GitHasFeatureConfigURLMatch() error {
+func gitHasFeatureConfigURLMatch() error {
 	cmd := exec.Command("git", "--version")
 	buf, err := cmd.Output()
 
