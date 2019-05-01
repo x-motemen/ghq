@@ -241,8 +241,6 @@ func TestCommandGet(t *testing.T) {
 }
 
 func TestCommandList(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, _, err := capture(func() {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
@@ -251,12 +249,12 @@ func TestCommandList(t *testing.T) {
 		doList(c)
 	})
 
-	Expect(err).To(BeNil())
+	if err != nil {
+		t.Errorf("error should be nil, but: %s", err)
+	}
 }
 
 func TestCommandListUnique(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, _, err := capture(func() {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
@@ -266,12 +264,12 @@ func TestCommandListUnique(t *testing.T) {
 		doList(c)
 	})
 
-	Expect(err).To(BeNil())
+	if err != nil {
+		t.Errorf("error should be nil, but: %s", err)
+	}
 }
 
 func TestCommandListUnknown(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, _, err := capture(func() {
 		app := cli.NewApp()
 		flagSet := flagSet("list", commandList.Flags)
@@ -281,5 +279,7 @@ func TestCommandListUnknown(t *testing.T) {
 		doList(c)
 	})
 
-	Expect(err).To(BeNil())
+	if err != nil {
+		t.Errorf("error should be nil, but: %s", err)
+	}
 }
