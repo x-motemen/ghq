@@ -64,30 +64,6 @@ func (repo *GitHubGistRepository) VCS() (*VCSBackend, *url.URL) {
 	return GitBackend, repo.URL()
 }
 
-type GoogleCodeRepository struct {
-	url *url.URL
-}
-
-func (repo *GoogleCodeRepository) URL() *url.URL {
-	return repo.url
-}
-
-var validGoogleCodePathPattern = regexp.MustCompile(`^/p/[^/]+/?$`)
-
-func (repo *GoogleCodeRepository) IsValid() bool {
-	return validGoogleCodePathPattern.MatchString(repo.url.Path)
-}
-
-func (repo *GoogleCodeRepository) VCS() (*VCSBackend, *url.URL) {
-	if cmdutil.RunSilently("hg", "identify", repo.url.String()) == nil {
-		return MercurialBackend, repo.URL()
-	} else if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
-		return GitBackend, repo.URL()
-	} else {
-		return nil, nil
-	}
-}
-
 type DarksHubRepository struct {
 	url *url.URL
 }
@@ -180,10 +156,6 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 
 	if url.Host == "gist.github.com" {
 		return &GitHubGistRepository{url}, nil
-	}
-
-	if url.Host == "code.google.com" {
-		return &GoogleCodeRepository{url}, nil
 	}
 
 	if url.Host == "hub.darcs.net" {
