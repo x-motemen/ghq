@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -415,49 +414,6 @@ func doImport(c *cli.Context) error {
 		isSilent = true
 	}
 
-	var (
-		in       io.Reader
-		finalize func() error
-	)
-
-	if len(c.Args()) == 0 {
-		// `ghq import` reads URLs from stdin
-		in = os.Stdin
-		finalize = func() error { return nil }
-	} else {
-		// Handle `ghq import starred motemen` case
-		// with `git config --global ghq.import.starred "!github-list-starred"`
-		subCommand := c.Args().First()
-		command, err := GitConfigSingle("ghq.import." + subCommand)
-		if err == nil && command == "" {
-			err = fmt.Errorf("ghq.import.%s configuration not found", subCommand)
-		}
-		if err != nil {
-			return err
-		}
-
-		// execute `sh -c 'COMMAND "$@"' -- ARG...`
-		// TODO: Windows
-		command = strings.TrimLeft(command, "!")
-		shellCommand := append([]string{"sh", "-c", command + ` "$@"`, "--"}, c.Args().Tail()...)
-
-		logger.Log("run", strings.Join(append([]string{command}, c.Args().Tail()...), " "))
-
-		cmd := exec.Command(shellCommand[0], shellCommand[1:]...)
-		cmd.Stderr = os.Stderr
-
-		in, err = cmd.StdoutPipe()
-		if err != nil {
-			return err
-		}
-
-		if err := cmd.Start(); err != nil {
-			return err
-		}
-
-		finalize = cmd.Wait
-	}
-
 	processLine := func(line string) error {
 		url, err := NewURL(line)
 		if err != nil {
@@ -492,7 +448,7 @@ func doImport(c *cli.Context) error {
 		eg = &errgroup.Group{}
 		sem = make(chan struct{}, 6)
 	}
-	scanner := bufio.NewScanner(in)
+	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if parallel {
@@ -518,7 +474,7 @@ func doImport(c *cli.Context) error {
 			logger.Log("error", err.Error())
 		}
 	}
-	return finalize()
+	return nil
 }
 
 func doRoot(c *cli.Context) error {
