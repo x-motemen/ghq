@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -155,7 +156,16 @@ func findVCSBackend(fpath string) *VCSBackend {
 	for _, d := range vcsDirs {
 		fi, err := os.Stat(filepath.Join(fpath, d))
 		if err == nil && fi.IsDir() {
-			return vcsDirsMap[d]
+			// In case the filesystem is case insensitive,
+			// make sure a directory with the exact name exists.
+			fis, err := ioutil.ReadDir(fpath)
+			if err == nil {
+				for _, fi := range fis {
+					if fi.IsDir() && fi.Name() == d {
+						return vcsDirsMap[d]
+					}
+				}
+			}
 		}
 	}
 	return nil
