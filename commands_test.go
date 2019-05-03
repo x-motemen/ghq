@@ -56,6 +56,8 @@ func capture(block func()) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
+	defer rOut.Close()
+	defer rErr.Close()
 
 	bufOut, err := ioutil.ReadAll(rOut)
 	if err != nil {
@@ -314,5 +316,80 @@ func TestCommandListUnknown(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("error should be nil, but: %s", err)
+	}
+}
+
+func TestDoRoot(t *testing.T) {
+	ghqrootEnv := "GHQ_ROOT"
+	testCases := []struct {
+		name              string
+		setup             func() func()
+		expect, allExpect string
+	}{{
+		name: "env",
+		setup: func() func() {
+			orig := os.Getenv(ghqrootEnv)
+			os.Setenv(ghqrootEnv, "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
+			return func() { os.Setenv(ghqrootEnv, orig) }
+		},
+		expect:    "/path/to/ghqroot1\n",
+		allExpect: "/path/to/ghqroot1\n/path/to/ghqroot2\n",
+	}, {
+		name: "gitconfig",
+		setup: func() func() {
+			orig := os.Getenv(ghqrootEnv)
+			os.Setenv(ghqrootEnv, "")
+			teardown, err := WithGitconfigFile(`[ghq]
+  root = /path/to/ghqroot11
+  root = /path/to/ghqroot12
+`)
+			if err != nil {
+				panic(err)
+			}
+			return func() {
+				os.Setenv(ghqrootEnv, orig)
+				teardown()
+			}
+		},
+		expect:    "/path/to/ghqroot11\n",
+		allExpect: "/path/to/ghqroot11\n/path/to/ghqroot12\n",
+	}, {
+		name: "default home",
+		setup: func() func() {
+			origRoot := os.Getenv(ghqrootEnv)
+			os.Setenv(ghqrootEnv, "")
+			origGitconfig := os.Getenv("GIT_CONFIG")
+			os.Setenv("GIT_CONFIG", "/tmp/unknown-ghq-dummy")
+			origHome := os.Getenv("HOME")
+			os.Setenv("HOME", "/path/to/ghqhome")
+
+			return func() {
+				os.Setenv(ghqrootEnv, origRoot)
+				os.Setenv("GIT_CONFIG", origGitconfig)
+				os.Setenv("HOME", origHome)
+			}
+		},
+		expect:    "/path/to/ghqhome/.ghq\n",
+		allExpect: "/path/to/ghqhome/.ghq\n",
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+			_localRepositoryRoots = nil
+			defer tc.setup()()
+			out, _, _ := capture(func() {
+				newApp().Run([]string{"", "root"})
+			})
+			if out != tc.expect {
+				t.Errorf("got: %s, expect: %s", out, tc.expect)
+			}
+			out, _, _ = capture(func() {
+				newApp().Run([]string{"", "root", "--all"})
+			})
+			if out != tc.allExpect {
+				t.Errorf("got: %s, expect: %s", out, tc.allExpect)
+			}
+		})
 	}
 }
