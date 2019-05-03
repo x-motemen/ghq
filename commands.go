@@ -253,10 +253,13 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 }
 
 func doList(c *cli.Context) error {
-	query := c.Args().First()
-	exact := c.Bool("exact")
-	printFullPaths := c.Bool("full-path")
-	printUniquePaths := c.Bool("unique")
+	var (
+		w                = c.App.Writer
+		query            = c.Args().First()
+		exact            = c.Bool("exact")
+		printFullPaths   = c.Bool("full-path")
+		printUniquePaths = c.Bool("unique")
+	)
 
 	var filterFn func(*LocalRepository) bool
 	if query == "" {
@@ -322,7 +325,7 @@ func doList(c *cli.Context) error {
 
 			for _, p := range repo.Subpaths() {
 				if subpathCount[p] == 1 {
-					fmt.Println(p)
+					fmt.Fprintln(w, p)
 					break
 				}
 			}
@@ -330,9 +333,9 @@ func doList(c *cli.Context) error {
 	} else {
 		for _, repo := range repos {
 			if printFullPaths {
-				fmt.Println(repo.FullPath)
+				fmt.Fprintln(w, repo.FullPath)
 			} else {
-				fmt.Println(repo.RelPath)
+				fmt.Fprintln(w, repo.RelPath)
 			}
 		}
 	}
@@ -478,21 +481,24 @@ func doImport(c *cli.Context) error {
 }
 
 func doRoot(c *cli.Context) error {
-	all := c.Bool("all")
+	var (
+		w   = c.App.Writer
+		all = c.Bool("all")
+	)
 	if all {
 		roots, err := localRepositoryRoots()
 		if err != nil {
 			return err
 		}
 		for _, root := range roots {
-			fmt.Println(root)
+			fmt.Fprintln(w, root)
 		}
-	} else {
-		root, err := primaryLocalRepositoryRoot()
-		if err != nil {
-			return err
-		}
-		fmt.Println(root)
+		return nil
 	}
+	root, err := primaryLocalRepositoryRoot()
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(w, root)
 	return nil
 }
