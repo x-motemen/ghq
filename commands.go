@@ -12,6 +12,7 @@ import (
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/xerrors"
 )
 
 var commands = []cli.Command{
@@ -163,13 +164,13 @@ func (g *getter) get(argURL string) error {
 
 	u, err := newURL(argURL)
 	if err != nil {
-		return err
+		return xerrors.Errorf("Could not parse URL %q: %w", argURL, err)
 	}
 
 	if g.ssh {
 		// Assume Git repository if `-p` is given.
 		if u, err = convertGitURLHTTPToSSH(u); err != nil {
-			return err
+			return xerrors.Errorf("Could not convet URL %q: %w", u, err)
 		}
 	}
 
@@ -415,53 +416,21 @@ func doLook(c *cli.Context) error {
 }
 
 func doImport(c *cli.Context) error {
-	var (
-		doUpdate   = c.Bool("update")
-		isSSH      = c.Bool("p")
-		isShallow  = c.Bool("shallow")
-		isSilent   = c.Bool("silent")
-		vcsBackend = c.String("vcs")
-		parallel   = c.Bool("parallel")
-	)
+	var parallel = c.Bool("parallel")
+	g := &getter{
+		update:  c.Bool("update"),
+		shallow: c.Bool("shallow"),
+		ssh:     c.Bool("p"),
+		vcs:     c.String("vcs"),
+		silent:  c.Bool("silent"),
+	}
 	if parallel {
 		// force silent in parallel import
-		isSilent = true
+		g.silent = true
 	}
 
-	processLine := func(line string) error {
-		url, err := newURL(line)
-		if err != nil {
-			return fmt.Errorf("Could not parse URL <%s>: %s", line, err)
-		}
-		if isSSH {
-			url, err = convertGitURLHTTPToSSH(url)
-			if err != nil {
-				return fmt.Errorf("Could not convert URL <%s>: %s", url, err)
-			}
-		}
-
-		remote, err := NewRemoteRepository(url)
-		if err != nil {
-			return err
-		}
-		if !remote.IsValid() {
-			return fmt.Errorf("Not a valid repository: %s", url)
-		}
-
-		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
-			return fmt.Errorf("failed to getRemoteRepository %q: %s", remote.URL(), err)
-		}
-		return nil
-	}
-
-	var (
-		eg  *errgroup.Group
-		sem chan (struct{})
-	)
-	if parallel {
-		eg = &errgroup.Group{}
-		sem = make(chan struct{}, 6)
-	}
+	eg := &errgroup.Group{}
+	sem := make(chan struct{}, 6)
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -469,13 +438,13 @@ func doImport(c *cli.Context) error {
 			eg.Go(func() error {
 				sem <- struct{}{}
 				defer func() { <-sem }()
-				if err := processLine(line); err != nil {
+				if err := g.get(line); err != nil {
 					logger.Log("error", err.Error())
 				}
 				return nil
 			})
 		} else {
-			if err := processLine(line); err != nil {
+			if err := g.get(line); err != nil {
 				logger.Log("error", err.Error())
 			}
 		}
