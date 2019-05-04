@@ -12,6 +12,7 @@ import (
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/xerrors"
 )
 
 var commands = []cli.Command{
@@ -128,21 +129,12 @@ OPTIONS:
 {{end}}`
 }
 
-func doGet(c *cli.Context) error {
-	var (
-		argURL     = c.Args().Get(0)
-		doUpdate   = c.Bool("update")
-		isShallow  = c.Bool("shallow")
-		andLook    = c.Bool("look")
-		vcsBackend = c.String("vcs")
-		isSilent   = c.Bool("silent")
-	)
+type getter struct {
+	update, shallow, silent, ssh bool
+	vcs                          string
+}
 
-	if argURL == "" {
-		cli.ShowCommandHelp(c, "get")
-		os.Exit(1)
-	}
-
+func (g *getter) get(argURL string) error {
 	// If argURL is a "./foo" or "../bar" form,
 	// find repository name trailing after github.com/USER/.
 	parts := strings.Split(argURL, string(filepath.Separator))
@@ -170,29 +162,49 @@ func doGet(c *cli.Context) error {
 		}
 	}
 
-	url, err := newURL(argURL)
+	u, err := newURL(argURL)
 	if err != nil {
-		return err
+		return xerrors.Errorf("Could not parse URL %q: %w", argURL, err)
 	}
 
-	isSSH := c.Bool("p")
-	if isSSH {
+	if g.ssh {
 		// Assume Git repository if `-p` is given.
-		if url, err = convertGitURLHTTPToSSH(url); err != nil {
-			return err
+		if u, err = convertGitURLHTTPToSSH(u); err != nil {
+			return xerrors.Errorf("Could not convet URL %q: %w", u, err)
 		}
 	}
 
-	remote, err := NewRemoteRepository(url)
+	remote, err := NewRemoteRepository(u)
 	if err != nil {
 		return err
 	}
 
 	if remote.IsValid() == false {
-		return fmt.Errorf("Not a valid repository: %s", url)
+		return fmt.Errorf("Not a valid repository: %s", u)
 	}
 
-	if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
+	return getRemoteRepository(remote, g.update, g.shallow, g.vcs, g.silent)
+}
+
+func doGet(c *cli.Context) error {
+	var (
+		argURL  = c.Args().Get(0)
+		andLook = c.Bool("look")
+	)
+	g := &getter{
+		update:  c.Bool("update"),
+		shallow: c.Bool("shallow"),
+		ssh:     c.Bool("p"),
+		vcs:     c.String("vcs"),
+		silent:  c.Bool("silent"),
+	}
+
+	if argURL == "" {
+		cli.ShowCommandHelp(c, "get")
+		os.Exit(1)
+	}
+
+	if err := g.get(argURL); err != nil {
 		return err
 	}
 	if andLook {
@@ -404,53 +416,21 @@ func doLook(c *cli.Context) error {
 }
 
 func doImport(c *cli.Context) error {
-	var (
-		doUpdate   = c.Bool("update")
-		isSSH      = c.Bool("p")
-		isShallow  = c.Bool("shallow")
-		isSilent   = c.Bool("silent")
-		vcsBackend = c.String("vcs")
-		parallel   = c.Bool("parallel")
-	)
+	var parallel = c.Bool("parallel")
+	g := &getter{
+		update:  c.Bool("update"),
+		shallow: c.Bool("shallow"),
+		ssh:     c.Bool("p"),
+		vcs:     c.String("vcs"),
+		silent:  c.Bool("silent"),
+	}
 	if parallel {
 		// force silent in parallel import
-		isSilent = true
+		g.silent = true
 	}
 
-	processLine := func(line string) error {
-		url, err := newURL(line)
-		if err != nil {
-			return fmt.Errorf("Could not parse URL <%s>: %s", line, err)
-		}
-		if isSSH {
-			url, err = convertGitURLHTTPToSSH(url)
-			if err != nil {
-				return fmt.Errorf("Could not convert URL <%s>: %s", url, err)
-			}
-		}
-
-		remote, err := NewRemoteRepository(url)
-		if err != nil {
-			return err
-		}
-		if !remote.IsValid() {
-			return fmt.Errorf("Not a valid repository: %s", url)
-		}
-
-		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
-			return fmt.Errorf("failed to getRemoteRepository %q: %s", remote.URL(), err)
-		}
-		return nil
-	}
-
-	var (
-		eg  *errgroup.Group
-		sem chan (struct{})
-	)
-	if parallel {
-		eg = &errgroup.Group{}
-		sem = make(chan struct{}, 6)
-	}
+	eg := &errgroup.Group{}
+	sem := make(chan struct{}, 6)
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -458,13 +438,13 @@ func doImport(c *cli.Context) error {
 			eg.Go(func() error {
 				sem <- struct{}{}
 				defer func() { <-sem }()
-				if err := processLine(line); err != nil {
+				if err := g.get(line); err != nil {
 					logger.Log("error", err.Error())
 				}
 				return nil
 			})
 		} else {
-			if err := processLine(line); err != nil {
+			if err := g.get(line); err != nil {
 				logger.Log("error", err.Error())
 			}
 		}
