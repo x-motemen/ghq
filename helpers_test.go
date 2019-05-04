@@ -1,28 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
-
-	"github.com/motemen/ghq/cmdutil"
 )
-
-func NewFakeRunner(dispatch map[string]error) cmdutil.RunFunc {
-	return func(cmd *exec.Cmd) error {
-		cmdString := strings.Join(cmd.Args, " ")
-		for cmdPrefix, err := range dispatch {
-			if strings.Index(cmdString, cmdPrefix) == 0 {
-				return err
-			}
-		}
-		panic(fmt.Sprintf("No fake dispatch found for: %s", cmdString))
-	}
-}
 
 func WithGitconfigFile(configContent string) (func(), error) {
 	tmpdir, err := ioutil.TempDir("", "ghq-test")
