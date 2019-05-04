@@ -128,21 +128,12 @@ OPTIONS:
 {{end}}`
 }
 
-func doGet(c *cli.Context) error {
-	var (
-		argURL     = c.Args().Get(0)
-		doUpdate   = c.Bool("update")
-		isShallow  = c.Bool("shallow")
-		andLook    = c.Bool("look")
-		vcsBackend = c.String("vcs")
-		isSilent   = c.Bool("silent")
-	)
+type getter struct {
+	update, shallow, silent, ssh bool
+	vcs                          string
+}
 
-	if argURL == "" {
-		cli.ShowCommandHelp(c, "get")
-		os.Exit(1)
-	}
-
+func (g *getter) get(argURL string) error {
 	// If argURL is a "./foo" or "../bar" form,
 	// find repository name trailing after github.com/USER/.
 	parts := strings.Split(argURL, string(filepath.Separator))
@@ -170,29 +161,49 @@ func doGet(c *cli.Context) error {
 		}
 	}
 
-	url, err := newURL(argURL)
+	u, err := newURL(argURL)
 	if err != nil {
 		return err
 	}
 
-	isSSH := c.Bool("p")
-	if isSSH {
+	if g.ssh {
 		// Assume Git repository if `-p` is given.
-		if url, err = convertGitURLHTTPToSSH(url); err != nil {
+		if u, err = convertGitURLHTTPToSSH(u); err != nil {
 			return err
 		}
 	}
 
-	remote, err := NewRemoteRepository(url)
+	remote, err := NewRemoteRepository(u)
 	if err != nil {
 		return err
 	}
 
 	if remote.IsValid() == false {
-		return fmt.Errorf("Not a valid repository: %s", url)
+		return fmt.Errorf("Not a valid repository: %s", u)
 	}
 
-	if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
+	return getRemoteRepository(remote, g.update, g.shallow, g.vcs, g.silent)
+}
+
+func doGet(c *cli.Context) error {
+	var (
+		argURL  = c.Args().Get(0)
+		andLook = c.Bool("look")
+	)
+	g := &getter{
+		update:  c.Bool("update"),
+		shallow: c.Bool("shallow"),
+		ssh:     c.Bool("p"),
+		vcs:     c.String("vcs"),
+		silent:  c.Bool("silent"),
+	}
+
+	if argURL == "" {
+		cli.ShowCommandHelp(c, "get")
+		os.Exit(1)
+	}
+
+	if err := g.get(argURL); err != nil {
 		return err
 	}
 	if andLook {
