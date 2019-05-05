@@ -112,6 +112,10 @@ func (repo *LocalRepository) NonHostPath() string {
 	return strings.Join(repo.PathParts[1:], "/")
 }
 
+// list as bellow
+// - "$GHQ_ROOT/github.com/motemen/ghq/cmdutil" // repo.FullPath
+// - "$GHQ_ROOT/github.com/motemen/ghq"
+// - "$GHQ_ROOT/github.com/motemen
 func (repo *LocalRepository) repoRootCandidates() []string {
 	hostRoot := filepath.Join(repo.RootPath, repo.PathParts[0])
 	nonHostParts := repo.PathParts[1:]
