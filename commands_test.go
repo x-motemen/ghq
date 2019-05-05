@@ -2,12 +2,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/motemen/ghq/cmdutil"
@@ -348,6 +350,8 @@ func TestDoRoot(t *testing.T) {
 func TestDoLook(t *testing.T) {
 	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {
 		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "ghq", ".git"), 0755)
+		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "gobump", ".git"), 0755)
+		os.MkdirAll(filepath.Join(tmproot, "github.com", "Songmu", "gobump", ".git"), 0755)
 		defer func(orig func(cmd *exec.Cmd) error) {
 			cmdutil.CommandRunner = orig
 		}(cmdutil.CommandRunner)
@@ -374,6 +378,18 @@ func TestDoLook(t *testing.T) {
 		expectEnv := "GHQ_LOOK=github.com/motemen/ghq"
 		if gotEnv != expectEnv {
 			t.Errorf("lastCmd.Env[len(lastCmd.Env)-1]: got: %s, expect: %s", gotEnv, expectEnv)
+		}
+
+		err = newApp().Run([]string{"", "look", "github.com/motemen/_unknown"})
+		expect := "No repository found"
+		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
+			t.Errorf("error should has prefix %q, but: %s", expect, err)
+		}
+
+		err = newApp().Run([]string{"", "look", "gobump"})
+		expect = "More than one repositories are found; Try more precise name"
+		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
+			t.Errorf("error should has prefix %q, but: %s", expect, err)
 		}
 	})
 }
