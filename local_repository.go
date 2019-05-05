@@ -13,9 +13,18 @@ import (
 type LocalRepository struct {
 	FullPath  string
 	RelPath   string
+	RootPath  string
 	PathParts []string
 
+	repoPath   string
 	vcsBackend *VCSBackend
+}
+
+func (repo *LocalRepository) RepoPath() string {
+	if repo.repoPath != "" {
+		return repo.repoPath
+	}
+	return repo.FullPath
 }
 
 func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRepository, error) {
@@ -25,7 +34,8 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 	if err != nil {
 		return nil, err
 	}
-	for _, root := range roots {
+	var root string
+	for _, root = range roots {
 		if !strings.HasPrefix(fullPath, root) {
 			continue
 		}
@@ -46,6 +56,7 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 	return &LocalRepository{
 		FullPath:   fullPath,
 		RelPath:    filepath.ToSlash(relPath),
+		RootPath:   root,
 		PathParts:  pathParts,
 		vcsBackend: backend,
 	}, nil
@@ -80,6 +91,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	return &LocalRepository{
 		FullPath:  path.Join(prim, relPath),
 		RelPath:   relPath,
+		RootPath:  prim,
 		PathParts: pathParts,
 	}, nil
 }
@@ -98,6 +110,21 @@ func (repo *LocalRepository) Subpaths() []string {
 
 func (repo *LocalRepository) NonHostPath() string {
 	return strings.Join(repo.PathParts[1:], "/")
+}
+
+// list as bellow
+// - "$GHQ_ROOT/github.com/motemen/ghq/cmdutil" // repo.FullPath
+// - "$GHQ_ROOT/github.com/motemen/ghq"
+// - "$GHQ_ROOT/github.com/motemen
+func (repo *LocalRepository) repoRootCandidates() []string {
+	hostRoot := filepath.Join(repo.RootPath, repo.PathParts[0])
+	nonHostParts := repo.PathParts[1:]
+	candidates := make([]string, len(nonHostParts))
+	for i := 0; i < len(nonHostParts); i++ {
+		candidates[i] = filepath.Join(append(
+			[]string{hostRoot}, nonHostParts[0:len(nonHostParts)-i]...)...)
+	}
+	return candidates
 }
 
 func (repo *LocalRepository) IsUnderPrimaryRoot() bool {
@@ -119,11 +146,18 @@ func (repo *LocalRepository) Matches(pathQuery string) bool {
 	return false
 }
 
-func (repo *LocalRepository) VCS() *VCSBackend {
+func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 	if repo.vcsBackend == nil {
-		repo.vcsBackend = findVCSBackend(repo.FullPath)
+		for _, dir := range repo.repoRootCandidates() {
+			backend := findVCSBackend(dir)
+			if backend != nil {
+				repo.vcsBackend = backend
+				repo.repoPath = dir
+				break
+			}
+		}
 	}
-	return repo.vcsBackend
+	return repo.vcsBackend, repo.RepoPath()
 }
 
 var vcsContentsMap = map[string]*VCSBackend{

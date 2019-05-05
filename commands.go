@@ -257,7 +257,11 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 	} else {
 		if doUpdate {
 			logger.Log("update", path)
-			local.VCS().Update(path, isSilent)
+			vcs, repoPath := local.VCS()
+			if vcs == nil {
+				return fmt.Errorf("failed to detect VCS for %q", path)
+			}
+			vcs.Update(repoPath, isSilent)
 		} else {
 			logger.Log("exists", path)
 		}
