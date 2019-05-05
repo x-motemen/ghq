@@ -59,6 +59,8 @@ func TestDoList_query(t *testing.T) {
 		"github.com/motemen/gobump",
 		"github.com/motemen/gore",
 		"github.com/Songmu/gobump",
+		"golang.org/x/crypt",
+		"golang.org/x/image",
 	}
 	testCases := []struct {
 		name   string
@@ -72,6 +74,10 @@ func TestDoList_query(t *testing.T) {
 		name:   "host only doesn't match",
 		args:   []string{"github.com"},
 		expect: "",
+	}, {
+		name:   "host and slash match",
+		args:   []string{"golang.org/"},
+		expect: "golang.org/x/crypt\ngolang.org/x/image\n",
 	}, {
 		name:   "host and user",
 		args:   []string{"github.com/Songmu"},
@@ -108,7 +114,12 @@ func TestDoList_query(t *testing.T) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, tc.expect)
 				}
 				argsFull := append([]string{"ghq", "list", "--full-path"}, tc.args...)
-				fullExpect := strings.ReplaceAll(tc.expect, "github.com", tmproot+"/github.com")
+				fullExpect := tc.expect
+				if fullExpect != "" {
+					fullExpect = tmproot + "/" + strings.TrimSpace(fullExpect)
+					fullExpect = strings.ReplaceAll(fullExpect, "\n", "\n"+tmproot+"/")
+					fullExpect += "\n"
+				}
 				out, _, _ = capture(func() {
 					newApp().Run(argsFull)
 				})
