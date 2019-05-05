@@ -60,6 +60,7 @@ var commandList = cli.Command{
 	Action: doList,
 	Flags: []cli.Flag{
 		cli.BoolFlag{Name: "exact, e", Usage: "Perform an exact match"},
+		cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for matching"},
 		cli.BoolFlag{Name: "full-path, p", Usage: "Print full paths"},
 		cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
 	},

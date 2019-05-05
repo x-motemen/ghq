@@ -12,16 +12,15 @@ func doList(c *cli.Context) error {
 		w                = c.App.Writer
 		query            = c.Args().First()
 		exact            = c.Bool("exact")
+		vcsBackend       = c.String("vcs")
 		printFullPaths   = c.Bool("full-path")
 		printUniquePaths = c.Bool("unique")
 	)
 
-	var filterFn func(*LocalRepository) bool
-	if query == "" {
-		filterFn = func(_ *LocalRepository) bool {
-			return true
-		}
-	} else {
+	filterByQuery := func(_ *LocalRepository) bool {
+		return true
+	}
+	if query != "" {
 		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
 			if url, err := newURL(query); err == nil {
 				if repo, err := LocalRepositoryFromURL(url); err == nil {
@@ -31,7 +30,7 @@ func doList(c *cli.Context) error {
 		}
 
 		if exact {
-			filterFn = func(repo *LocalRepository) bool {
+			filterByQuery = func(repo *LocalRepository) bool {
 				return repo.Matches(query)
 			}
 		} else {
@@ -41,16 +40,20 @@ func doList(c *cli.Context) error {
 				query = strings.Join(paths[1:], "/")
 				host = paths[0]
 			}
-			filterFn = func(repo *LocalRepository) bool {
+			filterByQuery = func(repo *LocalRepository) bool {
 				return strings.Contains(repo.NonHostPath(), query) &&
 					(host == "" || repo.PathParts[0] == host)
 			}
 		}
 	}
+	filterByVCS := func(repo *LocalRepository) bool {
+		return vcsBackend == "" ||
+			vcsRegistry[vcsBackend] == repo.VCS()
+	}
 
 	repos := []*LocalRepository{}
 	if err := walkLocalRepositories(func(repo *LocalRepository) {
-		if !filterFn(repo) {
+		if !filterByQuery(repo) || !filterByVCS(repo) {
 			return
 		}
 		repos = append(repos, repo)
