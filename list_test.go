@@ -53,6 +53,12 @@ func TestCommandListUnknown(t *testing.T) {
 }
 
 func TestDoList_query(t *testing.T) {
+	repos := []string{
+		"github.com/motemen/ghq",
+		"github.com/motemen/gobump",
+		"github.com/motemen/gore",
+		"github.com/Songmu/gobump",
+	}
 	testCases := []struct {
 		name   string
 		args   []string
@@ -88,11 +94,9 @@ func TestDoList_query(t *testing.T) {
 	}}
 
 	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {
-		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "ghq", ".git"), 0755)
-		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "gobump", ".git"), 0755)
-		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "gore", ".git"), 0755)
-		os.MkdirAll(filepath.Join(tmproot, "github.com", "Songmu", "gobump", ".git"), 0755)
-
+		for _, r := range repos {
+			os.MkdirAll(filepath.Join(tmproot, r, ".git"), 0755)
+		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				args := append([]string{"ghq", "list"}, tc.args...)
