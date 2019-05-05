@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.11.2](https://github.com/motemen/ghq/compare/v0.11.1...v0.11.2) (2019-05-06)
+
+* [bugfix] walk up directory when finding VCS of LocalRepository to avaid panics [#158](https://github.com/motemen/ghq/pull/158) ([Songmu](https://github.com/Songmu))
+* bzr pull --overwrite same as go get [#157](https://github.com/motemen/ghq/pull/157) ([Songmu](https://github.com/Songmu))
+
 ## [v0.11.1](https://github.com/motemen/ghq/compare/v0.11.0...v0.11.1) (2019-05-05)
 
 * [feature] List vcs option [#155](https://github.com/motemen/ghq/pull/155) ([msh5](https://github.com/msh5))
