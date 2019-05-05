@@ -45,7 +45,7 @@ func TestNewURL(t *testing.T) {
 		expect: "https://golang.org/x/crypto",
 		host:   "golang.org",
 	}, {
-		name: "same name repository",
+		name: "fill username",
 		setup: func() func() {
 			key := "GITHUB_USER"
 			orig := os.Getenv(key)
@@ -54,6 +54,19 @@ func TestNewURL(t *testing.T) {
 		},
 		url:    "same-name-ghq",
 		expect: "https://github.com/ghq-test/same-name-ghq",
+		host:   "github.com",
+	}, {
+		name: "same name repository",
+		setup: func() func() {
+			teardown, err := WithGitconfigFile(`[ghq]
+completeUser = false`)
+			if err != nil {
+				panic(err)
+			}
+			return func() { teardown() }
+		},
+		url:    "peco",
+		expect: "https://github.com/peco/peco",
 		host:   "github.com",
 	}}
 

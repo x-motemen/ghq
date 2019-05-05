@@ -44,7 +44,7 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[git] shallow clone",
 		f: func() error {
-			return GitBackend.Clone(remoteDummyURL, localDir, true, false)
+			return GitBackend.Clone(remoteDummyURL, localDir, true, true)
 		},
 		expect: []string{"git", "clone", "--depth", "1", remoteDummyURL.String(), localDir},
 	}, {
@@ -69,7 +69,7 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[svn] update",
 		f: func() error {
-			return SubversionBackend.Update(localDir, false)
+			return SubversionBackend.Update(localDir, true)
 		},
 		expect: []string{"svn", "update"},
 		dir:    localDir,
@@ -149,6 +149,20 @@ func TestVCSBackend(t *testing.T) {
 			return BazaarBackend.Clone(remoteDummyURL, localDir, true, false)
 		},
 		expect: []string{"bzr", "branch", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[fossil] clone",
+		f: func() error {
+			return FossilBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"fossil", "open", fossilRepoName},
+		dir:    localDir,
+	}, {
+		name: "[fossil] update",
+		f: func() error {
+			return FossilBackend.Update(localDir, false)
+		},
+		expect: []string{"fossil", "update"},
+		dir:    localDir,
 	}}
 
 	for _, tc := range testCases {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,9 +10,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/motemen/ghq/cmdutil"
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/xerrors"
 )
 
 var commands = []cli.Command{
@@ -128,21 +131,12 @@ OPTIONS:
 {{end}}`
 }
 
-func doGet(c *cli.Context) error {
-	var (
-		argURL     = c.Args().Get(0)
-		doUpdate   = c.Bool("update")
-		isShallow  = c.Bool("shallow")
-		andLook    = c.Bool("look")
-		vcsBackend = c.String("vcs")
-		isSilent   = c.Bool("silent")
-	)
+type getter struct {
+	update, shallow, silent, ssh bool
+	vcs                          string
+}
 
-	if argURL == "" {
-		cli.ShowCommandHelp(c, "get")
-		os.Exit(1)
-	}
-
+func (g *getter) get(argURL string) error {
 	// If argURL is a "./foo" or "../bar" form,
 	// find repository name trailing after github.com/USER/.
 	parts := strings.Split(argURL, string(filepath.Separator))
@@ -170,29 +164,49 @@ func doGet(c *cli.Context) error {
 		}
 	}
 
-	url, err := newURL(argURL)
+	u, err := newURL(argURL)
 	if err != nil {
-		return err
+		return xerrors.Errorf("Could not parse URL %q: %w", argURL, err)
 	}
 
-	isSSH := c.Bool("p")
-	if isSSH {
+	if g.ssh {
 		// Assume Git repository if `-p` is given.
-		if url, err = convertGitURLHTTPToSSH(url); err != nil {
-			return err
+		if u, err = convertGitURLHTTPToSSH(u); err != nil {
+			return xerrors.Errorf("Could not convet URL %q: %w", u, err)
 		}
 	}
 
-	remote, err := NewRemoteRepository(url)
+	remote, err := NewRemoteRepository(u)
 	if err != nil {
 		return err
 	}
 
 	if remote.IsValid() == false {
-		return fmt.Errorf("Not a valid repository: %s", url)
+		return fmt.Errorf("Not a valid repository: %s", u)
 	}
 
-	if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
+	return getRemoteRepository(remote, g.update, g.shallow, g.vcs, g.silent)
+}
+
+func doGet(c *cli.Context) error {
+	var (
+		argURL  = c.Args().Get(0)
+		andLook = c.Bool("look")
+	)
+	g := &getter{
+		update:  c.Bool("update"),
+		shallow: c.Bool("shallow"),
+		ssh:     c.Bool("p"),
+		vcs:     c.String("vcs"),
+		silent:  c.Bool("silent"),
+	}
+
+	if argURL == "" {
+		cli.ShowCommandHelp(c, "get")
+		os.Exit(1)
+	}
+
+	if err := g.get(argURL); err != nil {
 		return err
 	}
 	if andLook {
@@ -252,91 +266,15 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 	return nil
 }
 
-func doList(c *cli.Context) error {
-	query := c.Args().First()
-	exact := c.Bool("exact")
-	printFullPaths := c.Bool("full-path")
-	printUniquePaths := c.Bool("unique")
-
-	var filterFn func(*LocalRepository) bool
-	if query == "" {
-		filterFn = func(_ *LocalRepository) bool {
-			return true
-		}
-	} else {
-		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
-			if url, err := newURL(query); err == nil {
-				if repo, err := LocalRepositoryFromURL(url); err == nil {
-					query = repo.RelPath
-				}
-			}
-		}
-
-		if exact {
-			filterFn = func(repo *LocalRepository) bool {
-				return repo.Matches(query)
-			}
-		} else {
-			var host string
-			paths := strings.Split(query, "/")
-			if len(paths) > 1 && looksLikeAuthorityPattern.MatchString(paths[0]) {
-				query = strings.Join(paths[1:], "/")
-				host = paths[0]
-			}
-			filterFn = func(repo *LocalRepository) bool {
-				return strings.Contains(repo.NonHostPath(), query) &&
-					(host == "" || repo.PathParts[0] == host)
-			}
-		}
+func detectShell() string {
+	shell := os.Getenv("SHELL")
+	if shell != "" {
+		return shell
 	}
-
-	repos := []*LocalRepository{}
-	if err := walkLocalRepositories(func(repo *LocalRepository) {
-		if !filterFn(repo) {
-			return
-		}
-		repos = append(repos, repo)
-	}); err != nil {
-		return err
+	if runtime.GOOS == "windows" {
+		return os.Getenv("COMSPEC")
 	}
-
-	if printUniquePaths {
-		subpathCount := map[string]int{} // Count duplicated subpaths (ex. foo/dotfiles and bar/dotfiles)
-		reposCount := map[string]int{}   // Check duplicated repositories among roots
-
-		// Primary first
-		for _, repo := range repos {
-			if reposCount[repo.RelPath] == 0 {
-				for _, p := range repo.Subpaths() {
-					subpathCount[p] = subpathCount[p] + 1
-				}
-			}
-
-			reposCount[repo.RelPath] = reposCount[repo.RelPath] + 1
-		}
-
-		for _, repo := range repos {
-			if reposCount[repo.RelPath] > 1 && repo.IsUnderPrimaryRoot() == false {
-				continue
-			}
-
-			for _, p := range repo.Subpaths() {
-				if subpathCount[p] == 1 {
-					fmt.Println(p)
-					break
-				}
-			}
-		}
-	} else {
-		for _, repo := range repos {
-			if printFullPaths {
-				fmt.Println(repo.FullPath)
-			} else {
-				fmt.Println(repo.RelPath)
-			}
-		}
-	}
-	return nil
+	return "/bin/sh"
 }
 
 func doLook(c *cli.Context) error {
@@ -375,79 +313,40 @@ func doLook(c *cli.Context) error {
 	case 0:
 		return fmt.Errorf("No repository found")
 	case 1:
-		shell := os.Getenv("SHELL")
-		if shell == "" {
-			if runtime.GOOS == "windows" {
-				shell = os.Getenv("COMSPEC")
-			} else {
-				shell = "/bin/sh"
-			}
-		}
 		repo := reposFound[0]
-		cmd := exec.Command(shell)
+		cmd := exec.Command(detectShell())
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = repo.FullPath
 		cmd.Env = append(os.Environ(), "GHQ_LOOK="+repo.RelPath)
-		return cmd.Run()
+		return cmdutil.RunCommand(cmd, true)
 	default:
-		logger.Log("error", "More than one repositories are found; Try more precise name")
+		b := &strings.Builder{}
+		b.WriteString("More than one repositories are found; Try more precise name\n")
 		for _, repo := range reposFound {
-			logger.Log("error", "- "+strings.Join(repo.PathParts, "/"))
+			b.WriteString(fmt.Sprintf("       - %s\n", strings.Join(repo.PathParts, "/")))
 		}
+		return errors.New(b.String())
 	}
-	return nil
 }
 
 func doImport(c *cli.Context) error {
-	var (
-		doUpdate   = c.Bool("update")
-		isSSH      = c.Bool("p")
-		isShallow  = c.Bool("shallow")
-		isSilent   = c.Bool("silent")
-		vcsBackend = c.String("vcs")
-		parallel   = c.Bool("parallel")
-	)
+	var parallel = c.Bool("parallel")
+	g := &getter{
+		update:  c.Bool("update"),
+		shallow: c.Bool("shallow"),
+		ssh:     c.Bool("p"),
+		vcs:     c.String("vcs"),
+		silent:  c.Bool("silent"),
+	}
 	if parallel {
 		// force silent in parallel import
-		isSilent = true
+		g.silent = true
 	}
 
-	processLine := func(line string) error {
-		url, err := newURL(line)
-		if err != nil {
-			return fmt.Errorf("Could not parse URL <%s>: %s", line, err)
-		}
-		if isSSH {
-			url, err = convertGitURLHTTPToSSH(url)
-			if err != nil {
-				return fmt.Errorf("Could not convert URL <%s>: %s", url, err)
-			}
-		}
-
-		remote, err := NewRemoteRepository(url)
-		if err != nil {
-			return err
-		}
-		if !remote.IsValid() {
-			return fmt.Errorf("Not a valid repository: %s", url)
-		}
-
-		if err := getRemoteRepository(remote, doUpdate, isShallow, vcsBackend, isSilent); err != nil {
-			return fmt.Errorf("failed to getRemoteRepository %q: %s", remote.URL(), err)
-		}
-		return nil
-	}
-
-	var (
-		eg  *errgroup.Group
-		sem chan (struct{})
-	)
-	if parallel {
-		eg = &errgroup.Group{}
-		sem = make(chan struct{}, 6)
-	}
+	eg := &errgroup.Group{}
+	sem := make(chan struct{}, 6)
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -455,13 +354,13 @@ func doImport(c *cli.Context) error {
 			eg.Go(func() error {
 				sem <- struct{}{}
 				defer func() { <-sem }()
-				if err := processLine(line); err != nil {
+				if err := g.get(line); err != nil {
 					logger.Log("error", err.Error())
 				}
 				return nil
 			})
 		} else {
-			if err := processLine(line); err != nil {
+			if err := g.get(line); err != nil {
 				logger.Log("error", err.Error())
 			}
 		}
@@ -469,30 +368,28 @@ func doImport(c *cli.Context) error {
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("While reading input: %s", err)
 	}
-	if parallel {
-		if err := eg.Wait(); err != nil {
-			logger.Log("error", err.Error())
-		}
-	}
-	return nil
+	return eg.Wait()
 }
 
 func doRoot(c *cli.Context) error {
-	all := c.Bool("all")
+	var (
+		w   = c.App.Writer
+		all = c.Bool("all")
+	)
 	if all {
 		roots, err := localRepositoryRoots()
 		if err != nil {
 			return err
 		}
 		for _, root := range roots {
-			fmt.Println(root)
+			fmt.Fprintln(w, root)
 		}
-	} else {
-		root, err := primaryLocalRepositoryRoot()
-		if err != nil {
-			return err
-		}
-		fmt.Println(root)
+		return nil
 	}
+	root, err := primaryLocalRepositoryRoot()
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(w, root)
 	return nil
 }

@@ -16,7 +16,7 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 == SYNOPSIS
 
 [verse]
-'ghq' get [-u] [-p] (<repository URL> | <user>/<project> | <project>)
+'ghq' get [-u] [-p] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
 'ghq' list [-p] [-e] [<query>]
 'ghq' look (<project> | <path/to/project>)
 'ghq' import [-u] [-p] < FILE
@@ -43,8 +43,9 @@ list::
     List locally cloned repositories. If a query argument is given, only
     repositories whose names contain that query text are listed. '-e'
     ('--exact') forces the match to be an exact one (i.e. the query equals to
-    _project_ or _user_/_project_) If '-p' ('--full-path') is given, the full paths
-    to the repository root are printed instead of relative ones.
+    _project_, _user_/_project_ or _host_/_user_/_project_)
+    If '-p' ('--full-path') is given, the full paths to the repository root are
+    printed instead of relative ones.
 
 look::
     Look into a locally cloned repository with the shell.

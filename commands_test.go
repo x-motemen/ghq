@@ -2,12 +2,17 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/motemen/ghq/cmdutil"
 	"github.com/urfave/cli"
 )
 
@@ -18,56 +23,6 @@ func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
 		f.Apply(set)
 	}
 	return set
-}
-
-func captureReader(block func()) (*os.File, *os.File, error) {
-	rOut, wOut, err := os.Pipe()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	rErr, wErr, err := os.Pipe()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	defer wOut.Close()
-	defer wErr.Close()
-
-	var stdout, stderr *os.File
-	os.Stdout, stdout = wOut, os.Stdout
-	os.Stderr, stderr = wErr, os.Stderr
-
-	defer func() {
-		os.Stdout = stdout
-		os.Stderr = stderr
-	}()
-
-	block()
-
-	wOut.Close()
-	wErr.Close()
-
-	return rOut, rErr, nil
-}
-
-func capture(block func()) (string, string, error) {
-	rOut, rErr, err := captureReader(block)
-	if err != nil {
-		return "", "", err
-	}
-
-	bufOut, err := ioutil.ReadAll(rOut)
-	if err != nil {
-		return "", "", err
-	}
-
-	bufErr, err := ioutil.ReadAll(rErr)
-	if err != nil {
-		return "", "", err
-	}
-
-	return string(bufOut), string(bufErr), nil
 }
 
 type _cloneArgs struct {
@@ -138,8 +93,8 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 		},
 	}
 	GitBackend = tmpBackend
-	vcsDirsMap[".git"] = tmpBackend
-	defer func() { GitBackend = originalGitBackend; vcsDirsMap[".git"] = originalGitBackend }()
+	vcsContentsMap[".git"] = tmpBackend
+	defer func() { GitBackend = originalGitBackend; vcsContentsMap[".git"] = originalGitBackend }()
 
 	block(t, tmpRoot, &cloneArgs, &updateArgs)
 }
@@ -273,46 +228,124 @@ func TestCommandGet(t *testing.T) {
 	}
 }
 
-func TestCommandList(t *testing.T) {
-	_, _, err := capture(func() {
-		app := cli.NewApp()
-		flagSet := flagSet("list", commandList.Flags)
-		c := cli.NewContext(app, flagSet, nil)
+func TestDoRoot(t *testing.T) {
+	ghqrootEnv := "GHQ_ROOT"
+	testCases := []struct {
+		name              string
+		setup             func() func()
+		expect, allExpect string
+	}{{
+		name: "env",
+		setup: func() func() {
+			orig := os.Getenv(ghqrootEnv)
+			os.Setenv(ghqrootEnv, "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
+			return func() { os.Setenv(ghqrootEnv, orig) }
+		},
+		expect:    "/path/to/ghqroot1\n",
+		allExpect: "/path/to/ghqroot1\n/path/to/ghqroot2\n",
+	}, {
+		name: "gitconfig",
+		setup: func() func() {
+			orig := os.Getenv(ghqrootEnv)
+			os.Setenv(ghqrootEnv, "")
+			teardown, err := WithGitconfigFile(`[ghq]
+  root = /path/to/ghqroot11
+  root = /path/to/ghqroot12
+`)
+			if err != nil {
+				panic(err)
+			}
+			return func() {
+				os.Setenv(ghqrootEnv, orig)
+				teardown()
+			}
+		},
+		expect:    "/path/to/ghqroot11\n",
+		allExpect: "/path/to/ghqroot11\n/path/to/ghqroot12\n",
+	}, {
+		name: "default home",
+		setup: func() func() {
+			origRoot := os.Getenv(ghqrootEnv)
+			os.Setenv(ghqrootEnv, "")
+			origGitconfig := os.Getenv("GIT_CONFIG")
+			os.Setenv("GIT_CONFIG", "/tmp/unknown-ghq-dummy")
+			origHome := os.Getenv("HOME")
+			os.Setenv("HOME", "/path/to/ghqhome")
 
-		doList(c)
-	})
+			return func() {
+				os.Setenv(ghqrootEnv, origRoot)
+				os.Setenv("GIT_CONFIG", origGitconfig)
+				os.Setenv("HOME", origHome)
+			}
+		},
+		expect:    "/path/to/ghqhome/.ghq\n",
+		allExpect: "/path/to/ghqhome/.ghq\n",
+	}}
 
-	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+			_localRepositoryRoots = nil
+			defer tc.setup()()
+			out, _, _ := capture(func() {
+				newApp().Run([]string{"", "root"})
+			})
+			if out != tc.expect {
+				t.Errorf("got: %s, expect: %s", out, tc.expect)
+			}
+			out, _, _ = capture(func() {
+				newApp().Run([]string{"", "root", "--all"})
+			})
+			if out != tc.allExpect {
+				t.Errorf("got: %s, expect: %s", out, tc.allExpect)
+			}
+		})
 	}
 }
 
-func TestCommandListUnique(t *testing.T) {
-	_, _, err := capture(func() {
-		app := cli.NewApp()
-		flagSet := flagSet("list", commandList.Flags)
-		flagSet.Parse([]string{"--unique"})
-		c := cli.NewContext(app, flagSet, nil)
+func TestDoLook(t *testing.T) {
+	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {
+		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "ghq", ".git"), 0755)
+		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "gobump", ".git"), 0755)
+		os.MkdirAll(filepath.Join(tmproot, "github.com", "Songmu", "gobump", ".git"), 0755)
+		defer func(orig func(cmd *exec.Cmd) error) {
+			cmdutil.CommandRunner = orig
+		}(cmdutil.CommandRunner)
+		var lastCmd *exec.Cmd
+		cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+			lastCmd = cmd
+			return nil
+		}
+		sh := detectShell()
 
-		doList(c)
+		err := newApp().Run([]string{"", "look", "https://github.com/motemen/ghq"})
+		if err != nil {
+			t.Errorf("error should be nil, but: %s", err)
+		}
+
+		if !reflect.DeepEqual(lastCmd.Args, []string{sh}) {
+			t.Errorf("lastCmd.Args: got: %v, expect: %v", lastCmd.Args, []string{sh})
+		}
+		dir := filepath.Join(tmproot, "github.com", "motemen", "ghq")
+		if lastCmd.Dir != dir {
+			t.Errorf("lastCmd.Dir: got: %s, expect: %s", lastCmd.Dir, dir)
+		}
+		gotEnv := lastCmd.Env[len(lastCmd.Env)-1]
+		expectEnv := "GHQ_LOOK=github.com/motemen/ghq"
+		if gotEnv != expectEnv {
+			t.Errorf("lastCmd.Env[len(lastCmd.Env)-1]: got: %s, expect: %s", gotEnv, expectEnv)
+		}
+
+		err = newApp().Run([]string{"", "look", "github.com/motemen/_unknown"})
+		expect := "No repository found"
+		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
+			t.Errorf("error should has prefix %q, but: %s", expect, err)
+		}
+
+		err = newApp().Run([]string{"", "look", "gobump"})
+		expect = "More than one repositories are found; Try more precise name"
+		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
+			t.Errorf("error should has prefix %q, but: %s", expect, err)
+		}
 	})
-
-	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
-	}
-}
-
-func TestCommandListUnknown(t *testing.T) {
-	_, _, err := capture(func() {
-		app := cli.NewApp()
-		flagSet := flagSet("list", commandList.Flags)
-		flagSet.Parse([]string{"--unknown-flag"})
-		c := cli.NewContext(app, flagSet, nil)
-
-		doList(c)
-	})
-
-	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
-	}
 }

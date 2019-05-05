@@ -101,6 +101,11 @@ func TestLocalRepositoryRoots(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
 
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	testCases := []struct {
 		root   string
 		expect []string
@@ -110,6 +115,9 @@ func TestLocalRepositoryRoots(t *testing.T) {
 	}, {
 		root:   "/path/to/ghqroot1" + string(os.PathListSeparator) + "/path/to/ghqroot2",
 		expect: []string{"/path/to/ghqroot1", "/path/to/ghqroot2"},
+	}, {
+		root:   "/path/to/ghqroot11" + string(os.PathListSeparator) + "vendor",
+		expect: []string{"/path/to/ghqroot11", filepath.Join(wd, "vendor")},
 	}}
 
 	for _, tc := range testCases {
