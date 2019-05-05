@@ -112,6 +112,17 @@ func (repo *LocalRepository) NonHostPath() string {
 	return strings.Join(repo.PathParts[1:], "/")
 }
 
+func (repo *LocalRepository) repoRootCandidates() []string {
+	hostRoot := filepath.Join(repo.RootPath, repo.PathParts[0])
+	nonHostParts := repo.PathParts[1:]
+	candidates := make([]string, len(nonHostParts))
+	for i := 0; i < len(nonHostParts); i++ {
+		candidates[i] = filepath.Join(append(
+			[]string{hostRoot}, nonHostParts[0:len(nonHostParts)-i]...)...)
+	}
+	return candidates
+}
+
 func (repo *LocalRepository) IsUnderPrimaryRoot() bool {
 	prim, err := primaryLocalRepositoryRoot()
 	if err != nil {
@@ -133,7 +144,14 @@ func (repo *LocalRepository) Matches(pathQuery string) bool {
 
 func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 	if repo.vcsBackend == nil {
-		repo.vcsBackend = findVCSBackend(repo.FullPath)
+		for _, dir := range repo.repoRootCandidates() {
+			backend := findVCSBackend(dir)
+			if backend != nil {
+				repo.vcsBackend = backend
+				repo.repoPath = dir
+				break
+			}
+		}
 	}
 	return repo.vcsBackend, repo.RepoPath()
 }
