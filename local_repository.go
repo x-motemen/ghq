@@ -16,7 +16,15 @@ type LocalRepository struct {
 	RootPath  string
 	PathParts []string
 
+	repoPath   string
 	vcsBackend *VCSBackend
+}
+
+func (repo *LocalRepository) RepoPath() string {
+	if repo.repoPath != "" {
+		return repo.repoPath
+	}
+	return repo.FullPath
 }
 
 func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRepository, error) {
@@ -123,11 +131,11 @@ func (repo *LocalRepository) Matches(pathQuery string) bool {
 	return false
 }
 
-func (repo *LocalRepository) VCS() *VCSBackend {
+func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 	if repo.vcsBackend == nil {
 		repo.vcsBackend = findVCSBackend(repo.FullPath)
 	}
-	return repo.vcsBackend
+	return repo.vcsBackend, repo.RepoPath()
 }
 
 var vcsContentsMap = map[string]*VCSBackend{

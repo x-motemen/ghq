@@ -47,8 +47,11 @@ func doList(c *cli.Context) error {
 		}
 	}
 	filterByVCS := func(repo *LocalRepository) bool {
-		return vcsBackend == "" ||
-			vcsRegistry[vcsBackend] == repo.VCS()
+		if vcsBackend == "" {
+			return true
+		}
+		vcs, _ := repo.VCS()
+		return vcsRegistry[vcsBackend] == vcs
 	}
 
 	repos := []*LocalRepository{}
