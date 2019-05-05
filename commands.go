@@ -419,7 +419,6 @@ func doLook(c *cli.Context) error {
 		}
 		return errors.New(b.String())
 	}
-	return nil
 }
 
 func doImport(c *cli.Context) error {
@@ -459,12 +458,7 @@ func doImport(c *cli.Context) error {
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("While reading input: %s", err)
 	}
-	if parallel {
-		if err := eg.Wait(); err != nil {
-			logger.Log("error", err.Error())
-		}
-	}
-	return nil
+	return eg.Wait()
 }
 
 func doRoot(c *cli.Context) error {
