@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/urfave/cli"
@@ -105,6 +106,14 @@ func TestDoList_query(t *testing.T) {
 				})
 				if out != tc.expect {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, tc.expect)
+				}
+				argsFull := append([]string{"ghq", "list", "--full-path"}, tc.args...)
+				fullExpect := strings.ReplaceAll(tc.expect, "github.com", tmproot+"/github.com")
+				out, _, _ = capture(func() {
+					newApp().Run(argsFull)
+				})
+				if out != fullExpect {
+					t.Errorf("got:\n%s\nexpect:\n%s", out, fullExpect)
 				}
 			})
 		}
