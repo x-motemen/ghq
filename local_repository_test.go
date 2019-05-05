@@ -174,3 +174,50 @@ func TestList_Symlink(t *testing.T) {
 		t.Errorf("length of paths should be 2, but: %d", len(paths))
 	}
 }
+
+func TestFindVCSBackend(t *testing.T) {
+	newTmp := func() string {
+		tmpdir, err := ioutil.TempDir("", "ghq-test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return tmpdir
+	}
+
+	testCases := []struct {
+		name   string
+		setup  func(t *testing.T) (string, func())
+		expect *VCSBackend
+	}{{
+		name: "git",
+		setup: func(t *testing.T) (string, func()) {
+			dir := newTmp()
+			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
+			return dir, func() {
+				os.RemoveAll(dir)
+			}
+		},
+		expect: GitBackend,
+	}, {
+		name: "git svn",
+		setup: func(t *testing.T) (string, func()) {
+			dir := newTmp()
+			os.MkdirAll(filepath.Join(dir, ".git", "svn"), 0755)
+			return dir, func() {
+				os.RemoveAll(dir)
+			}
+		},
+		expect: GitsvnBackend,
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fpath, teardown := tc.setup(t)
+			defer teardown()
+			backend := findVCSBackend(fpath)
+			if backend != tc.expect {
+				t.Errorf("got: %v, expect: %v", backend, tc.expect)
+			}
+		})
+	}
+}
