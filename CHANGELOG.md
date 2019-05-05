@@ -1,5 +1,20 @@
 # Changelog
 
+## [v0.11.1](https://github.com/motemen/ghq/compare/v0.11.0...v0.11.1) (2019-05-05)
+
+* [feature] List vcs option [#155](https://github.com/motemen/ghq/pull/155) ([msh5](https://github.com/msh5))
+* [testing] add TestDoImport [#156](https://github.com/motemen/ghq/pull/156) ([Songmu](https://github.com/Songmu))
+* [fix] fix findVCSBackend and add tests [#154](https://github.com/motemen/ghq/pull/154) ([Songmu](https://github.com/Songmu))
+* [fix] Make sure the directory exists with the exact name [#145](https://github.com/motemen/ghq/pull/145) ([knu](https://github.com/knu))
+* [bugfix] Fix fossil support [#153](https://github.com/motemen/ghq/pull/153) ([Songmu](https://github.com/Songmu))
+* [testing] add TestDoList_query [#152](https://github.com/motemen/ghq/pull/152) ([Songmu](https://github.com/Songmu))
+* [testing] add TestRunInDirSilently [#151](https://github.com/motemen/ghq/pull/151) ([Songmu](https://github.com/Songmu))
+* [testing] add more tests in TestDoLook [#150](https://github.com/motemen/ghq/pull/150) ([Songmu](https://github.com/Songmu))
+* [testing] add TestDoLook [#149](https://github.com/motemen/ghq/pull/149) ([Songmu](https://github.com/Songmu))
+* [refactoring] remove NewFakeRunner which not used [#148](https://github.com/motemen/ghq/pull/148) ([Songmu](https://github.com/Songmu))
+* [refactoring] Commonize doGet and doImport processing for refactoring [#147](https://github.com/motemen/ghq/pull/147) ([Songmu](https://github.com/Songmu))
+* [testing] add test for `ghq root` [#146](https://github.com/motemen/ghq/pull/146) ([Songmu](https://github.com/Songmu))
+
 ## [v0.11.0](https://github.com/motemen/ghq/compare/v0.10.2...v0.11.0) (2019-05-01)
 
 * Delete codes for the services turned down (Google Code and JazzHub) [#144](https://github.com/motemen/ghq/pull/144) ([Songmu](https://github.com/Songmu))
