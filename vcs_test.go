@@ -141,7 +141,7 @@ func TestVCSBackend(t *testing.T) {
 		f: func() error {
 			return BazaarBackend.Update(localDir, false)
 		},
-		expect: []string{"bzr", "pull"},
+		expect: []string{"bzr", "pull", "--overwrite"},
 		dir:    localDir,
 	}, {
 		name: "[bzr] clone shallow",
