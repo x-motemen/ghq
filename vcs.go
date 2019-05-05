@@ -139,23 +139,14 @@ const fossilRepoName = ".fossil" // same as Go
 
 var FossilBackend = &VCSBackend{
 	Clone: func(remote *url.URL, local string, shallow, silent bool) error {
-		dir, _ := filepath.Split(local)
-		err := os.MkdirAll(dir, 0755)
-		if err != nil {
+		if err := os.MkdirAll(local, 0755); err != nil {
 			return err
 		}
 
-		err = run(silent)("fossil", "clone", remote.String(), filepath.Join(dir, fossilRepoName))
-		if err != nil {
+		if err := run(silent)("fossil", "clone", remote.String(), filepath.Join(local, fossilRepoName)); err != nil {
 			return err
 		}
-
-		err = os.Chdir(dir)
-		if err != nil {
-			return err
-		}
-
-		return run(silent)("fossile", "open", fossilRepoName)
+		return runInDir(silent)(local, "fossil", "open", fossilRepoName)
 	},
 	Update: func(local string, silent bool) error {
 		return runInDir(silent)(local, "fossil", "update")

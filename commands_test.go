@@ -93,8 +93,8 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 		},
 	}
 	GitBackend = tmpBackend
-	vcsDirsMap[".git"] = tmpBackend
-	defer func() { GitBackend = originalGitBackend; vcsDirsMap[".git"] = originalGitBackend }()
+	vcsContentsMap[".git"] = tmpBackend
+	defer func() { GitBackend = originalGitBackend; vcsContentsMap[".git"] = originalGitBackend }()
 
 	block(t, tmpRoot, &cloneArgs, &updateArgs)
 }

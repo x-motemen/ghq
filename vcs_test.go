@@ -149,6 +149,20 @@ func TestVCSBackend(t *testing.T) {
 			return BazaarBackend.Clone(remoteDummyURL, localDir, true, false)
 		},
 		expect: []string{"bzr", "branch", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[fossil] clone",
+		f: func() error {
+			return FossilBackend.Clone(remoteDummyURL, localDir, false, false)
+		},
+		expect: []string{"fossil", "open", fossilRepoName},
+		dir:    localDir,
+	}, {
+		name: "[fossil] update",
+		f: func() error {
+			return FossilBackend.Update(localDir, false)
+		},
+		expect: []string{"fossil", "update"},
+		dir:    localDir,
 	}}
 
 	for _, tc := range testCases {

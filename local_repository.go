@@ -126,36 +126,36 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 	return repo.vcsBackend
 }
 
-var vcsDirsMap = map[string]*VCSBackend{
+var vcsContentsMap = map[string]*VCSBackend{
 	".git/svn":  GitsvnBackend,
 	".git":      GitBackend,
 	".svn":      SubversionBackend,
 	".hg":       MercurialBackend,
 	"_darcs":    DarcsBackend,
-	".fslckout": FossilBackend,
-	"_FOSSIL_":  FossilBackend,
+	".fslckout": FossilBackend, // file
+	"_FOSSIL_":  FossilBackend, // file
 	"CVS":       cvsDummyBackend,
 	".bzr":      BazaarBackend,
 }
 
-var vcsDirs = make([]string, 0, len(vcsDirsMap))
+var vcsContents = make([]string, 0, len(vcsContentsMap))
 
 func init() {
-	for k := range vcsDirsMap {
-		vcsDirs = append(vcsDirs, k)
+	for k := range vcsContentsMap {
+		vcsContents = append(vcsContents, k)
 	}
 	// Sort in order of length.
 	// This is to check git/svn before git.
-	sort.Slice(vcsDirs, func(i, j int) bool {
-		return len(vcsDirs[i]) > len(vcsDirs[j])
+	sort.Slice(vcsContents, func(i, j int) bool {
+		return len(vcsContents[i]) > len(vcsContents[j])
 	})
 }
 
 func findVCSBackend(fpath string) *VCSBackend {
-	for _, d := range vcsDirs {
-		fi, err := os.Stat(filepath.Join(fpath, d))
-		if err == nil && fi.IsDir() {
-			return vcsDirsMap[d]
+	for _, d := range vcsContents {
+		_, err := os.Stat(filepath.Join(fpath, d))
+		if err == nil {
+			return vcsContentsMap[d]
 		}
 	}
 	return nil
