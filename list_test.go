@@ -54,13 +54,16 @@ func TestCommandListUnknown(t *testing.T) {
 }
 
 func TestDoList_query(t *testing.T) {
-	repos := []string{
+	gitRepos := []string{
 		"github.com/motemen/ghq",
 		"github.com/motemen/gobump",
 		"github.com/motemen/gore",
 		"github.com/Songmu/gobump",
 		"golang.org/x/crypt",
 		"golang.org/x/image",
+	}
+	svnRepos := []string{
+		"github.com/msh5/svntest",
 	}
 	testCases := []struct {
 		name   string
@@ -102,11 +105,18 @@ func TestDoList_query(t *testing.T) {
 		name:   "exact query",
 		args:   []string{"-e", "men/go"},
 		expect: "",
+	}, {
+		name:   "vcs",
+		args:   []string{"--vcs", "svn"},
+		expect: "github.com/msh5/svntest\n",
 	}}
 
 	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {
-		for _, r := range repos {
+		for _, r := range gitRepos {
 			os.MkdirAll(filepath.Join(tmproot, r, ".git"), 0755)
+		}
+		for _, r := range svnRepos {
+			os.MkdirAll(filepath.Join(tmproot, r, ".svn"), 0755)
 		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
