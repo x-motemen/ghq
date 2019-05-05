@@ -71,6 +71,10 @@ func TestDoList_query(t *testing.T) {
 		args:   []string{"ghq"},
 		expect: "github.com/motemen/ghq\n",
 	}, {
+		name:   "unique",
+		args:   []string{"--unique", "ghq"},
+		expect: "ghq\n",
+	}, {
 		name:   "host only doesn't match",
 		args:   []string{"github.com"},
 		expect: "",
@@ -112,6 +116,9 @@ func TestDoList_query(t *testing.T) {
 				})
 				if out != tc.expect {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, tc.expect)
+				}
+				if strings.Contains(tc.name, "unique") {
+					return
 				}
 				argsFull := append([]string{"ghq", "list", "--full-path"}, tc.args...)
 				fullExpect := tc.expect
