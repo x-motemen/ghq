@@ -119,15 +119,27 @@ Local repositories are placed under 'ghq.root' with named github.com/_user_/_rep
 
 == [[installing]]INSTALLATION
 
+=== homebrew
+
+----
+brew install ghq
+----
+
+=== go get
+
 ----
 go get github.com/motemen/ghq
 ----
 
-Or clone the https://github.com/motemen/ghq[repository] and run:
+=== build
 
 ----
+git clone https://github.com/motemen/ghq .
 make install
 ----
+
+Built binaries are available from GitHub Releases.
+https://github.com/motemen/ghq/releases
 
 == AUTHOR
 
