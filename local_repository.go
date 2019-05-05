@@ -127,15 +127,15 @@ func (repo *LocalRepository) VCS() *VCSBackend {
 }
 
 var vcsContentsMap = map[string]*VCSBackend{
-	".git/svn":  GitsvnBackend,
-	".git":      GitBackend,
-	".svn":      SubversionBackend,
-	".hg":       MercurialBackend,
-	"_darcs":    DarcsBackend,
-	".fslckout": FossilBackend, // file
-	"_FOSSIL_":  FossilBackend, // file
-	"CVS":       cvsDummyBackend,
-	".bzr":      BazaarBackend,
+	".git/svn":       GitsvnBackend,
+	".git":           GitBackend,
+	".svn":           SubversionBackend,
+	".hg":            MercurialBackend,
+	"_darcs":         DarcsBackend,
+	".fslckout":      FossilBackend, // file
+	"_FOSSIL_":       FossilBackend, // file
+	"CVS/Repository": cvsDummyBackend,
+	".bzr":           BazaarBackend,
 }
 
 var vcsContents = make([]string, 0, len(vcsContentsMap))
@@ -157,16 +157,11 @@ func findVCSBackend(fpath string) *VCSBackend {
 		if err != nil {
 			continue
 		}
-		if fi.Name() != d {
-			// check if the name matches case sensitively
-			// It doesn't work well if there is both .git and .GIT, but ignore it
-			// because it is a rare case
+		// check if the name matches case sensitively
+		// It doesn't work well if there is both .git and .GIT, but ignore it
+		// because it is a rare case
+		if fi.Name() != filepath.Base(d) {
 			continue
-		}
-		if d == "CVS" {
-			if _, err := os.Stat(filepath.Join(fpath, "CVS", "Repository")); err != nil {
-				continue
-			}
 		}
 		return vcsContentsMap[d]
 	}
