@@ -153,10 +153,22 @@ func init() {
 
 func findVCSBackend(fpath string) *VCSBackend {
 	for _, d := range vcsContents {
-		_, err := os.Stat(filepath.Join(fpath, d))
-		if err == nil {
-			return vcsContentsMap[d]
+		fi, err := os.Stat(filepath.Join(fpath, d))
+		if err != nil {
+			continue
 		}
+		if fi.Name() != d {
+			// check if the name matches case sensitively
+			// It doesn't work well if there is both .git and .GIT, but ignore it
+			// because it is a rare case
+			continue
+		}
+		if d == "CVS" {
+			if _, err := os.Stat(filepath.Join(fpath, "CVS", "Repository")); err != nil {
+				continue
+			}
+		}
+		return vcsContentsMap[d]
 	}
 	return nil
 }
