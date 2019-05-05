@@ -32,6 +32,7 @@ type VCSBackend struct {
 }
 
 var GitBackend = &VCSBackend{
+	// support submodules?
 	Clone: func(remote *url.URL, local string, shallow, silent bool) error {
 		dir, _ := filepath.Split(local)
 		err := os.MkdirAll(dir, 0755)
@@ -161,11 +162,11 @@ var BazaarBackend = &VCSBackend{
 		if err != nil {
 			return err
 		}
-
 		return run(silent)("bzr", "branch", remote.String(), local)
 	},
 	Update: func(local string, silent bool) error {
-		return runInDir(silent)(local, "bzr", "pull")
+		// Without --overwrite bzr will not pull tags that changed.
+		return runInDir(silent)(local, "bzr", "pull", "--overwrite")
 	},
 }
 
