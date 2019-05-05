@@ -13,6 +13,7 @@ import (
 type LocalRepository struct {
 	FullPath  string
 	RelPath   string
+	RootPath  string
 	PathParts []string
 
 	vcsBackend *VCSBackend
@@ -25,7 +26,8 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 	if err != nil {
 		return nil, err
 	}
-	for _, root := range roots {
+	var root string
+	for _, root = range roots {
 		if !strings.HasPrefix(fullPath, root) {
 			continue
 		}
@@ -46,6 +48,7 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 	return &LocalRepository{
 		FullPath:   fullPath,
 		RelPath:    filepath.ToSlash(relPath),
+		RootPath:   root,
 		PathParts:  pathParts,
 		vcsBackend: backend,
 	}, nil
@@ -80,6 +83,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	return &LocalRepository{
 		FullPath:  path.Join(prim, relPath),
 		RelPath:   relPath,
+		RootPath:  prim,
 		PathParts: pathParts,
 	}, nil
 }
