@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -88,4 +89,20 @@ func capture(block func()) (string, string, error) {
 	}
 
 	return string(bufOut), string(bufErr), nil
+}
+
+func captureWithInput(in []string, block func()) (string, string, error) {
+	rIn, wIn, err := os.Pipe()
+	if err != nil {
+		return "", "", err
+	}
+	defer rIn.Close()
+	var stdin *os.File
+	os.Stdin, stdin = rIn, os.Stdin
+	defer func() { os.Stdin = stdin }()
+	for _, line := range in {
+		fmt.Fprintln(wIn, line)
+	}
+	wIn.Close()
+	return capture(block)
 }
