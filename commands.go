@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/motemen/ghq/cmdutil"
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli"
 	"golang.org/x/sync/errgroup"
@@ -354,6 +355,17 @@ func doList(c *cli.Context) error {
 	return nil
 }
 
+func detectShell() string {
+	shell := os.Getenv("SHELL")
+	if shell != "" {
+		return shell
+	}
+	if runtime.GOOS == "windows" {
+		return os.Getenv("COMSPEC")
+	}
+	return "/bin/sh"
+}
+
 func doLook(c *cli.Context) error {
 	name := c.Args().First()
 
@@ -390,22 +402,14 @@ func doLook(c *cli.Context) error {
 	case 0:
 		return fmt.Errorf("No repository found")
 	case 1:
-		shell := os.Getenv("SHELL")
-		if shell == "" {
-			if runtime.GOOS == "windows" {
-				shell = os.Getenv("COMSPEC")
-			} else {
-				shell = "/bin/sh"
-			}
-		}
 		repo := reposFound[0]
-		cmd := exec.Command(shell)
+		cmd := exec.Command(detectShell())
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = repo.FullPath
 		cmd.Env = append(os.Environ(), "GHQ_LOOK="+repo.RelPath)
-		return cmd.Run()
+		return cmdutil.RunCommand(cmd, true)
 	default:
 		logger.Log("error", "More than one repositories are found; Try more precise name")
 		for _, repo := range reposFound {
