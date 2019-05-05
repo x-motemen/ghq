@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -411,10 +412,12 @@ func doLook(c *cli.Context) error {
 		cmd.Env = append(os.Environ(), "GHQ_LOOK="+repo.RelPath)
 		return cmdutil.RunCommand(cmd, true)
 	default:
-		logger.Log("error", "More than one repositories are found; Try more precise name")
+		b := &strings.Builder{}
+		b.WriteString("More than one repositories are found; Try more precise name\n")
 		for _, repo := range reposFound {
-			logger.Log("error", "- "+strings.Join(repo.PathParts, "/"))
+			b.WriteString(fmt.Sprintf("       - %s\n", strings.Join(repo.PathParts, "/")))
 		}
+		return errors.New(b.String())
 	}
 	return nil
 }
