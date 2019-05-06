@@ -146,5 +146,27 @@ func TestDoList_query(t *testing.T) {
 			})
 		}
 	})
+}
 
+func TestDoList_unique(t *testing.T) {
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
+
+	tmp1 := newTempDir(t)
+	defer os.RemoveAll(tmp1)
+	tmp2 := newTempDir(t)
+	defer os.RemoveAll(tmp2)
+
+	_localRepositoryRoots = nil
+	rootPaths := []string{tmp1, tmp2}
+	os.Setenv("GHQ_ROOT", strings.Join(rootPaths, string(os.PathListSeparator)))
+	for _, rootPath := range rootPaths {
+		os.MkdirAll(filepath.Join(rootPath, "github.com/motemen/ghq/.git"), 0755)
+	}
+	out, _, _ := capture(func() {
+		newApp().Run([]string{"ghq", "list", "--unique"})
+	})
+	if out != "ghq\n" {
+		t.Errorf("got: %s, expect: ghq\n", out)
+	}
 }
