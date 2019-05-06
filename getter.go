@@ -60,7 +60,7 @@ func (g *getter) get(argURL string) error {
 		return err
 	}
 
-	if remote.IsValid() == false {
+	if !remote.IsValid() {
 		return fmt.Errorf("Not a valid repository: %s", u)
 	}
 

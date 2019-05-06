@@ -32,13 +32,8 @@ func (repo *GitHubRepository) IsValid() bool {
 	if strings.HasPrefix(repo.url.Path, "/blog/") {
 		return false
 	}
-
 	pathComponents := strings.Split(strings.Trim(repo.url.Path, "/"), "/")
-	if len(pathComponents) < 2 {
-		return false
-	}
-
-	return true
+	return len(pathComponents) >= 2
 }
 
 func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL) {
