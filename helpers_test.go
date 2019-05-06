@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"testing"
 )
 
 func WithGitconfigFile(configContent string) (func(), error) {
@@ -105,4 +106,35 @@ func captureWithInput(in []string, block func()) (string, string, error) {
 	}
 	wIn.Close()
 	return capture(block)
+}
+
+func newTempDir(t *testing.T) string {
+	tmpdir, err := ioutil.TempDir("", "ghq-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Resolve /var/folders/.../T/... to /private/var/... in OSX
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("os.Getwd(): %s", err)
+	}
+
+	defer func() {
+		err := os.Chdir(wd)
+		if err != nil {
+			t.Fatalf("os.Chdir(): %s", err)
+		}
+	}()
+
+	err = os.Chdir(tmpdir)
+	if err != nil {
+		t.Fatalf("os.Chdir(): %s", err)
+	}
+
+	tmpdir, err = os.Getwd()
+	if err != nil {
+		t.Fatalf("os.Getwd(): %s", err)
+	}
+
+	return tmpdir
 }
