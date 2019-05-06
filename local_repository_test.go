@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -137,16 +136,10 @@ func TestLocalRepositoryRoots(t *testing.T) {
 
 // https://gist.github.com/kyanny/c231f48e5d08b98ff2c3
 func TestList_Symlink(t *testing.T) {
-	root, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	root := newTempDir(t)
 	defer os.RemoveAll(root)
 
-	symDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	symDir := newTempDir(t)
 	defer os.RemoveAll(symDir)
 
 	origLocalRepositryRoots := _localRepositoryRoots
