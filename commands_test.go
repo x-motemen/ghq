@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -36,38 +35,8 @@ type _updateArgs struct {
 }
 
 func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs, *_updateArgs)) {
-	tmpRoot, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatalf("Could not create tempdir: %s", err)
-	}
+	tmpRoot := newTempDir(t)
 	defer os.RemoveAll(tmpRoot)
-
-	// Resolve /var/folders/.../T/... to /private/var/... in OSX
-	tmpRoot = func() string {
-		wd, err := os.Getwd()
-		if err != nil {
-			t.Fatalf("os.Getwd(): %s", err)
-		}
-
-		defer func() {
-			err := os.Chdir(wd)
-			if err != nil {
-				t.Fatalf("os.Chdir(): %s", err)
-			}
-		}()
-
-		err = os.Chdir(tmpRoot)
-		if err != nil {
-			t.Fatalf("os.Chdir(): %s", err)
-		}
-
-		tmpRoot, err := os.Getwd()
-		if err != nil {
-			t.Fatalf("os.Getwd(): %s", err)
-		}
-
-		return tmpRoot
-	}()
 
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	_localRepositoryRoots = []string{tmpRoot}

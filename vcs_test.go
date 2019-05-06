@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,10 +13,7 @@ import (
 var remoteDummyURL = mustParseURL("https://example.com/git/repo")
 
 func TestVCSBackend(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	tempDir := newTempDir(t)
 	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
 	_commands := []*exec.Cmd{}
@@ -182,10 +178,7 @@ func TestVCSBackend(t *testing.T) {
 }
 
 func TestCvsDummyBackend(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	tempDir := newTempDir(t)
 	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
 

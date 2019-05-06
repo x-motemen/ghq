@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -137,16 +136,10 @@ func TestLocalRepositoryRoots(t *testing.T) {
 
 // https://gist.github.com/kyanny/c231f48e5d08b98ff2c3
 func TestList_Symlink(t *testing.T) {
-	root, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	root := newTempDir(t)
 	defer os.RemoveAll(root)
 
-	symDir, err := ioutil.TempDir("", "ghq-test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	symDir := newTempDir(t)
 	defer os.RemoveAll(symDir)
 
 	origLocalRepositryRoots := _localRepositoryRoots
@@ -176,14 +169,6 @@ func TestList_Symlink(t *testing.T) {
 }
 
 func TestFindVCSBackend(t *testing.T) {
-	newTmp := func() string {
-		tmpdir, err := ioutil.TempDir("", "ghq-test")
-		if err != nil {
-			t.Fatal(err)
-		}
-		return tmpdir
-	}
-
 	testCases := []struct {
 		name   string
 		setup  func(t *testing.T) (string, func())
@@ -191,7 +176,7 @@ func TestFindVCSBackend(t *testing.T) {
 	}{{
 		name: "git",
 		setup: func(t *testing.T) (string, func()) {
-			dir := newTmp()
+			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
 			return dir, func() {
 				os.RemoveAll(dir)
@@ -201,7 +186,7 @@ func TestFindVCSBackend(t *testing.T) {
 	}, {
 		name: "git svn",
 		setup: func(t *testing.T) (string, func()) {
-			dir := newTmp()
+			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git", "svn"), 0755)
 			return dir, func() {
 				os.RemoveAll(dir)
@@ -220,4 +205,47 @@ func TestFindVCSBackend(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLocalRepository_VCS(t *testing.T) {
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
+
+	_localRepositoryRoots = nil
+	tmpdir := newTempDir(t)
+	os.Setenv("GHQ_ROOT", tmpdir)
+
+	pkg := filepath.Join(tmpdir, "github.com", "motemen", "ghq")
+	subpkg := filepath.Join(pkg, "logger")
+
+	os.MkdirAll(filepath.Join(pkg, ".git"), 0755)
+	os.MkdirAll(subpkg, 0755)
+
+	t.Run("reporoot", func(t *testing.T) {
+		repo, err := LocalRepositoryFromFullPath(pkg, nil)
+		if err != nil {
+			t.Errorf("error should be nil, but: %s", err)
+		}
+		vcs, repoPath := repo.VCS()
+		if vcs != GitBackend {
+			t.Errorf("repo.VCS() = %+v, expect: GitBackend", vcs)
+		}
+		if repoPath != pkg {
+			t.Errorf("got: %s, expect: %s", repoPath, pkg)
+		}
+	})
+
+	t.Run("subdir", func(t *testing.T) {
+		repo, err := LocalRepositoryFromFullPath(subpkg, nil)
+		if err != nil {
+			t.Errorf("error should be nil, but: %s", err)
+		}
+		vcs, repoPath := repo.VCS()
+		if vcs != GitBackend {
+			t.Errorf("repo.VCS() = %+v, expect: GitBackend", vcs)
+		}
+		if repoPath != pkg {
+			t.Errorf("got: %s, expect: %s", repoPath, pkg)
+		}
+	})
 }
