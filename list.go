@@ -81,7 +81,7 @@ func doList(c *cli.Context) error {
 		}
 
 		for _, repo := range repos {
-			if reposCount[repo.RelPath] > 1 && repo.IsUnderPrimaryRoot() == false {
+			if reposCount[repo.RelPath] > 1 && !repo.IsUnderPrimaryRoot() {
 				continue
 			}
 
