@@ -9,10 +9,10 @@ import (
 	"testing"
 )
 
-func WithGitconfigFile(configContent string) (func(), error) {
+func withGitConfig(t *testing.T, configContent string) func() {
 	tmpdir, err := ioutil.TempDir("", "ghq-test")
 	if err != nil {
-		return nil, err
+		t.Fatal(err)
 	}
 
 	tmpGitconfigFile := filepath.Join(tmpdir, "gitconfig")
@@ -29,7 +29,7 @@ func WithGitconfigFile(configContent string) (func(), error) {
 	return func() {
 		os.Setenv("GIT_CONFIG", prevGitConfigEnv)
 		os.RemoveAll(tmpdir)
-	}, nil
+	}
 }
 
 func mustParseURL(urlString string) *url.URL {

@@ -18,16 +18,11 @@ func TestGitConfigURL(t *testing.T) {
 		t.Skip("Git does not have config --get-urlmatch feature")
 	}
 
-	reset, err := WithGitconfigFile(`
-[ghq "https://ghe.example.com/"]
+	defer withGitConfig(t, `[ghq "https://ghe.example.com/"]
 vcs = github
 [ghq "https://ghe.example.com/hg/"]
 vcs = hg
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer reset()
+`)()
 
 	testCases := []struct {
 		name   string

@@ -63,12 +63,8 @@ func TestNewURL(t *testing.T) {
 	}, {
 		name: "same name repository",
 		setup: func() func() {
-			teardown, err := WithGitconfigFile(`[ghq]
+			return withGitConfig(t, `[ghq]
 completeUser = false`)
-			if err != nil {
-				panic(err)
-			}
-			return func() { teardown() }
 		},
 		url:    "peco",
 		expect: "https://github.com/peco/peco",
@@ -132,12 +128,7 @@ func TestNewURL_err(t *testing.T) {
 	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
 		t.Errorf("newURL(%q) error = %q; want substring %q", invalidURL, got, wantSub)
 	}
-
-	reset, err := WithGitconfigFile(`[[[`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer reset()
+	defer withGitConfig(t, `[[[`)()
 
 	var exitError *exec.ExitError
 	_, err = newURL("peco")
