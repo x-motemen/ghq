@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/urfave/cli"
+	"golang.org/x/xerrors"
 )
 
 func TestCommandList(t *testing.T) {
@@ -168,5 +169,18 @@ func TestDoList_unique(t *testing.T) {
 	})
 	if out != "ghq\n" {
 		t.Errorf("got: %s, expect: ghq\n", out)
+	}
+}
+
+func TestDoList_unknownRoot(t *testing.T) {
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
+
+	_localRepositoryRoots = nil
+	os.Setenv("GHQ_ROOT", "/path/to/unknown-ghq")
+
+	err := newApp().Run([]string{"ghq", "list"})
+	if !os.IsNotExist(xerrors.Unwrap(err)) {
+		t.Errorf("error should be ErrNotExist, but: %s", err)
 	}
 }

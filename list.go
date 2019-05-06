@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/urfave/cli"
+	"golang.org/x/xerrors"
 )
 
 func doList(c *cli.Context) error {
@@ -61,7 +62,7 @@ func doList(c *cli.Context) error {
 		}
 		repos = append(repos, repo)
 	}); err != nil {
-		return err
+		return xerrors.Errorf("failed to filter repos while walkLocalRepositories(repo): %w", err)
 	}
 
 	if printUniquePaths {
