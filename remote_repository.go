@@ -33,9 +33,8 @@ func (repo *GitHubRepository) IsValid() bool {
 		return false
 	}
 
-	// must be /{user}/{project}/?
-	pathComponents := strings.Split(strings.TrimRight(repo.url.Path, "/"), "/")
-	if len(pathComponents) != 3 {
+	pathComponents := strings.Split(strings.Trim(repo.url.Path, "/"), "/")
+	if len(pathComponents) < 2 {
 		return false
 	}
 
@@ -43,7 +42,14 @@ func (repo *GitHubRepository) IsValid() bool {
 }
 
 func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL) {
-	return GitBackend, repo.URL()
+	u, _ := url.Parse(repo.URL().String()) // clone
+	pathComponents := strings.Split(strings.Trim(strings.TrimSuffix(u.Path, ".git"), "/"), "/")
+	path := "/" + strings.Join(pathComponents[0:2], "/")
+	if strings.HasSuffix(u.String(), ".git") {
+		path += ".git"
+	}
+	u.Path = path
+	return GitBackend, u
 }
 
 // A GitHubGistRepository represents a GitHub Gist repository.
