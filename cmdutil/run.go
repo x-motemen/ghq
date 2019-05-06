@@ -63,9 +63,6 @@ func RunCommand(cmd *exec.Cmd, silent bool) error {
 	}
 	err := CommandRunner(cmd)
 	if err != nil {
-		if execErr, ok := err.(*exec.Error); ok {
-			logger.Log("warning", fmt.Sprintf("%q: %s", execErr.Name, execErr.Err))
-		}
 		return &RunError{cmd, err}
 	}
 
