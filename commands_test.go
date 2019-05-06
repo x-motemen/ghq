@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/motemen/ghq/cmdutil"
+	"github.com/motemen/ghq/gitutil"
 	"github.com/urfave/cli"
 )
 
@@ -217,7 +218,7 @@ func TestDoRoot(t *testing.T) {
 		setup: func() func() {
 			orig := os.Getenv(ghqrootEnv)
 			os.Setenv(ghqrootEnv, "")
-			teardown := withGitConfig(t, `[ghq]
+			teardown := gitutil.WithConfig(t, `[ghq]
   root = /path/to/ghqroot11
   root = /path/to/ghqroot12
 `)
