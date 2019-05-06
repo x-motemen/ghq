@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.12.0](https://github.com/motemen/ghq/compare/v0.11.2...v0.12.0) (2019-05-07)
+
+* get lock using repoPath to avoid duplicate get on import [#163](https://github.com/motemen/ghq/pull/163) ([Songmu](https://github.com/Songmu))
+* separate gitutil package from main and utilize it [#162](https://github.com/motemen/ghq/pull/162) ([Songmu](https://github.com/Songmu))
+* support deep directory in GitRepository like 'github.com/motemen/ghq/logger' [#161](https://github.com/motemen/ghq/pull/161) ([Songmu](https://github.com/Songmu))
+* Test enhancement [#160](https://github.com/motemen/ghq/pull/160) ([Songmu](https://github.com/Songmu))
+* add TestLocalRepository_VCS [#159](https://github.com/motemen/ghq/pull/159) ([Songmu](https://github.com/Songmu))
+
 ## [v0.11.2](https://github.com/motemen/ghq/compare/v0.11.1...v0.11.2) (2019-05-06)
 
 * [bugfix] walk up directory when finding VCS of LocalRepository to avaid panics [#158](https://github.com/motemen/ghq/pull/158) ([Songmu](https://github.com/Songmu))
