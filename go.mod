@@ -12,5 +12,5 @@ require (
 	github.com/urfave/cli v1.20.0
 	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
-	golang.org/x/xerrors v0.0.0-20190410155217-1f06c39b4373
+	golang.org/x/xerrors v0.0.0-20190506180316-385005612d73
 )
