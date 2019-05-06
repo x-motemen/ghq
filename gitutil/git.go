@@ -1,4 +1,4 @@
-package main
+package gitutil
 
 import (
 	"fmt"
@@ -11,15 +11,15 @@ import (
 	"github.com/blang/semver"
 )
 
-// GitConfigSingle fetches single git-config variable.
+// ConfigSingle fetches single git-config variable.
 // returns an empty string and no error if no variable is found with the given key.
-func GitConfigSingle(key string) (string, error) {
-	return GitConfig("--get", key)
+func ConfigSingle(key string) (string, error) {
+	return Config("--get", key)
 }
 
-// GitConfigAll fetches git-config variable of multiple values.
-func GitConfigAll(key string) ([]string, error) {
-	value, err := GitConfig("--get-all", key)
+// ConfigAll fetches git-config variable of multiple values.
+func ConfigAll(key string) ([]string, error) {
+	value, err := Config("--get-all", key)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +32,8 @@ func GitConfigAll(key string) ([]string, error) {
 	return strings.Split(value, "\000"), nil
 }
 
-// GitConfig invokes 'git config' and handles some errors properly.
-func GitConfig(args ...string) (string, error) {
+// Config invokes 'git config' and handles some errors properly.
+func Config(args ...string) (string, error) {
 	gitArgs := append([]string{"config", "--path", "--null"}, args...)
 	cmd := exec.Command("git", gitArgs...)
 	cmd.Stderr = os.Stderr
@@ -59,7 +59,8 @@ var (
 	featureConfigURLMatchVersion = semver.MustParse("1.8.5")
 )
 
-func gitHasFeatureConfigURLMatch() error {
+// HasFeatureConfigURLMatch checks has url-match feature or not
+func HasFeatureConfigURLMatch() error {
 	cmd := exec.Command("git", "--version")
 	buf, err := cmd.Output()
 

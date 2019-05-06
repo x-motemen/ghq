@@ -1,4 +1,4 @@
-package main
+package gitutil
 
 import (
 	"fmt"
@@ -7,23 +7,23 @@ import (
 	"testing"
 )
 
-func TestGitConfigAll(t *testing.T) {
+func TestConfigAll(t *testing.T) {
 	dummyKey := "ghq.non.existent.key"
-	confs, err := GitConfigAll(dummyKey)
+	confs, err := ConfigAll(dummyKey)
 	if err != nil {
 		t.Errorf("error should be nil but: %s", err)
 	}
 	if len(confs) > 0 {
-		t.Errorf("GitConfigAll(%q) = %v; want %v", dummyKey, confs, nil)
+		t.Errorf("ConfigAll(%q) = %v; want %v", dummyKey, confs, nil)
 	}
 }
 
-func TestGitConfigURL(t *testing.T) {
-	if gitHasFeatureConfigURLMatch() != nil {
+func TestConfigURL(t *testing.T) {
+	if HasFeatureConfigURLMatch() != nil {
 		t.Skip("Git does not have config --get-urlmatch feature")
 	}
 
-	defer withGitConfig(t, `[ghq "https://ghe.example.com/"]
+	defer WithConfig(t, `[ghq "https://ghe.example.com/"]
 vcs = github
 [ghq "https://ghe.example.com/hg/"]
 vcs = hg
@@ -49,7 +49,7 @@ vcs = hg
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, err := GitConfig(tc.config...)
+			value, err := Config(tc.config...)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
@@ -60,14 +60,14 @@ vcs = hg
 	}
 }
 
-func TestGitHasFeatureConfigURLMatch_err(t *testing.T) {
+func TestHasFeatureConfigURLMatch_err(t *testing.T) {
 	defer func(orig string) { os.Setenv("PATH", orig) }(os.Getenv("PATH"))
 	os.Setenv("PATH", "")
 
-	err := gitHasFeatureConfigURLMatch()
+	err := HasFeatureConfigURLMatch()
 	const wantSub = `failed to execute "git --version": `
 	if got := fmt.Sprint(err); !strings.HasPrefix(got, wantSub) {
-		t.Errorf("gitHasFeatureConfigURLMatch() error = %q; want substring %q", got, wantSub)
+		t.Errorf("HasFeatureConfigURLMatch() error = %q; want substring %q", got, wantSub)
 	}
 }
 

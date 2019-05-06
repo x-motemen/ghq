@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/motemen/ghq/cmdutil"
+	"github.com/motemen/ghq/gitutil"
 	"github.com/motemen/ghq/logger"
 )
 
@@ -93,14 +94,14 @@ func (repo *OtherRepository) IsValid() bool {
 }
 
 func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
-	if err := gitHasFeatureConfigURLMatch(); err != nil {
+	if err := gitutil.HasFeatureConfigURLMatch(); err != nil {
 		logger.Log("warning", err.Error())
 	} else {
 		// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
 		// (in gitconfig:)
 		//     [ghq "https://ghe.example.com/"]
 		//     vcs = github
-		vcs, err := GitConfig("--get-urlmatch", "ghq.vcs", repo.URL().String())
+		vcs, err := gitutil.Config("--get-urlmatch", "ghq.vcs", repo.URL().String())
 		if err != nil {
 			logger.Log("error", err.Error())
 		}
@@ -144,7 +145,7 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 		return &DarksHubRepository{url}, nil
 	}
 
-	gheHosts, err := GitConfigAll("ghq.ghe.host")
+	gheHosts, err := gitutil.ConfigAll("ghq.ghe.host")
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve GH:E hostname from .gitconfig: %s", err)
