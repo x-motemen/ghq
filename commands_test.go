@@ -217,13 +217,10 @@ func TestDoRoot(t *testing.T) {
 		setup: func() func() {
 			orig := os.Getenv(ghqrootEnv)
 			os.Setenv(ghqrootEnv, "")
-			teardown, err := WithGitconfigFile(`[ghq]
+			teardown := withGitConfig(t, `[ghq]
   root = /path/to/ghqroot11
   root = /path/to/ghqroot12
 `)
-			if err != nil {
-				panic(err)
-			}
 			return func() {
 				os.Setenv(ghqrootEnv, orig)
 				teardown()

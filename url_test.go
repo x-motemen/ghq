@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
+
+	"golang.org/x/xerrors"
 )
 
 func TestNewURL(t *testing.T) {
@@ -58,12 +63,8 @@ func TestNewURL(t *testing.T) {
 	}, {
 		name: "same name repository",
 		setup: func() func() {
-			teardown, err := WithGitconfigFile(`[ghq]
+			return withGitConfig(t, `[ghq]
 completeUser = false`)
-			if err != nil {
-				panic(err)
-			}
-			return func() { teardown() }
 		},
 		url:    "peco",
 		expect: "https://github.com/peco/peco",
@@ -117,5 +118,35 @@ func TestConvertGitURLHTTPToSSH(t *testing.T) {
 				t.Errorf("got: %s, expect: %s", sshURL.String(), tc.expect)
 			}
 		})
+	}
+}
+
+func TestNewURL_err(t *testing.T) {
+	invalidURL := "http://foo.com/?foo\nbar"
+	_, err := newURL(invalidURL)
+	const wantSub = "net/url: invalid control character in URL"
+	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
+		t.Errorf("newURL(%q) error = %q; want substring %q", invalidURL, got, wantSub)
+	}
+	defer withGitConfig(t, `[[[`)()
+
+	var exitError *exec.ExitError
+	_, err = newURL("peco")
+	if !xerrors.As(err, &exitError) {
+		t.Errorf("error should be occurred but nil")
+	}
+}
+
+func TestFillUsernameToPath_err(t *testing.T) {
+	for _, envStr := range []string{"GITHUB_USER", "USER", "USERNAME"} {
+		defer func(orig string) { os.Setenv(envStr, orig) }(os.Getenv(envStr))
+		os.Setenv(envStr, "")
+	}
+	defer withGitConfig(t, "")()
+
+	_, err := fillUsernameToPath("peco")
+	const wantSub = "set ghq.user to your gitconfig"
+	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
+		t.Errorf("fillUsernameToPath(peco) error = %q; want substring %q", got, wantSub)
 	}
 }
