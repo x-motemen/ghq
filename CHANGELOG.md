@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.12.1](https://github.com/motemen/ghq/compare/v0.12.0...v0.12.1) (2019-05-07)
+
+* update deps [#164](https://github.com/motemen/ghq/pull/164) ([Songmu](https://github.com/Songmu))
+
 ## [v0.12.0](https://github.com/motemen/ghq/compare/v0.11.2...v0.12.0) (2019-05-07)
 
 * get lock using repoPath to avoid duplicate get on import [#163](https://github.com/motemen/ghq/pull/163) ([Songmu](https://github.com/Songmu))
