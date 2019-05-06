@@ -5,10 +5,25 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/motemen/ghq/logger"
 	"golang.org/x/xerrors"
 )
+
+var (
+	seen = make(map[string]bool)
+	mu   = &sync.Mutex{}
+)
+
+func getRepoLock(repoPath string) bool {
+	mu.Lock()
+	defer func() {
+		seen[repoPath] = true
+		mu.Unlock()
+	}()
+	return !seen[repoPath]
+}
 
 type getter struct {
 	update, shallow, silent, ssh bool
@@ -106,21 +121,22 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			}
 			repoPath = strings.TrimSuffix(filepath.Join(root, repoURL.Host, repoURL.Path), ".git")
 		}
-		err := vcs.Clone(repoURL, repoPath, g.shallow, g.silent)
-		if err != nil {
-			return err
+		if getRepoLock(repoPath) {
+			return vcs.Clone(repoURL, repoPath, g.shallow, g.silent)
 		}
-	} else {
-		if g.update {
-			logger.Log("update", path)
-			vcs, repoPath := local.VCS()
-			if vcs == nil {
-				return fmt.Errorf("failed to detect VCS for %q", path)
-			}
-			vcs.Update(repoPath, g.silent)
-		} else {
-			logger.Log("exists", path)
-		}
+		return nil
 	}
+	if g.update {
+		logger.Log("update", path)
+		vcs, repoPath := local.VCS()
+		if vcs == nil {
+			return fmt.Errorf("failed to detect VCS for %q", path)
+		}
+		if getRepoLock(repoPath) {
+			return vcs.Update(repoPath, g.silent)
+		}
+		return nil
+	}
+	logger.Log("exists", path)
 	return nil
 }
