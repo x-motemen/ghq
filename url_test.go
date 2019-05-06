@@ -136,3 +136,17 @@ func TestNewURL_err(t *testing.T) {
 		t.Errorf("error should be occurred but nil")
 	}
 }
+
+func TestFillUsernameToPath_err(t *testing.T) {
+	for _, envStr := range []string{"GITHUB_USER", "USER", "USERNAME"} {
+		defer func(orig string) { os.Setenv(envStr, orig) }(os.Getenv(envStr))
+		os.Setenv(envStr, "")
+	}
+	defer withGitConfig(t, "")()
+
+	_, err := fillUsernameToPath("peco")
+	const wantSub = "set ghq.user to your gitconfig"
+	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
+		t.Errorf("fillUsernameToPath(peco) error = %q; want substring %q", got, wantSub)
+	}
+}
