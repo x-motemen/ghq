@@ -64,13 +64,13 @@ func (g *getter) get(argURL string) error {
 		return fmt.Errorf("Not a valid repository: %s", u)
 	}
 
-	return getRemoteRepository(remote, g.update, g.shallow, g.vcs, g.silent)
+	return g.getRemoteRepository(remote)
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool, vcsBackend string, isSilent bool) error {
+func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 	remoteURL := remote.URL()
 	local, err := LocalRepositoryFromURL(remoteURL)
 	if err != nil {
@@ -94,7 +94,7 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 	if newPath {
 		logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
 
-		vcs := vcsRegistry[vcsBackend]
+		vcs := vcsRegistry[g.vcs]
 		repoURL := remoteURL
 		if vcs == nil {
 			vcs, repoURL = remote.VCS()
@@ -103,18 +103,18 @@ func getRemoteRepository(remote RemoteRepository, doUpdate bool, isShallow bool,
 			}
 		}
 
-		err := vcs.Clone(repoURL, path, isShallow, isSilent)
+		err := vcs.Clone(repoURL, path, g.shallow, g.silent)
 		if err != nil {
 			return err
 		}
 	} else {
-		if doUpdate {
+		if g.update {
 			logger.Log("update", path)
 			vcs, repoPath := local.VCS()
 			if vcs == nil {
 				return fmt.Errorf("failed to detect VCS for %q", path)
 			}
-			vcs.Update(repoPath, isSilent)
+			vcs.Update(repoPath, g.silent)
 		} else {
 			logger.Log("exists", path)
 		}
