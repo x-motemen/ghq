@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
+
+	"golang.org/x/xerrors"
 )
 
 func TestNewURL(t *testing.T) {
@@ -117,5 +122,26 @@ func TestConvertGitURLHTTPToSSH(t *testing.T) {
 				t.Errorf("got: %s, expect: %s", sshURL.String(), tc.expect)
 			}
 		})
+	}
+}
+
+func TestNewURL_err(t *testing.T) {
+	invalidURL := "http://foo.com/?foo\nbar"
+	_, err := newURL(invalidURL)
+	const wantSub = "net/url: invalid control character in URL"
+	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
+		t.Errorf("newURL(%q) error = %q; want substring %q", invalidURL, got, wantSub)
+	}
+
+	reset, err := WithGitconfigFile(`[[[`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reset()
+
+	var exitError *exec.ExitError
+	_, err = newURL("peco")
+	if !xerrors.As(err, &exitError) {
+		t.Errorf("error should be occurred but nil")
 	}
 }
