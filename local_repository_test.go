@@ -8,20 +8,21 @@ import (
 )
 
 func TestLocalRepositoryFromFullPath(t *testing.T) {
-	origLocalRepositryRoots := _localRepositoryRoots
-	_localRepositoryRoots = []string{"/repos"}
-	defer func() { _localRepositoryRoots = origLocalRepositryRoots }()
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	tmproot := newTempDir(t)
+	defer os.RemoveAll(tmproot)
+	_localRepositoryRoots = []string{tmproot}
 
 	testCases := []struct {
 		fpath    string
 		expect   string
 		subpaths []string
 	}{{
-		fpath:    "/repos/github.com/motemen/ghq",
+		fpath:    filepath.Join(tmproot, "github.com/motemen/ghq"),
 		expect:   "motemen/ghq",
 		subpaths: []string{"ghq", "motemen/ghq", "github.com/motemen/ghq"},
 	}, {
-		fpath:    "/repos/stash.com/scm/motemen/ghq",
+		fpath:    filepath.Join(tmproot, "stash.com/scm/motemen/ghq"),
 		expect:   "scm/motemen/ghq",
 		subpaths: []string{"ghq", "motemen/ghq", "scm/motemen/ghq", "stash.com/scm/motemen/ghq"},
 	}}
@@ -43,44 +44,45 @@ func TestLocalRepositoryFromFullPath(t *testing.T) {
 }
 
 func TestNewLocalRepository(t *testing.T) {
-	origLocalRepositryRoots := _localRepositoryRoots
-	_localRepositoryRoots = []string{"/repos"}
-	defer func() { _localRepositoryRoots = origLocalRepositryRoots }()
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	tmproot := newTempDir(t)
+	defer os.RemoveAll(tmproot)
+	_localRepositoryRoots = []string{tmproot}
 
 	testCases := []struct {
 		name, url, expect string
 	}{{
 		name:   "GitHub",
 		url:    "ssh://git@github.com/motemen/ghq.git",
-		expect: "/repos/github.com/motemen/ghq",
+		expect: filepath.Join(tmproot, "github.com/motemen/ghq"),
 	}, {
 		name:   "stash",
 		url:    "ssh://git@stash.com/scm/motemen/ghq.git",
-		expect: "/repos/stash.com/scm/motemen/ghq",
+		expect: filepath.Join(tmproot, "stash.com/scm/motemen/ghq"),
 	}, {
 		name:   "svn Sourceforge",
 		url:    "http://svn.code.sf.net/p/ghq/code/trunk",
-		expect: "/repos/svn.code.sf.net/p/ghq/code/trunk",
+		expect: filepath.Join(tmproot, "svn.code.sf.net/p/ghq/code/trunk"),
 	}, {
 		name:   "git Sourceforge",
 		url:    "http://git.code.sf.net/p/ghq/code",
-		expect: "/repos/git.code.sf.net/p/ghq/code",
+		expect: filepath.Join(tmproot, "git.code.sf.net/p/ghq/code"),
 	}, {
 		name:   "svn Sourceforge JP",
 		url:    "http://scm.sourceforge.jp/svnroot/ghq/",
-		expect: "/repos/scm.sourceforge.jp/svnroot/ghq",
+		expect: filepath.Join(tmproot, "scm.sourceforge.jp/svnroot/ghq"),
 	}, {
 		name:   "git Sourceforge JP",
 		url:    "http://scm.sourceforge.jp/gitroot/ghq/ghq.git",
-		expect: "/repos/scm.sourceforge.jp/gitroot/ghq/ghq",
+		expect: filepath.Join(tmproot, "scm.sourceforge.jp/gitroot/ghq/ghq"),
 	}, {
 		name:   "svn Assembla",
 		url:    "https://subversion.assembla.com/svn/ghq/",
-		expect: "/repos/subversion.assembla.com/svn/ghq",
+		expect: filepath.Join(tmproot, "subversion.assembla.com/svn/ghq"),
 	}, {
 		name:   "git Assembla",
 		url:    "https://git.assembla.com/ghq.git",
-		expect: "/repos/git.assembla.com/ghq",
+		expect: filepath.Join(tmproot, "git.assembla.com/ghq"),
 	}}
 
 	for _, tc := range testCases {

@@ -200,22 +200,21 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 		return err
 	}
 	for _, root := range roots {
-		if err := filepath.Walk(root, func(fpath string, fileInfo os.FileInfo, err error) error {
-			if err != nil || fileInfo == nil {
-				return nil
+		if err := filepath.Walk(root, func(fpath string, fi os.FileInfo, err error) error {
+			if err != nil || fi == nil {
+				return err
 			}
-
-			if fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+			if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
 				realpath, err := filepath.EvalSymlinks(fpath)
 				if err != nil {
 					return nil
 				}
-				fileInfo, err = os.Stat(realpath)
+				fi, err = os.Stat(realpath)
 				if err != nil {
 					return nil
 				}
 			}
-			if !fileInfo.IsDir() {
+			if !fi.IsDir() {
 				return nil
 			}
 			vcsBackend := findVCSBackend(fpath)
