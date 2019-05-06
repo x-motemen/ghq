@@ -9,6 +9,7 @@ func TestNewRemoteRepository(t *testing.T) {
 		url        string
 		valid      bool
 		vcsBackend *VCSBackend
+		repoURL    string
 	}{{
 		url:        "https://github.com/motemen/pusheen-explorer",
 		valid:      true,
@@ -18,9 +19,10 @@ func TestNewRemoteRepository(t *testing.T) {
 		valid:      true,
 		vcsBackend: GitBackend,
 	}, {
-		url:        "https://github.com/motemen/pusheen-explorer/blob/master/README.md",
-		valid:      false,
+		url:        "https://github.com/motemen/ghq/logger",
+		valid:      true,
 		vcsBackend: GitBackend,
+		repoURL:    "https://github.com/motemen/ghq",
 	}, {
 		url:        "https://example.com/motemen/pusheen-explorer/",
 		valid:      true,
@@ -44,9 +46,14 @@ func TestNewRemoteRepository(t *testing.T) {
 			if repo.IsValid() != tc.valid {
 				t.Errorf("repo.IsValid() should be %v, but %v", tc.valid, repo.IsValid())
 			}
-			vcs, _ := repo.VCS()
+			vcs, u := repo.VCS()
 			if vcs != tc.vcsBackend {
 				t.Errorf("got: %+v, expect: %+v", vcs, tc.vcsBackend)
+			}
+			if tc.repoURL != "" {
+				if u.String() != tc.repoURL {
+					t.Errorf("repoURL: got: %s, expect: %s", u.String(), tc.repoURL)
+				}
 			}
 		})
 	}
