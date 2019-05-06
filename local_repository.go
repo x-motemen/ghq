@@ -224,11 +224,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 			}
 
 			repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
-			if err != nil {
-				return nil
-			}
-
-			if repo == nil {
+			if err != nil || repo == nil {
 				return nil
 			}
 			callback(repo)
