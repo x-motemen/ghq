@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"os"
+	"strings"
+	"testing"
+)
 
 func TestGitConfigAll(t *testing.T) {
 	dummyKey := "ghq.non.existent.key"
@@ -52,5 +57,16 @@ vcs = hg
 				t.Errorf("got: %s, expect: %s", value, tc.expect)
 			}
 		})
+	}
+}
+
+func TestGitHasFeatureConfigURLMatch_err(t *testing.T) {
+	defer func(orig string) { os.Setenv("PATH", orig) }(os.Getenv("PATH"))
+	os.Setenv("PATH", "")
+
+	err := gitHasFeatureConfigURLMatch()
+	const wantSub = `failed to execute "git --version": `
+	if got := fmt.Sprint(err); !strings.HasPrefix(got, wantSub) {
+		t.Errorf("gitHasFeatureConfigURLMatch() error = %q; want substring %q", got, wantSub)
 	}
 }
