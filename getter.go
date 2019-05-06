@@ -119,7 +119,9 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			if vcs == nil {
 				return fmt.Errorf("Could not find version control system: %s", remoteURL)
 			}
-			repoPath = strings.TrimSuffix(filepath.Join(root, repoURL.Host, repoURL.Path), ".git")
+			if strings.HasPrefix(remoteURL.String(), strings.TrimSuffix(repoURL.String(), ".git")) {
+				repoPath = strings.TrimSuffix(filepath.Join(root, repoURL.Host, repoURL.Path), ".git")
+			}
 		}
 		if getRepoLock(repoPath) {
 			return vcs.Clone(repoURL, repoPath, g.shallow, g.silent)
