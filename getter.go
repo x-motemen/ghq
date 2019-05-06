@@ -119,6 +119,9 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			if vcs == nil {
 				return fmt.Errorf("Could not find version control system: %s", remoteURL)
 			}
+			// Only when repoURL is a subpath of remoteURL, rebuild repoPath.
+			// This is because there is a case, for example, golang.org/x is hosted
+			// on go.googlesource.com.
 			if strings.HasPrefix(remoteURL.String(), strings.TrimSuffix(repoURL.String(), ".git")) {
 				repoPath = strings.TrimSuffix(filepath.Join(root, repoURL.Host, repoURL.Path), ".git")
 			}
