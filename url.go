@@ -28,7 +28,11 @@ func newURL(ref string) (*url.URL, error) {
 			host := matched[2]
 			path := matched[3]
 
-			ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
+			if strings.HasPrefix(path, "/") {
+				ref = fmt.Sprintf("ssh://%s%s%s", user, host, path)
+			} else {
+				ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
+			}
 		} else {
 			// If ref is like "github.com/motemen/ghq" convert to "https://github.com/motemen/ghq"
 			paths := strings.Split(ref, "/")
