@@ -180,7 +180,26 @@ func TestDoList_unknownRoot(t *testing.T) {
 	os.Setenv("GHQ_ROOT", "/path/to/unknown-ghq")
 
 	err := newApp().Run([]string{"ghq", "list"})
-	if !os.IsNotExist(xerrors.Unwrap(err)) {
+	if err != nil {
+		t.Errorf("error should be nil, but: %s", err)
+	}
+}
+
+func TestDoList_notPermittedRoot(t *testing.T) {
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
+	tmpdir := newTempDir(t)
+	defer func(dir string) {
+		os.Chmod(dir, 0755)
+		os.RemoveAll(dir)
+	}(tmpdir)
+
+	_localRepositoryRoots = nil
+	os.Setenv("GHQ_ROOT", tmpdir)
+	os.Chmod(tmpdir, 0000)
+
+	err := newApp().Run([]string{"ghq", "list"})
+	if !os.IsPermission(xerrors.Unwrap(err)) {
 		t.Errorf("error should be ErrNotExist, but: %s", err)
 	}
 }
