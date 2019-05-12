@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.12.2](https://github.com/motemen/ghq/compare/v0.12.1...v0.12.2) (2019-05-12)
+
+* [fix] remove extra / from ref when path has "/" prefix [#167](https://github.com/motemen/ghq/pull/167) ([sakihet](https://github.com/sakihet))
+* [fix] refine local cloning path detection [#171](https://github.com/motemen/ghq/pull/171) ([Songmu](https://github.com/Songmu))
+* [fix] skip go-import mod in detectGoImport [#170](https://github.com/motemen/ghq/pull/170) ([Songmu](https://github.com/Songmu))
+* [fix] even if the GHQ_ROOT directory doesn't exist, don't raise an error [#168](https://github.com/motemen/ghq/pull/168) ([Songmu](https://github.com/Songmu))
+
 ## [v0.12.1](https://github.com/motemen/ghq/compare/v0.12.0...v0.12.1) (2019-05-07)
 
 * update deps [#164](https://github.com/motemen/ghq/pull/164) ([Songmu](https://github.com/Songmu))
