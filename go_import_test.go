@@ -8,6 +8,7 @@ import (
 func TestDetectVCSAndRepoURL(t *testing.T) {
 	input := `<html>
 <head>
+<meta name="go-import" content="gopkg.in/yaml.v2 mod https://gopkg.in/yaml.v2">
 <meta name="go-import" content="gopkg.in/yaml.v2 git https://gopkg.in/yaml.v2">
 <meta name="go-source" content="gopkg.in/yaml.v2 _ https://github.com/go-yaml/yaml/tree/v2.2.2{/dir} https://github.com/go-yaml/yaml/blob/v2.2.2{/dir}/{file}#L{line}">
 </head>

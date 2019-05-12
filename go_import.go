@@ -10,8 +10,20 @@ import (
 	"golang.org/x/net/html"
 )
 
+// metaImport represents the parsed <meta name="go-import"
+// content="prefix vcs reporoot" /> tags from HTML files.
+type metaImport struct {
+	Prefix, VCS, RepoRoot string
+}
+
 func detectGoImport(u *url.URL) (string, *url.URL, error) {
-	goGetU, _ := url.Parse(u.String()) // clone
+	goGetU := &url.URL{ // clone
+		Scheme:   u.Scheme,
+		User:     u.User,
+		Host:     u.Host,
+		Path:     u.Path,
+		RawQuery: u.RawQuery,
+	}
 	q := goGetU.Query()
 	q.Add("go-get", "1")
 	goGetU.RawQuery = q.Encode()
@@ -42,11 +54,11 @@ func detectVCSAndRepoURL(r io.Reader) (string, *url.URL, error) {
 		return "", nil, err
 	}
 
-	var goImportContent string
+	var mImport *metaImport
 
 	var f func(*html.Node)
 	f = func(n *html.Node) {
-		if goImportContent != "" {
+		if mImport != nil {
 			return
 		}
 		if n.Type == html.ElementNode && n.Data == "meta" {
@@ -63,8 +75,12 @@ func detectVCSAndRepoURL(r io.Reader) (string, *url.URL, error) {
 					content = a.Val
 				}
 			}
-			if goImportMeta && content != "" {
-				goImportContent = content
+			if f := strings.Fields(content); goImportMeta && len(f) == 3 && f[1] != "mod" {
+				mImport = &metaImport{
+					Prefix:   f[0],
+					VCS:      f[1],
+					RepoRoot: f[2],
+				}
 			}
 		}
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
@@ -73,13 +89,12 @@ func detectVCSAndRepoURL(r io.Reader) (string, *url.URL, error) {
 	}
 	f(doc)
 
-	stuffs := strings.Fields(goImportContent)
-	if len(stuffs) < 3 {
+	if mImport == nil {
 		return "", nil, fmt.Errorf("no go-import meta tags detected")
 	}
-	u, err := url.Parse(stuffs[2])
+	u, err := url.Parse(mImport.RepoRoot)
 	if err != nil {
 		return "", nil, err
 	}
-	return stuffs[1], u, nil
+	return mImport.VCS, u, nil
 }
