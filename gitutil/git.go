@@ -14,12 +14,13 @@ import (
 // ConfigSingle fetches single git-config variable.
 // returns an empty string and no error if no variable is found with the given key.
 func ConfigSingle(key string) (string, error) {
-	return Config("--get", key)
+	// --path option expands tilde(~)
+	return Config("--path", "--get", key)
 }
 
 // ConfigAll fetches git-config variable of multiple values.
 func ConfigAll(key string) ([]string, error) {
-	value, err := Config("--get-all", key)
+	value, err := Config("--path", "--get-all", key)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +35,7 @@ func ConfigAll(key string) ([]string, error) {
 
 // Config invokes 'git config' and handles some errors properly.
 func Config(args ...string) (string, error) {
-	gitArgs := append([]string{"config", "--path", "--null"}, args...)
+	gitArgs := append([]string{"config", "--null"}, args...)
 	cmd := exec.Command("git", gitArgs...)
 	cmd.Stderr = os.Stderr
 
