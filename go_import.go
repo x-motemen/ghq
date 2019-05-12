@@ -17,7 +17,13 @@ type metaImport struct {
 }
 
 func detectGoImport(u *url.URL) (string, *url.URL, error) {
-	goGetU, _ := url.Parse(u.String()) // clone
+	goGetU := &url.URL{ // clone
+		Scheme:   u.Scheme,
+		User:     u.User,
+		Host:     u.Host,
+		Path:     u.Path,
+		RawQuery: u.RawQuery,
+	}
 	q := goGetU.Query()
 	q.Add("go-get", "1")
 	goGetU.RawQuery = q.Encode()

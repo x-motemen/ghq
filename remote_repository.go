@@ -38,7 +38,14 @@ func (repo *GitHubRepository) IsValid() bool {
 }
 
 func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL) {
-	u, _ := url.Parse(repo.URL().String()) // clone
+	origU := repo.URL()
+	u := &url.URL{ // clone
+		Scheme:   origU.Scheme,
+		User:     origU.User,
+		Host:     origU.Host,
+		Path:     origU.Path,
+		RawQuery: origU.RawQuery,
+	}
 	pathComponents := strings.Split(strings.Trim(strings.TrimSuffix(u.Path, ".git"), "/"), "/")
 	path := "/" + strings.Join(pathComponents[0:2], "/")
 	if strings.HasSuffix(u.String(), ".git") {
