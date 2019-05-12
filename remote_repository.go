@@ -108,7 +108,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		// (in gitconfig:)
 		//     [ghq "https://ghe.example.com/"]
 		//     vcs = github
-		vcs, err := gitutil.Config("--get-urlmatch", "ghq.vcs", repo.URL().String())
+		vcs, err := gitutil.Config("--path", "--get-urlmatch", "ghq.vcs", repo.URL().String())
 		if err != nil {
 			logger.Log("error", err.Error())
 		}

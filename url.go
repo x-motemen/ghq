@@ -74,7 +74,7 @@ func convertGitURLHTTPToSSH(url *url.URL) (*url.URL, error) {
 }
 
 func fillUsernameToPath(path string) (string, error) {
-	completeUser, err := gitutil.ConfigSingle("ghq.completeUser")
+	completeUser, err := gitutil.Config("--bool", "--get", "ghq.completeUser")
 	if err != nil {
 		return path, err
 	}
