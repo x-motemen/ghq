@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -16,13 +17,13 @@ var (
 	mu   = &sync.Mutex{}
 )
 
-func getRepoLock(repoPath string) bool {
+func getRepoLock(localRepoRoot string) bool {
 	mu.Lock()
 	defer func() {
-		seen[repoPath] = true
+		seen[localRepoRoot] = true
 		mu.Unlock()
 	}()
-	return !seen[repoPath]
+	return !seen[localRepoRoot]
 }
 
 type getter struct {
@@ -38,22 +39,22 @@ func (g *getter) get(argURL string) error {
 		if wd, err := os.Getwd(); err == nil {
 			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
 
-			var repoPath string
+			var localRepoRoot string
 			roots, err := localRepositoryRoots()
 			if err != nil {
 				return err
 			}
 			for _, r := range roots {
 				p := strings.TrimPrefix(path, r+string(filepath.Separator))
-				if p != path && (repoPath == "" || len(p) < len(repoPath)) {
-					repoPath = p
+				if p != path && (localRepoRoot == "" || len(p) < len(localRepoRoot)) {
+					localRepoRoot = p
 				}
 			}
 
-			if repoPath != "" {
+			if localRepoRoot != "" {
 				// Guess it
-				logger.Log("resolved", fmt.Sprintf("relative %q to %q", argURL, "https://"+repoPath))
-				argURL = "https://" + repoPath
+				logger.Log("resolved", fmt.Sprintf("relative %q to %q", argURL, "https://"+localRepoRoot))
+				argURL = "https://" + localRepoRoot
 			}
 		}
 	}
@@ -92,11 +93,12 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 		return err
 	}
 
-	path := local.FullPath
-	root := local.RootPath
-	newPath := false
+	var (
+		fpath   = local.FullPath
+		newPath = false
+	)
 
-	_, err = os.Stat(path)
+	_, err = os.Stat(fpath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			newPath = true
@@ -108,40 +110,52 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 	}
 
 	if newPath {
-		logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, path))
+		logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, fpath))
 		var (
-			vcs      = vcsRegistry[g.vcs]
-			repoPath = path
-			repoURL  = remoteURL
+			vcs           = vcsRegistry[g.vcs]
+			localRepoRoot = fpath
+			repoURL       = remoteURL
 		)
 		if vcs == nil {
 			vcs, repoURL = remote.VCS()
 			if vcs == nil {
 				return fmt.Errorf("Could not find version control system: %s", remoteURL)
 			}
-			// Only when repoURL is a subpath of remoteURL, rebuild repoPath.
-			// This is because there is a case, for example, golang.org/x is hosted
-			// on go.googlesource.com.
-			if strings.HasPrefix(remoteURL.String(), strings.TrimSuffix(repoURL.String(), ".git")) {
-				repoPath = strings.TrimSuffix(filepath.Join(root, repoURL.Host, repoURL.Path), ".git")
+			l := detectLocalRepoRoot(
+				strings.TrimSuffix(remoteURL.Path, ".git"),
+				strings.TrimSuffix(repoURL.Path, ".git"))
+			if l != "" {
+				localRepoRoot = path.Join(local.RootPath, remoteURL.Host, l)
 			}
 		}
-		if getRepoLock(repoPath) {
-			return vcs.Clone(repoURL, repoPath, g.shallow, g.silent)
+		if getRepoLock(localRepoRoot) {
+			return vcs.Clone(repoURL, localRepoRoot, g.shallow, g.silent)
 		}
 		return nil
 	}
 	if g.update {
-		logger.Log("update", path)
-		vcs, repoPath := local.VCS()
+		logger.Log("update", fpath)
+		vcs, localRepoRoot := local.VCS()
 		if vcs == nil {
-			return fmt.Errorf("failed to detect VCS for %q", path)
+			return fmt.Errorf("failed to detect VCS for %q", fpath)
 		}
-		if getRepoLock(repoPath) {
-			return vcs.Update(repoPath, g.silent)
+		if getRepoLock(localRepoRoot) {
+			return vcs.Update(localRepoRoot, g.silent)
 		}
 		return nil
 	}
-	logger.Log("exists", path)
+	logger.Log("exists", fpath)
 	return nil
+}
+
+func detectLocalRepoRoot(remotePath, repoPath string) string {
+	pathParts := strings.Split(repoPath, "/")
+	pathParts = pathParts[1:len(pathParts)]
+	for i := 0; i < len(pathParts); i++ {
+		subPath := "/" + path.Join(pathParts[i:len(pathParts)]...)
+		if subIdx := strings.Index(remotePath, subPath); subIdx > 0 {
+			return remotePath[0:subIdx] + subPath
+		}
+	}
+	return ""
 }
