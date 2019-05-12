@@ -28,7 +28,7 @@ func TestNewURL(t *testing.T) {
 	}, {
 		name:   "scp with root",
 		url:    "git@github.com:/motemen/pusheen-explorer.git",
-		expect: "ssh://git@github.com//motemen/pusheen-explorer.git",
+		expect: "ssh://git@github.com/motemen/pusheen-explorer.git",
 		host:   "github.com",
 	}, {
 		name:   "scp without user",

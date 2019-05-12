@@ -27,8 +27,12 @@ func newURL(ref string) (*url.URL, error) {
 			user := matched[1]
 			host := matched[2]
 			path := matched[3]
-
-			ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
+			// If the path is a relative path not beginning with a slash like
+			// `path/to/repo`, we might convert to like
+			// `ssh://user@repo.example.com/~/path/to/repo` using tilde, but
+			// since GitHub doesn't support it, we treat relative and absolute
+			// paths the same way.
+			ref = fmt.Sprintf("ssh://%s%s/%s", user, host, strings.TrimPrefix(path, "/"))
 		} else {
 			// If ref is like "github.com/motemen/ghq" convert to "https://github.com/motemen/ghq"
 			paths := strings.Split(ref, "/")
