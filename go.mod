@@ -10,7 +10,7 @@ require (
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
 	github.com/urfave/cli v1.20.0
-	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c
+	golang.org/x/net v0.0.0-20190509222800-a4d6f7feada5
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
-	golang.org/x/xerrors v0.0.0-20190506180316-385005612d73
+	golang.org/x/xerrors v0.0.0-20190510150013-5403a72a6aaf
 )
