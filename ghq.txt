@@ -16,12 +16,11 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 == SYNOPSIS
 
 [verse]
-'ghq' get [-u] [-p] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
-'ghq' list [-p] [-e] [<query>]
-'ghq' look (<project> | <path/to/project>)
-'ghq' import [-u] [-p] < FILE
-'ghq' import <subcommand> [<args>...]
-'ghq' root [--all]
+ghq get [-u] [-p] [--shallow] [--vcs] [--look] [--silent] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
+ghq list [-p] [-e] [<query>]
+ghq look (<project> | <path/to/project> | <host>/<user>/<project> | <repository URL>)
+ghq import [-u] [-p] [--shalow] [--vcs] [--parallel] < FILE
+ghq root [--all]
 
 == COMMANDS
 
