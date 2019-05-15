@@ -170,6 +170,43 @@ func TestList_Symlink(t *testing.T) {
 	}
 }
 
+func TestList_Symlink_In_Same_Directory(t *testing.T) {
+	root := newTempDir(t)
+	defer os.RemoveAll(root)
+
+	symDir := newTempDir(t)
+	defer os.RemoveAll(symDir)
+
+	origLocalRepositryRoots := _localRepositoryRoots
+	_localRepositoryRoots = []string{root}
+	defer func() { _localRepositoryRoots = origLocalRepositryRoots }()
+
+	if err := os.MkdirAll(filepath.Join(root, "github.com", "root-user", "a-repository", ".git"), 0777); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.MkdirAll(filepath.Join(root, "github.com", "root-user", "z-repository", ".git"), 0777); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.MkdirAll(filepath.Join(symDir, "github.com", "sym-user", "h-repository", ".git"), 0777); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Symlink(filepath.Join(symDir, "github.com", "sym-user", "h-repository"), filepath.Join(root, "github.com", "root-user", "h-repository")); err != nil {
+		t.Fatal(err)
+	}
+
+	paths := []string{}
+	walkLocalRepositories(func(repo *LocalRepository) {
+		paths = append(paths, repo.RelPath)
+	})
+
+	if len(paths) != 3 {
+		t.Errorf("length of paths should be 3, but: %d", len(paths))
+	}
+}
+
 func TestFindVCSBackend(t *testing.T) {
 	testCases := []struct {
 		name   string

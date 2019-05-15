@@ -216,17 +216,16 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 				if err != nil {
 					return nil
 				}
-			}
-			if !fi.IsDir() {
-				return nil
-			}
-			vcsBackend := findVCSBackend(fpath)
-			if vcsBackend == nil {
+				repo := LocalRepositoryFromFile(fpath, fi)
+				if repo == nil {
+					return nil
+				}
+				callback(repo)
 				return nil
 			}
 
-			repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
-			if err != nil || repo == nil {
+			repo := LocalRepositoryFromFile(fpath, fi)
+			if repo == nil {
 				return nil
 			}
 			callback(repo)
@@ -236,6 +235,24 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 		}
 	}
 	return nil
+}
+
+func LocalRepositoryFromFile(fpath string, fi os.FileInfo) *LocalRepository {
+	if !fi.IsDir() {
+		return nil
+	}
+
+	vcsBackend := findVCSBackend(fpath)
+	if vcsBackend == nil {
+		return nil
+	}
+
+	repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
+	if err != nil || repo == nil {
+		return nil
+	}
+
+	return repo
 }
 
 var _localRepositoryRoots []string
