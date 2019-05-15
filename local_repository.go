@@ -204,10 +204,12 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 	}
 	for _, root := range roots {
 		if err := filepath.Walk(root, func(fpath string, fi os.FileInfo, err error) error {
+			isSymlink := false
 			if err != nil || fi == nil {
 				return err
 			}
 			if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
+				isSymlink = true
 				realpath, err := filepath.EvalSymlinks(fpath)
 				if err != nil {
 					return nil
@@ -216,43 +218,30 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 				if err != nil {
 					return nil
 				}
-				repo := LocalRepositoryFromFile(fpath, fi)
-				if repo == nil {
-					return nil
-				}
-				callback(repo)
+			}
+			if !fi.IsDir() {
+				return nil
+			}
+			vcsBackend := findVCSBackend(fpath)
+			if vcsBackend == nil {
 				return nil
 			}
 
-			repo := LocalRepositoryFromFile(fpath, fi)
-			if repo == nil {
+			repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
+			if err != nil || repo == nil {
 				return nil
 			}
 			callback(repo)
+
+			if isSymlink {
+				return nil
+			}
 			return filepath.SkipDir
 		}); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func LocalRepositoryFromFile(fpath string, fi os.FileInfo) *LocalRepository {
-	if !fi.IsDir() {
-		return nil
-	}
-
-	vcsBackend := findVCSBackend(fpath)
-	if vcsBackend == nil {
-		return nil
-	}
-
-	repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
-	if err != nil || repo == nil {
-		return nil
-	}
-
-	return repo
 }
 
 var _localRepositoryRoots []string
