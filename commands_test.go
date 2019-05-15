@@ -11,8 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Songmu/gitconfig"
 	"github.com/motemen/ghq/cmdutil"
-	"github.com/motemen/ghq/gitutil"
+
 	"github.com/urfave/cli"
 )
 
@@ -218,7 +219,7 @@ func TestDoRoot(t *testing.T) {
 		setup: func() func() {
 			orig := os.Getenv(ghqrootEnv)
 			os.Setenv(ghqrootEnv, "")
-			teardown := gitutil.WithConfig(t, `[ghq]
+			teardown := gitconfig.WithConfig(t, `[ghq]
   root = /path/to/ghqroot11
   root = /path/to/ghqroot12
 `)
@@ -232,17 +233,14 @@ func TestDoRoot(t *testing.T) {
 	}, {
 		name: "default home",
 		setup: func() func() {
-			origRoot := os.Getenv(ghqrootEnv)
-			os.Setenv(ghqrootEnv, "")
-			origGitconfig := os.Getenv("GIT_CONFIG")
-			os.Setenv("GIT_CONFIG", "/tmp/unknown-ghq-dummy")
-			origHome := os.Getenv("HOME")
-			os.Setenv("HOME", "/path/to/ghqhome")
+			restore1 := tmpEnv(ghqrootEnv, "")
+			restore2 := tmpEnv("GIT_CONFIG", "/tmp/unknown-ghq-dummy")
+			restore3 := tmpEnv("HOME", "/path/to/ghqhome")
 
 			return func() {
-				os.Setenv(ghqrootEnv, origRoot)
-				os.Setenv("GIT_CONFIG", origGitconfig)
-				os.Setenv("HOME", origHome)
+				restore1()
+				restore2()
+				restore3()
 			}
 		},
 		expect:    "/path/to/ghqhome/.ghq\n",

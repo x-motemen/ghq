@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/motemen/ghq/gitutil"
+	"github.com/Songmu/gitconfig"
 	"golang.org/x/xerrors"
 )
 
@@ -64,7 +64,7 @@ func TestNewURL(t *testing.T) {
 	}, {
 		name: "same name repository",
 		setup: func() func() {
-			return gitutil.WithConfig(t, `[ghq]
+			return gitconfig.WithConfig(t, `[ghq]
 completeUser = false`)
 		},
 		url:    "peco",
@@ -129,7 +129,7 @@ func TestNewURL_err(t *testing.T) {
 	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
 		t.Errorf("newURL(%q) error = %q; want substring %q", invalidURL, got, wantSub)
 	}
-	defer gitutil.WithConfig(t, `[[[`)()
+	defer gitconfig.WithConfig(t, `[[[`)()
 
 	var exitError *exec.ExitError
 	_, err = newURL("peco")
@@ -140,10 +140,9 @@ func TestNewURL_err(t *testing.T) {
 
 func TestFillUsernameToPath_err(t *testing.T) {
 	for _, envStr := range []string{"GITHUB_USER", "USER", "USERNAME"} {
-		defer func(orig string) { os.Setenv(envStr, orig) }(os.Getenv(envStr))
-		os.Setenv(envStr, "")
+		defer tmpEnv(envStr, "")()
 	}
-	defer gitutil.WithConfig(t, "")()
+	defer gitconfig.WithConfig(t, "")()
 
 	_, err := fillUsernameToPath("peco")
 	const wantSub = "set ghq.user to your gitconfig"
