@@ -209,6 +209,9 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 				if err == nil || os.IsNotExist(err) {
 					return nil
 				}
+				if os.IsPermission(err) && filepath.Base(fpath)[0] == '.' {
+					return nil
+				}
 				return err
 			}
 			if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
