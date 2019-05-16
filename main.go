@@ -8,7 +8,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-const version = "0.12.2"
+const version = "0.12.3"
 
 var revision = "HEAD"
 

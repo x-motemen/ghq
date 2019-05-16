@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.12.3](https://github.com/motemen/ghq/compare/v0.12.2...v0.12.3) (2019-05-16)
+
+* [fix] Ignore files which seems to system hidden file in walking [#176](https://github.com/motemen/ghq/pull/176) ([Songmu](https://github.com/Songmu))
+* [fix] Fix the list if symlink is in the same directory [#174](https://github.com/motemen/ghq/pull/174) ([at-grandpa](https://github.com/at-grandpa))
+* [refactoring] introduce Songmu/gitconfig [#175](https://github.com/motemen/ghq/pull/175) ([Songmu](https://github.com/Songmu))
+* [refactoring] Get ghq.completeUser strictly as a boolean value [#172](https://github.com/motemen/ghq/pull/172) ([Songmu](https://github.com/Songmu))
+
 ## [v0.12.2](https://github.com/motemen/ghq/compare/v0.12.1...v0.12.2) (2019-05-12)
 
 * [fix] remove extra / from ref when path has "/" prefix [#167](https://github.com/motemen/ghq/pull/167) ([sakihet](https://github.com/sakihet))
