@@ -114,3 +114,16 @@ func newTempDir(t *testing.T) string {
 
 	return tmpdir
 }
+
+func tmpEnv(key, val string) func() {
+	orig, ok := os.LookupEnv(key)
+	os.Setenv(key, val)
+
+	return func() {
+		if ok {
+			os.Setenv(key, orig)
+		} else {
+			os.Unsetenv(key)
+		}
+	}
+}

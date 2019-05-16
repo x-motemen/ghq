@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/motemen/ghq/gitutil"
+	"github.com/Songmu/gitconfig"
 )
 
 // Convert SCP-like URL to SSH URL(e.g. [user@]host.xz:path/to/repo.git/)
@@ -74,16 +74,16 @@ func convertGitURLHTTPToSSH(url *url.URL) (*url.URL, error) {
 }
 
 func fillUsernameToPath(path string) (string, error) {
-	completeUser, err := gitutil.Config("--bool", "--get", "ghq.completeUser")
-	if err != nil {
+	completeUser, err := gitconfig.Bool("ghq.completeUser")
+	if err != nil && !gitconfig.IsNotFound(err) {
 		return path, err
 	}
-	if completeUser == "false" {
+	if err == nil && !completeUser {
 		return path + "/" + path, nil
 	}
 
-	user, err := gitutil.ConfigSingle("ghq.user")
-	if err != nil {
+	user, err := gitconfig.Get("ghq.user")
+	if err != nil && !gitconfig.IsNotFound(err) {
 		return path, err
 	}
 	if user == "" {

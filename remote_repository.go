@@ -5,8 +5,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/Songmu/gitconfig"
 	"github.com/motemen/ghq/cmdutil"
-	"github.com/motemen/ghq/gitutil"
+
 	"github.com/motemen/ghq/logger"
 )
 
@@ -101,20 +102,16 @@ func (repo *OtherRepository) IsValid() bool {
 }
 
 func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
-	if err := gitutil.HasFeatureConfigURLMatch(); err != nil {
-		logger.Log("warning", err.Error())
-	} else {
-		// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
-		// (in gitconfig:)
-		//     [ghq "https://ghe.example.com/"]
-		//     vcs = github
-		vcs, err := gitutil.Config("--path", "--get-urlmatch", "ghq.vcs", repo.URL().String())
-		if err != nil {
-			logger.Log("error", err.Error())
-		}
-		if backend, ok := vcsRegistry[vcs]; ok {
-			return backend, repo.URL()
-		}
+	// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
+	// (in gitconfig:)
+	//     [ghq "https://ghe.example.com/"]
+	//     vcs = github
+	vcs, err := gitconfig.Do("--path", "--get-urlmatch", "ghq.vcs", repo.URL().String())
+	if err != nil && !gitconfig.IsNotFound(err) {
+		logger.Log("error", err.Error())
+	}
+	if backend, ok := vcsRegistry[vcs]; ok {
+		return backend, repo.URL()
 	}
 
 	// Detect VCS backend automatically
@@ -152,9 +149,8 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 		return &DarksHubRepository{url}, nil
 	}
 
-	gheHosts, err := gitutil.ConfigAll("ghq.ghe.host")
-
-	if err != nil {
+	gheHosts, err := gitconfig.GetAll("ghq.ghe.host")
+	if err != nil && !gitconfig.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to retrieve GH:E hostname from .gitconfig: %s", err)
 	}
 

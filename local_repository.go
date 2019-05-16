@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/motemen/ghq/gitutil"
+	"github.com/Songmu/gitconfig"
 )
 
 type LocalRepository struct {
@@ -259,7 +259,8 @@ func localRepositoryRoots() ([]string, error) {
 		_localRepositoryRoots = filepath.SplitList(envRoot)
 	} else {
 		var err error
-		if _localRepositoryRoots, err = gitutil.ConfigAll("ghq.root"); err != nil {
+		_localRepositoryRoots, err = gitconfig.PathAll("ghq.root")
+		if err != nil && !gitconfig.IsNotFound(err) {
 			return nil, err
 		}
 	}
