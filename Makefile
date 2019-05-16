@@ -65,13 +65,16 @@ upload:
 	ghr -body="$$(ghch --latest -F markdown)" v$(VERSION) dist/snapshot
 
 .PHONY: release
-release: bump crossbuild upload
+release: bump docker-release
+
+.PHONY: local-release
+local-release: bump crossbuild upload
 
 .PHONY: docker-release
 docker-release:
 	@docker run \
-      -v $(PWD):/go/src/github.com/motemen/ghq \
-      -w /go/src/github.com/motemen/ghq \
+      -v $(PWD):/build \
+      -w /build \
       -e GITHUB_TOKEN="$(GITHUB_TOKEN)" \
       --rm        \
       golang:1.12 \
