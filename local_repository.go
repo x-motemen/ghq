@@ -204,6 +204,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 	}
 	for _, root := range roots {
 		if err := filepath.Walk(root, func(fpath string, fi os.FileInfo, err error) error {
+			isSymlink := false
 			if err != nil || fi == nil {
 				if err == nil || os.IsNotExist(err) {
 					return nil
@@ -211,6 +212,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 				return err
 			}
 			if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
+				isSymlink = true
 				realpath, err := filepath.EvalSymlinks(fpath)
 				if err != nil {
 					return nil
@@ -233,6 +235,10 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 				return nil
 			}
 			callback(repo)
+
+			if isSymlink {
+				return nil
+			}
 			return filepath.SkipDir
 		}); err != nil {
 			return err
