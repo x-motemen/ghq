@@ -2,9 +2,7 @@ VERSION = $(shell godzil show-version)
 CURRENT_REVISION = $(shell git rev-parse --short HEAD 2> /dev/null || cat .revision)
 BUILD_LDFLAGS = "-s -w -X main.revision=$(CURRENT_REVISION)"
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
-ifdef update
-  u=-u
-endif
+u := $(if $(update),-u)
 
 export GO111MODULE=on
 
@@ -52,13 +50,15 @@ bump: devel-deps
 CREDITS: devel-deps go.sum
 	gocredits -w
 
+
+DIST_DIR = dist/snapshot
 .PHONY: crossbuild
 crossbuild: CREDITS
-	rm -rf dist/snapshot
+	rm -rf $(DIST_DIR)
 	cp ghq.txt README.txt
 	goxz -arch=386,amd64 -build-ldflags=$(BUILD_LDFLAGS) \
-      -include='zsh/_ghq' -z -d dist/snapshot
-	cd dist/snapshot && shasum $$(find * -type f -maxdepth 0) > SHASUMS
+      -include='zsh/_ghq' -z -d $(DIST_DIR)
+	cd $(DIST_DIR) && shasum $$(find * -type f -maxdepth 0) > SHASUMS
 
 .PHONY: upload
 upload:
@@ -68,17 +68,17 @@ upload:
 release: bump docker-release
 
 .PHONY: local-release
-local-release: bump crossbuild upload
+local-release: bump crossbuild archive upload
 
 .PHONY: docker-release
 docker-release:
 	@docker run \
-      -v $(PWD):/build \
-      -w /build \
+      -v $(PWD):/ghq \
+      -w /ghq \
       -e GITHUB_TOKEN="$(GITHUB_TOKEN)" \
       --rm        \
       golang:1.12 \
-      make crossbuild upload
+      make crossbuild archive upload
 
 ARCHIVE_DIR = ghq-$(VERSION)
 .PHONY: archive
@@ -86,6 +86,8 @@ archive:
 	@git archive HEAD --prefix=$(ARCHIVE_DIR)/ -o ghq-$(VERSION).tar
 	@mkdir -p $(ARCHIVE_DIR)
 	@echo $(CURRENT_REVISION) > $(ARCHIVE_DIR)/.revision
-	@tar --append -vf ghq-$(VERSION).tar $(ARCHIVE_DIR)/.revision
-	@gzip ghq-$(VERSION).tar
+	@tar --append -vf ghq-$(VERSION).tar $(ARCHIVE_DIR)/.revision > /dev/null 2>&1
 	@rm -rf $(ARCHIVE_DIR)
+	@gzip ghq-$(VERSION).tar
+	@mv ghq-$(VERSION).tar.gz $(DIST_DIR)
+	@echo "created $(DIST_DIR)/ghq-$(VERSION).tar.gz"
