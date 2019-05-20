@@ -78,4 +78,14 @@ docker-release:
       -e GITHUB_TOKEN="$(GITHUB_TOKEN)" \
       --rm        \
       golang:1.12 \
-	  make crossbuild upload
+      make crossbuild upload
+
+ARCHIVE_DIR = ghq-$(VERSION)
+.PHONY: archive
+archive:
+	@git archive HEAD --prefix=$(ARCHIVE_DIR)/ -o ghq-$(VERSION).tar
+	@mkdir -p $(ARCHIVE_DIR)
+	@echo $(CURRENT_REVISION) > $(ARCHIVE_DIR)/.revision
+	@tar --append -vf ghq-$(VERSION).tar $(ARCHIVE_DIR)/.revision
+	@gzip ghq-$(VERSION).tar
+	@rm -rf $(ARCHIVE_DIR)
