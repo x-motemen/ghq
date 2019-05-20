@@ -1,5 +1,5 @@
 VERSION = $(shell godzil show-version)
-CURRENT_REVISION = $(shell git rev-parse --short HEAD)
+CURRENT_REVISION = $(shell git rev-parse --short HEAD 2> /dev/null || cat .revision)
 BUILD_LDFLAGS = "-s -w -X main.revision=$(CURRENT_REVISION)"
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
 ifdef update
