@@ -54,7 +54,6 @@ DIST_DIR = dist/v$(VERSION)
 .PHONY: crossbuild
 crossbuild: CREDITS
 	rm -rf $(DIST_DIR)
-	cp ghq.txt README.txt
 	goxz -arch=386,amd64 -build-ldflags=$(BUILD_LDFLAGS) \
       -include='zsh/_ghq' -z -d $(DIST_DIR)
 	cd $(DIST_DIR) && shasum $$(find * -type f -maxdepth 0) > SHASUMS
