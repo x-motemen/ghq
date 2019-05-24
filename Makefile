@@ -50,8 +50,7 @@ bump: devel-deps
 CREDITS: devel-deps go.sum
 	gocredits -w
 
-
-DIST_DIR = dist/snapshot
+DIST_DIR = dist/v$(VERSION)
 .PHONY: crossbuild
 crossbuild: CREDITS
 	rm -rf $(DIST_DIR)
@@ -62,7 +61,7 @@ crossbuild: CREDITS
 
 .PHONY: upload
 upload:
-	ghr -body="$$(ghch --latest -F markdown)" v$(VERSION) dist/snapshot
+	ghr -body="$$(ghch --latest -F markdown)" v$(VERSION) $(DIST_DIR)
 
 .PHONY: release
 release: bump docker-release
@@ -80,14 +79,14 @@ docker-release:
       golang:1.12 \
       make crossbuild archive upload
 
-ARCHIVE_DIR = ghq-$(VERSION)
+ARCHIVE_BASE = ghq-$(VERSION)
 .PHONY: archive
 archive:
-	@git archive HEAD --prefix=$(ARCHIVE_DIR)/ -o ghq-$(VERSION).tar
-	@mkdir -p $(ARCHIVE_DIR)
-	@echo $(CURRENT_REVISION) > $(ARCHIVE_DIR)/.revision
-	@tar --append -vf ghq-$(VERSION).tar $(ARCHIVE_DIR)/.revision > /dev/null 2>&1
-	@rm -rf $(ARCHIVE_DIR)
-	@gzip ghq-$(VERSION).tar
-	@mv ghq-$(VERSION).tar.gz $(DIST_DIR)
-	@echo "created $(DIST_DIR)/ghq-$(VERSION).tar.gz"
+	@git archive HEAD --prefix=$(ARCHIVE_BASE)/ -o $(ARCHIVE_BASE).tar
+	@mkdir -p $(ARCHIVE_BASE)
+	@echo $(CURRENT_REVISION) > $(ARCHIVE_BASE)/.revision
+	@tar --append -vf $(ARCHIVE_BASE).tar $(ARCHIVE_BASE)/.revision > /dev/null 2>&1
+	@rm -rf $(ARCHIVE_BASE)
+	@gzip $(ARCHIVE_BASE).tar
+	@mv $(ARCHIVE_BASE).tar.gz $(DIST_DIR)
+	@echo "created $(DIST_DIR)/$(ARCHIVE_BASE).tar.gz"
