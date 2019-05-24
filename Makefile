@@ -1,5 +1,5 @@
 VERSION = $(shell godzil show-version)
-CURRENT_REVISION = $(shell git rev-parse --short HEAD 2> /dev/null || cat .revision)
+CURRENT_REVISION = $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS = "-s -w -X main.revision=$(CURRENT_REVISION)"
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
 u := $(if $(update),-u)
@@ -66,7 +66,7 @@ upload:
 release: bump docker-release
 
 .PHONY: local-release
-local-release: bump crossbuild archive upload
+local-release: bump crossbuild upload
 
 .PHONY: docker-release
 docker-release:
@@ -76,16 +76,4 @@ docker-release:
       -e GITHUB_TOKEN="$(GITHUB_TOKEN)" \
       --rm        \
       golang:1.12 \
-      make crossbuild archive upload
-
-ARCHIVE_BASE = ghq-$(VERSION)
-.PHONY: archive
-archive:
-	@git archive HEAD --prefix=$(ARCHIVE_BASE)/ -o $(ARCHIVE_BASE).tar
-	@mkdir -p $(ARCHIVE_BASE)
-	@echo $(CURRENT_REVISION) > $(ARCHIVE_BASE)/.revision
-	@tar --append -vf $(ARCHIVE_BASE).tar $(ARCHIVE_BASE)/.revision > /dev/null 2>&1
-	@rm -rf $(ARCHIVE_BASE)
-	@gzip $(ARCHIVE_BASE).tar
-	@mv $(ARCHIVE_BASE).tar.gz $(DIST_DIR)
-	@echo "created $(DIST_DIR)/$(ARCHIVE_BASE).tar.gz"
+      make crossbuild upload
