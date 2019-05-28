@@ -35,6 +35,11 @@ func TestDetectLocalRepoRoot(t *testing.T) {
 		remotePath: "/そーすこーど/path/to/repo/repo",
 		repoPath:   "/ぎっと/path/to/repo",
 		expect:     "/そーすこーど/path/to/repo",
+	}, {
+		name:       "shallow path",
+		remotePath: "/zap/buffer",
+		repoPath:   "/uber-go/zap",
+		expect:     "/zap",
 	}}
 
 	for _, tc := range testCases {
