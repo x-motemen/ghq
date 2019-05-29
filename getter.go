@@ -130,7 +130,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			strings.TrimSuffix(remoteURL.Path, ".git"),
 			strings.TrimSuffix(repoURL.Path, ".git"))
 		if l != "" {
-			localRepoRoot = path.Join(local.RootPath, remoteURL.Host, l)
+			localRepoRoot = path.Join(local.RootPath, remoteURL.Hostname(), l)
 		}
 
 		if getRepoLock(localRepoRoot) {

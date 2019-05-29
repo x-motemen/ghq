@@ -83,6 +83,10 @@ func TestNewLocalRepository(t *testing.T) {
 		name:   "git Assembla",
 		url:    "https://git.assembla.com/ghq.git",
 		expect: filepath.Join(tmproot, "git.assembla.com/ghq"),
+	}, {
+		name:   "bitbucket host with port",
+		url:    "https://bitbucket.local:8888/motemen/ghq.git",
+		expect: filepath.Join(tmproot, "bitbucket.local/motemen/ghq"),
 	}}
 
 	for _, tc := range testCases {
