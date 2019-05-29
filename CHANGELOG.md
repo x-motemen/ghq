@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.12.5](https://github.com/motemen/ghq/compare/v0.12.4...v0.12.5) (2019-05-28)
+
+* refine local cloning path detection [#181](https://github.com/motemen/ghq/pull/181) ([Songmu](https://github.com/Songmu))
+* Adjust metafiles [#179](https://github.com/motemen/ghq/pull/179) ([Songmu](https://github.com/Songmu))
+
 ## [v0.12.4](https://github.com/motemen/ghq/compare/v0.12.3...v0.12.4) (2019-05-24)
 
 * make archive [#178](https://github.com/motemen/ghq/pull/178) ([Songmu](https://github.com/Songmu))
