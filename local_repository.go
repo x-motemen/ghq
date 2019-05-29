@@ -66,7 +66,7 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 
 func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	pathParts := append(
-		[]string{remoteURL.Host}, strings.Split(remoteURL.Path, "/")...,
+		[]string{remoteURL.Hostname()}, strings.Split(remoteURL.Path, "/")...,
 	)
 	relPath := strings.TrimSuffix(path.Join(pathParts...), ".git")
 	pathParts[len(pathParts)-1] = strings.TrimSuffix(pathParts[len(pathParts)-1], ".git")
