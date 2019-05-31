@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.12.6](https://github.com/motemen/ghq/compare/v0.12.5...v0.12.6) (2019-05-29)
+
+* Removing port number from local directory. [#182](https://github.com/motemen/ghq/pull/182) ([gmidorii](https://github.com/gmidorii))
+
 ## [v0.12.5](https://github.com/motemen/ghq/compare/v0.12.4...v0.12.5) (2019-05-28)
 
 * refine local cloning path detection [#181](https://github.com/motemen/ghq/pull/181) ([Songmu](https://github.com/Songmu))
