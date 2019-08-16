@@ -73,6 +73,30 @@ func convertGitURLHTTPToSSH(url *url.URL) (*url.URL, error) {
 	return url.Parse(sshURL)
 }
 
+func detectUserName() (string, error) {
+	user, err := gitconfig.Get("ghq.user")
+	if (err != nil && !gitconfig.IsNotFound(err)) || user != "" {
+		return user, err
+	}
+
+	user, err = gitconfig.GitHubUser("")
+	if (err != nil && !gitconfig.IsNotFound(err)) || user != "" {
+		return user, err
+	}
+
+	switch runtime.GOOS {
+	case "windows":
+		user = os.Getenv("USERNAME")
+	default:
+		user = os.Getenv("USER")
+	}
+	if user == "" {
+		// Make the error if it does not match any pattern
+		return "", fmt.Errorf("failed to detect username. You can set ghq.user to your gitconfig")
+	}
+	return user, nil
+}
+
 func fillUsernameToPath(path string) (string, error) {
 	completeUser, err := gitconfig.Bool("ghq.completeUser")
 	if err != nil && !gitconfig.IsNotFound(err) {
@@ -82,25 +106,9 @@ func fillUsernameToPath(path string) (string, error) {
 		return path + "/" + path, nil
 	}
 
-	user, err := gitconfig.Get("ghq.user")
-	if err != nil && !gitconfig.IsNotFound(err) {
+	user, err := detectUserName()
+	if err != nil {
 		return path, err
 	}
-	if user == "" {
-		user = os.Getenv("GITHUB_USER")
-	}
-	if user == "" {
-		switch runtime.GOOS {
-		case "windows":
-			user = os.Getenv("USERNAME")
-		default:
-			user = os.Getenv("USER")
-		}
-	}
-	if user == "" {
-		// Make the error if it does not match any pattern
-		return path, fmt.Errorf("set ghq.user to your gitconfig")
-	}
-	path = user + "/" + path
-	return path, nil
+	return user + "/" + path, nil
 }

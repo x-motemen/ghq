@@ -139,12 +139,14 @@ func TestNewURL_err(t *testing.T) {
 }
 
 func TestFillUsernameToPath_err(t *testing.T) {
-	for _, envStr := range []string{"GITHUB_USER", "USER", "USERNAME"} {
+	for _, envStr := range []string{"GITHUB_USER", "GITHUB_TOKEN", "USER", "USERNAME"} {
 		defer tmpEnv(envStr, "")()
 	}
+	defer tmpEnv("XDG_CONFIG_HOME", "/dummy/dummy")()
 	defer gitconfig.WithConfig(t, "")()
 
-	_, err := fillUsernameToPath("peco")
+	usr, err := fillUsernameToPath("peco")
+	t.Log(usr)
 	const wantSub = "set ghq.user to your gitconfig"
 	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
 		t.Errorf("fillUsernameToPath(peco) error = %q; want substring %q", got, wantSub)
