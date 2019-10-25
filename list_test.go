@@ -204,7 +204,7 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if !os.IsPermission(xerrors.Unwrap(err)) {
-		t.Errorf("error should be ErrNotExist, but: %v", err)
+		t.Errorf("error should be ErrPermission, but: %#+v", err)
 	}
 }
 

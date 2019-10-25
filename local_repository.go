@@ -240,7 +240,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 				return nil
 			}
 			return filepath.SkipDir
-		}); err != nil && !os.IsPermission(err) {
+		}); err != nil {
 			return err
 		}
 	}
