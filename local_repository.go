@@ -205,7 +205,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 	}
 	for _, root := range roots {
 		if _, err := os.Stat(root); err != nil {
-			if os.IsNotExist(err) || os.IsPermission(err) {
+			if os.IsNotExist(err) {
 				continue
 			}
 		}
@@ -240,7 +240,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 				return nil
 			}
 			return filepath.SkipDir
-		}); err != nil {
+		}); err != nil && !os.IsPermission(err) {
 			return err
 		}
 	}
