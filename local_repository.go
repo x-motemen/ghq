@@ -92,7 +92,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	// No local repository found, returning new one
 	return &LocalRepository{
 		FullPath:  filepath.Join(prim, relPath),
-		RelPath:   relPath,
+		RelPath:   filepath.ToSlash(relPath),
 		RootPath:  prim,
 		PathParts: pathParts,
 	}, nil
