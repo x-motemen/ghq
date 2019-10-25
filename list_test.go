@@ -21,7 +21,7 @@ func TestCommandList(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }
 
@@ -36,7 +36,7 @@ func TestCommandListUnique(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }
 
@@ -51,7 +51,7 @@ func TestCommandListUnknown(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }
 
@@ -186,7 +186,7 @@ func TestDoList_unknownRoot(t *testing.T) {
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }
 
@@ -204,7 +204,7 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if !os.IsPermission(xerrors.Unwrap(err)) {
-		t.Errorf("error should be ErrNotExist, but: %s", err)
+		t.Errorf("error should be ErrNotExist, but: %v", err)
 	}
 }
 
@@ -223,6 +223,6 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }
