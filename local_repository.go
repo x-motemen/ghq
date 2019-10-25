@@ -204,6 +204,9 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 		return err
 	}
 	for _, root := range roots {
+		if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
+			continue
+		}
 		if err := walker.Walk(root, func(fpath string, fi os.FileInfo) error {
 			isSymlink := false
 			if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
