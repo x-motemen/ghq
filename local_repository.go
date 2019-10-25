@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Songmu/gitconfig"
+	"github.com/saracen/walker"
 )
 
 type LocalRepository struct {
@@ -203,17 +204,8 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 		return err
 	}
 	for _, root := range roots {
-		if err := filepath.Walk(root, func(fpath string, fi os.FileInfo, err error) error {
+		if err := walker.Walk(root, func(fpath string, fi os.FileInfo) error {
 			isSymlink := false
-			if err != nil || fi == nil {
-				if err == nil || os.IsNotExist(err) {
-					return nil
-				}
-				if os.IsPermission(err) && filepath.Base(fpath)[0] == '.' {
-					return nil
-				}
-				return err
-			}
 			if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
 				isSymlink = true
 				realpath, err := filepath.EvalSymlinks(fpath)
