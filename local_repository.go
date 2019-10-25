@@ -56,7 +56,7 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 
 	return &LocalRepository{
 		FullPath:   fullPath,
-		RelPath:    filepath.ToSlash(relPath),
+		RelPath:    relPath,
 		RootPath:   root,
 		PathParts:  pathParts,
 		vcsBackend: backend,
@@ -92,7 +92,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	// No local repository found, returning new one
 	return &LocalRepository{
 		FullPath:  filepath.Join(prim, relPath),
-		RelPath:   filepath.ToSlash(relPath),
+		RelPath:   relPath,
 		RootPath:  prim,
 		PathParts: pathParts,
 	}, nil
