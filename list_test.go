@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -52,6 +53,12 @@ func TestCommandListUnknown(t *testing.T) {
 	if err != nil {
 		t.Errorf("error should be nil, but: %s", err)
 	}
+}
+
+func sortLines(s string) string {
+	ss := strings.Split(s, "\n")
+	sort.Strings(ss)
+	return strings.Join(ss, "\n")
 }
 
 func TestDoList_query(t *testing.T) {
@@ -125,7 +132,7 @@ func TestDoList_query(t *testing.T) {
 				out, _, _ := capture(func() {
 					newApp().Run(args)
 				})
-				if out != tc.expect {
+				if sortLines(out) != sortLines(tc.expect) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, tc.expect)
 				}
 				if strings.Contains(tc.name, "unique") {
@@ -134,14 +141,14 @@ func TestDoList_query(t *testing.T) {
 				argsFull := append([]string{"ghq", "list", "--full-path"}, tc.args...)
 				fullExpect := tc.expect
 				if fullExpect != "" {
-					fullExpect = tmproot + "/" + strings.TrimSpace(fullExpect)
-					fullExpect = strings.ReplaceAll(fullExpect, "\n", "\n"+tmproot+"/")
+					fullExpect = tmproot + string(filepath.Separator) + strings.TrimSpace(fullExpect)
+					fullExpect = strings.ReplaceAll(fullExpect, "\n", "\n"+tmproot+string(filepath.Separator))
 					fullExpect += "\n"
 				}
 				out, _, _ = capture(func() {
 					newApp().Run(argsFull)
 				})
-				if out != fullExpect {
+				if sortLines(out) != sortLines(fullExpect) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, fullExpect)
 				}
 			})
