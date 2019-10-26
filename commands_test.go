@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -199,6 +200,23 @@ func TestCommandGet(t *testing.T) {
 	}
 }
 
+func samePaths(lhs, rhs string) bool {
+	if runtime.GOOS != "windows" {
+		return lhs == rhs
+	}
+	lhss := strings.Split(lhs, "\n")
+	rhss := strings.Split(rhs, "\n")
+	for i := range lhss {
+		lhss[i], _ = filepath.Abs(filepath.Clean(lhss[i]))
+	}
+	for i := range rhss {
+		rhss[i], _ = filepath.Abs(filepath.Clean(rhss[i]))
+	}
+	lhs = strings.Join(lhss, "\n")
+	rhs = strings.Join(rhss, "\n")
+	return strings.ToLower(lhs) == strings.ToLower(lhs)
+}
+
 func TestDoRoot(t *testing.T) {
 	ghqrootEnv := "GHQ_ROOT"
 	testCases := []struct {
@@ -255,13 +273,13 @@ func TestDoRoot(t *testing.T) {
 			out, _, _ := capture(func() {
 				newApp().Run([]string{"", "root"})
 			})
-			if out != tc.expect {
+			if !samePaths(out, tc.expect) {
 				t.Errorf("got: %s, expect: %s", out, tc.expect)
 			}
 			out, _, _ = capture(func() {
 				newApp().Run([]string{"", "root", "--all"})
 			})
-			if out != tc.allExpect {
+			if !samePaths(out, tc.allExpect) {
 				t.Errorf("got: %s, expect: %s", out, tc.allExpect)
 			}
 		})
@@ -292,7 +310,7 @@ func TestDoLook(t *testing.T) {
 			t.Errorf("lastCmd.Args: got: %v, expect: %v", lastCmd.Args, []string{sh})
 		}
 		dir := filepath.Join(tmproot, "github.com", "motemen", "ghq")
-		if lastCmd.Dir != dir {
+		if filepath.Clean(lastCmd.Dir) != dir {
 			t.Errorf("lastCmd.Dir: got: %s, expect: %s", lastCmd.Dir, dir)
 		}
 		gotEnv := lastCmd.Env[len(lastCmd.Env)-1]

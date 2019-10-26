@@ -52,7 +52,7 @@ func TestDoImport(t *testing.T) {
 				}
 				log := buf.String()
 				for _, r := range in {
-					if !strings.Contains(log, r) {
+					if !strings.Contains(log, filepath.FromSlash(r)) {
 						t.Errorf("log should contains %q but not: %s", r, log)
 					}
 				}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -57,7 +56,7 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 
 	return &LocalRepository{
 		FullPath:   fullPath,
-		RelPath:    filepath.ToSlash(relPath),
+		RelPath:    relPath,
 		RootPath:   root,
 		PathParts:  pathParts,
 		vcsBackend: backend,
@@ -68,7 +67,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	pathParts := append(
 		[]string{remoteURL.Hostname()}, strings.Split(remoteURL.Path, "/")...,
 	)
-	relPath := strings.TrimSuffix(path.Join(pathParts...), ".git")
+	relPath := strings.TrimSuffix(filepath.Join(pathParts...), ".git")
 	pathParts[len(pathParts)-1] = strings.TrimSuffix(pathParts[len(pathParts)-1], ".git")
 
 	var localRepository *LocalRepository
@@ -92,7 +91,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	}
 	// No local repository found, returning new one
 	return &LocalRepository{
-		FullPath:  path.Join(prim, relPath),
+		FullPath:  filepath.Join(prim, relPath),
 		RelPath:   relPath,
 		RootPath:  prim,
 		PathParts: pathParts,
