@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -207,7 +208,7 @@ func doLook(c *cli.Context) error {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = repo.FullPath
-		cmd.Env = append(os.Environ(), "GHQ_LOOK="+repo.RelPath)
+		cmd.Env = append(os.Environ(), "GHQ_LOOK="+filepath.ToSlash(repo.RelPath))
 		return cmdutil.RunCommand(cmd, true)
 	default:
 		b := &strings.Builder{}

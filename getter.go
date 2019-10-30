@@ -47,7 +47,7 @@ func (g *getter) get(argURL string) error {
 			for _, r := range roots {
 				p := strings.TrimPrefix(path, r+string(filepath.Separator))
 				if p != path && (localRepoRoot == "" || len(p) < len(localRepoRoot)) {
-					localRepoRoot = p
+					localRepoRoot = filepath.ToSlash(p)
 				}
 			}
 
@@ -130,7 +130,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			strings.TrimSuffix(remoteURL.Path, ".git"),
 			strings.TrimSuffix(repoURL.Path, ".git"))
 		if l != "" {
-			localRepoRoot = path.Join(local.RootPath, remoteURL.Hostname(), l)
+			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
 		}
 
 		if getRepoLock(localRepoRoot) {
