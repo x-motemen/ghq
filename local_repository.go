@@ -10,6 +10,7 @@ import (
 
 	"github.com/Songmu/gitconfig"
 	"github.com/saracen/walker"
+	"golang.org/x/xerrors"
 )
 
 type LocalRepository struct {
@@ -57,7 +58,7 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 
 	return &LocalRepository{
 		FullPath:   fullPath,
-		RelPath:    relPath,
+		RelPath:    filepath.ToSlash(relPath),
 		RootPath:   root,
 		PathParts:  pathParts,
 		vcsBackend: backend,
@@ -202,44 +203,54 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 	if err != nil {
 		return err
 	}
+
+	walkFn := func(fpath string, fi os.FileInfo) error {
+		isSymlink := false
+		if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
+			isSymlink = true
+			realpath, err := filepath.EvalSymlinks(fpath)
+			if err != nil {
+				return nil
+			}
+			fi, err = os.Stat(realpath)
+			if err != nil {
+				return nil
+			}
+		}
+		if !fi.IsDir() {
+			return nil
+		}
+		vcsBackend := findVCSBackend(fpath)
+		if vcsBackend == nil {
+			return nil
+		}
+
+		repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
+		if err != nil || repo == nil {
+			return nil
+		}
+		callback(repo)
+
+		if isSymlink {
+			return nil
+		}
+		return filepath.SkipDir
+	}
+
+	errCb := walker.WithErrorCallback(func(pathname string, err error) error {
+		if os.IsPermission(xerrors.Unwrap(err)) {
+			return nil
+		}
+		return err
+	})
+
 	for _, root := range roots {
 		if _, err := os.Stat(root); err != nil {
-			if os.IsNotExist(err) {
+			if os.IsNotExist(err) || os.IsPermission(err) {
 				continue
 			}
 		}
-		if err := walker.Walk(root, func(fpath string, fi os.FileInfo) error {
-			isSymlink := false
-			if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
-				isSymlink = true
-				realpath, err := filepath.EvalSymlinks(fpath)
-				if err != nil {
-					return nil
-				}
-				fi, err = os.Stat(realpath)
-				if err != nil {
-					return nil
-				}
-			}
-			if !fi.IsDir() {
-				return nil
-			}
-			vcsBackend := findVCSBackend(fpath)
-			if vcsBackend == nil {
-				return nil
-			}
-
-			repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
-			if err != nil || repo == nil {
-				return nil
-			}
-			callback(repo)
-
-			if isSymlink {
-				return nil
-			}
-			return filepath.SkipDir
-		}); err != nil {
+		if err := walker.Walk(root, walkFn, errCb); err != nil {
 			return err
 		}
 	}

@@ -9,9 +9,10 @@ require (
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
-	github.com/saracen/walker v0.0.0-20191020095038-4d832ad28155
+	github.com/saracen/walker v0.0.0-20191030103630-c86836c89b0d
 	github.com/urfave/cli v1.20.0
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
+	golang.org/x/sys v0.0.0-20191029155521-f43be2a4598c // indirect
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
 )
