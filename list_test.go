@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -141,6 +142,9 @@ func TestDoList_query(t *testing.T) {
 				argsFull := append([]string{"ghq", "list", "--full-path"}, tc.args...)
 				fullExpect := tc.expect
 				if fullExpect != "" {
+					if runtime.GOOS == "windows" {
+						fullExpect = strings.ReplaceAll(fullExpect, `/`, `\`)
+					}
 					fullExpect = tmproot + string(filepath.Separator) + strings.TrimSpace(fullExpect)
 					fullExpect = strings.ReplaceAll(fullExpect, "\n", "\n"+tmproot+string(filepath.Separator))
 					fullExpect += "\n"
@@ -191,6 +195,9 @@ func TestDoList_unknownRoot(t *testing.T) {
 }
 
 func TestDoList_notPermittedRoot(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmpdir := newTempDir(t)
 	defer func(dir string) {
@@ -209,6 +216,9 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 }
 
 func TestDoList_withSystemHiddenDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmpdir := newTempDir(t)
 	systemHidden := filepath.Join(tmpdir, ".system")

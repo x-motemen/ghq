@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"testing"
 )
 
@@ -133,7 +134,7 @@ func TestLocalRepositoryRoots(t *testing.T) {
 			if err != nil {
 				t.Errorf("error should be nil, but: %s", err)
 			}
-			if !reflect.DeepEqual(got, tc.expect) {
+			if !samePathSlice(got, tc.expect) {
 				t.Errorf("\ngot:    %+v\nexpect: %+v", got, tc.expect)
 			}
 		})
@@ -142,6 +143,9 @@ func TestLocalRepositoryRoots(t *testing.T) {
 
 // https://gist.github.com/kyanny/c231f48e5d08b98ff2c3
 func TestList_Symlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
 	root := newTempDir(t)
 	defer os.RemoveAll(root)
 
@@ -175,6 +179,9 @@ func TestList_Symlink(t *testing.T) {
 }
 
 func TestList_Symlink_In_Same_Directory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
 	root := newTempDir(t)
 	defer os.RemoveAll(root)
 
