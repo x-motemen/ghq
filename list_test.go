@@ -232,7 +232,7 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 	_localRepositoryRoots = nil
 
 	err := newApp().Run([]string{"ghq", "list"})
-	if err == nil {
-		t.Errorf("should not be error")
+	if err != nil {
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }

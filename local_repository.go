@@ -245,10 +245,16 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 	})
 
 	for _, root := range roots {
-		if _, err := os.Stat(root); err != nil {
-			if os.IsNotExist(err) || os.IsPermission(err) {
+		fi, err := os.Stat(root)
+		if err != nil {
+			if os.IsNotExist(err) {
 				continue
 			}
+		}
+		// https://github.com/motemen/ghq/issues/173
+		// https://github.com/motemen/ghq/issues/187
+		if fi.Mode()&0444 == 0 {
+			return os.ErrPermission
 		}
 		if err := walker.Walk(root, walkFn, errCb); err != nil {
 			return err
