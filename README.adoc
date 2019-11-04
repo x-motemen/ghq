@@ -75,7 +75,7 @@ ghq.<url>.vcs::
     remote repository. The URL is matched against '<url>' using 'git config --get-urlmatch'. +
     Accepted values are "git", "github" (an alias for "git"), "subversion",
     "svn" (an alias for "subversion"), "git-svn", "mercurial", "hg" (an alias for "mercurial"),
-    and "darcs". +
+    "darcs", "fossil", "bazaar", and "bzr" (an alias for "bazaar"). +
     To get this configuration variable effective, you will need Git 1.8.5 or higher. +
     For example in .gitconfig:
 
