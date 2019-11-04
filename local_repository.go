@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/Songmu/gitconfig"
+	"github.com/motemen/ghq/logger"
 	"github.com/saracen/walker"
 	"golang.org/x/xerrors"
 )
@@ -169,24 +170,38 @@ func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 	return repo.vcsBackend, repo.RepoPath()
 }
 
-var vcsContentsMap = map[string]*VCSBackend{
-	".git/svn":       GitsvnBackend,
-	".git":           GitBackend,
-	".svn":           SubversionBackend,
-	".hg":            MercurialBackend,
-	"_darcs":         DarcsBackend,
-	".fslckout":      FossilBackend, // file
-	"_FOSSIL_":       FossilBackend, // file
-	"CVS/Repository": cvsDummyBackend,
-	".bzr":           BazaarBackend,
-}
-
-var vcsContents = make([]string, 0, len(vcsContentsMap))
+var vcsContentsMap = map[string]*VCSBackend{}
+var vcsContents []string
 
 func init() {
+	vcses, err := gitconfig.GetAll("ghq.findVcs")
+	if err != nil && !gitconfig.IsNotFound(err) {
+		logger.Log("error", err.Error())
+		os.Exit(1)
+	}
+
+	if len(vcses) == 0 {
+		for _, vcs := range vcsRegistry {
+			for _, c := range vcs.Contents() {
+				vcsContentsMap[c] = vcs
+			}
+		}
+	} else {
+		for _, v := range vcses {
+			vcs, ok := vcsRegistry[v]
+			if ok {
+				for _, c := range vcs.Contents() {
+					vcsContentsMap[c] = vcs
+				}
+			}
+		}
+	}
+
+	vcsContents = make([]string, 0, len(vcsContentsMap))
 	for k := range vcsContentsMap {
 		vcsContents = append(vcsContents, k)
 	}
+
 	// Sort in order of length.
 	// This is to check git/svn before git.
 	sort.Slice(vcsContents, func(i, j int) bool {

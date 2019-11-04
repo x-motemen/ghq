@@ -29,6 +29,8 @@ type VCSBackend struct {
 	Clone func(*url.URL, string, bool, bool) error
 	// Updates a cloned local repository.
 	Update func(string, bool) error
+	// Returns VCS specific files
+	Contents func() []string
 }
 
 var GitBackend = &VCSBackend{
@@ -51,6 +53,9 @@ var GitBackend = &VCSBackend{
 	Update: func(local string, silent bool) error {
 		return runInDir(silent)(local, "git", "pull", "--ff-only")
 	},
+	Contents: func() []string {
+		return []string{".git"}
+	},
 }
 
 var SubversionBackend = &VCSBackend{
@@ -72,6 +77,9 @@ var SubversionBackend = &VCSBackend{
 	Update: func(local string, silent bool) error {
 		return runInDir(silent)(local, "svn", "update")
 	},
+	Contents: func() []string {
+		return []string{".svn"}
+	},
 }
 
 var GitsvnBackend = &VCSBackend{
@@ -88,6 +96,9 @@ var GitsvnBackend = &VCSBackend{
 	Update: func(local string, silent bool) error {
 		return runInDir(silent)(local, "git", "svn", "rebase")
 	},
+	Contents: func() []string {
+		return []string{".git/svn"}
+	},
 }
 
 var MercurialBackend = &VCSBackend{
@@ -103,6 +114,9 @@ var MercurialBackend = &VCSBackend{
 	},
 	Update: func(local string, silent bool) error {
 		return runInDir(silent)(local, "hg", "pull", "--update")
+	},
+	Contents: func() []string {
+		return []string{".hg"}
 	},
 }
 
@@ -125,6 +139,9 @@ var DarcsBackend = &VCSBackend{
 	Update: func(local string, silent bool) error {
 		return runInDir(silent)(local, "darcs", "pull")
 	},
+	Contents: func() []string {
+		return []string{"_darcs"}
+	},
 }
 
 var cvsDummyBackend = &VCSBackend{
@@ -133,6 +150,9 @@ var cvsDummyBackend = &VCSBackend{
 	},
 	Update: func(local string, silent bool) error {
 		return errors.New("CVS update is not supported")
+	},
+	Contents: func() []string {
+		return []string{"CVS/Repository"}
 	},
 }
 
@@ -152,6 +172,9 @@ var FossilBackend = &VCSBackend{
 	Update: func(local string, silent bool) error {
 		return runInDir(silent)(local, "fossil", "update")
 	},
+	Contents: func() []string {
+		return []string{".fslckout", "_FOSSIL_"}
+	},
 }
 
 var BazaarBackend = &VCSBackend{
@@ -167,6 +190,9 @@ var BazaarBackend = &VCSBackend{
 	Update: func(local string, silent bool) error {
 		// Without --overwrite bzr will not pull tags that changed.
 		return runInDir(silent)(local, "bzr", "pull", "--overwrite")
+	},
+	Contents: func() []string {
+		return []string{".bzr"}
 	},
 }
 
