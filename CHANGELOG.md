@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.12.7](https://github.com/motemen/ghq/compare/v0.12.6...v0.12.7) (2019-11-05)
+
+* fix accepted values of ghq.<url>.vcs in README [#196](https://github.com/motemen/ghq/pull/196) ([autopp](https://github.com/autopp))
+* Use walker [#195](https://github.com/motemen/ghq/pull/195) ([mattn](https://github.com/mattn))
+* Use filepath [#194](https://github.com/motemen/ghq/pull/194) ([mattn](https://github.com/mattn))
+* go.{mod,sum}: Update xerrors dependency [#193](https://github.com/motemen/ghq/pull/193) ([rvolosatovs](https://github.com/rvolosatovs))
+* define func detectUserName and utilize it [#191](https://github.com/motemen/ghq/pull/191) ([Songmu](https://github.com/Songmu))
+
 ## [v0.12.6](https://github.com/motemen/ghq/compare/v0.12.5...v0.12.6) (2019-05-29)
 
 * Removing port number from local directory. [#182](https://github.com/motemen/ghq/pull/182) ([gmidorii](https://github.com/gmidorii))
