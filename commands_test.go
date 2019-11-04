@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
@@ -200,6 +201,26 @@ func TestCommandGet(t *testing.T) {
 	}
 }
 
+func samePath(lhs, rhs string) bool {
+	if runtime.GOOS != "windows" {
+		return lhs == rhs
+	}
+
+	lhs, _ = filepath.Abs(filepath.Clean(lhs))
+	rhs, _ = filepath.Abs(filepath.Clean(rhs))
+	return strings.ToLower(lhs) == strings.ToLower(lhs)
+}
+
+func samePathSlice(lhss, rhss []string) bool {
+	sort.Strings(lhss)
+	sort.Strings(rhss)
+	for i := range lhss {
+		if !samePath(lhss[i], rhss[i]) {
+			return false
+		}
+	}
+	return true
+}
 func samePaths(lhs, rhs string) bool {
 	if runtime.GOOS != "windows" {
 		return lhs == rhs
@@ -207,14 +228,11 @@ func samePaths(lhs, rhs string) bool {
 	lhss := strings.Split(lhs, "\n")
 	rhss := strings.Split(rhs, "\n")
 	for i := range lhss {
-		lhss[i], _ = filepath.Abs(filepath.Clean(lhss[i]))
+		if !samePath(lhss[i], rhss[i]) {
+			return false
+		}
 	}
-	for i := range rhss {
-		rhss[i], _ = filepath.Abs(filepath.Clean(rhss[i]))
-	}
-	lhs = strings.Join(lhss, "\n")
-	rhs = strings.Join(rhss, "\n")
-	return strings.ToLower(lhs) == strings.ToLower(lhs)
+	return true
 }
 
 func TestDoRoot(t *testing.T) {

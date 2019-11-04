@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
@@ -20,7 +22,7 @@ func TestCommandList(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }
 
@@ -35,7 +37,7 @@ func TestCommandListUnique(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }
 
@@ -50,8 +52,14 @@ func TestCommandListUnknown(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
+}
+
+func sortLines(s string) string {
+	ss := strings.Split(s, "\n")
+	sort.Strings(ss)
+	return strings.Join(ss, "\n")
 }
 
 func TestDoList_query(t *testing.T) {
@@ -125,7 +133,7 @@ func TestDoList_query(t *testing.T) {
 				out, _, _ := capture(func() {
 					newApp().Run(args)
 				})
-				if out != tc.expect {
+				if sortLines(out) != sortLines(tc.expect) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, tc.expect)
 				}
 				if strings.Contains(tc.name, "unique") {
@@ -134,14 +142,17 @@ func TestDoList_query(t *testing.T) {
 				argsFull := append([]string{"ghq", "list", "--full-path"}, tc.args...)
 				fullExpect := tc.expect
 				if fullExpect != "" {
-					fullExpect = tmproot + "/" + strings.TrimSpace(fullExpect)
-					fullExpect = strings.ReplaceAll(fullExpect, "\n", "\n"+tmproot+"/")
+					if runtime.GOOS == "windows" {
+						fullExpect = strings.ReplaceAll(fullExpect, `/`, `\`)
+					}
+					fullExpect = tmproot + string(filepath.Separator) + strings.TrimSpace(fullExpect)
+					fullExpect = strings.ReplaceAll(fullExpect, "\n", "\n"+tmproot+string(filepath.Separator))
 					fullExpect += "\n"
 				}
 				out, _, _ = capture(func() {
 					newApp().Run(argsFull)
 				})
-				if out != fullExpect {
+				if sortLines(out) != sortLines(fullExpect) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, fullExpect)
 				}
 			})
@@ -179,11 +190,14 @@ func TestDoList_unknownRoot(t *testing.T) {
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }
 
 func TestDoList_notPermittedRoot(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmpdir := newTempDir(t)
 	defer func(dir string) {
@@ -197,11 +211,14 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if !os.IsPermission(xerrors.Unwrap(err)) {
-		t.Errorf("error should be ErrNotExist, but: %s", err)
+		t.Errorf("error should be ErrPermission, but: %#+v", err)
 	}
 }
 
 func TestDoList_withSystemHiddenDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmpdir := newTempDir(t)
 	systemHidden := filepath.Join(tmpdir, ".system")
@@ -216,6 +233,6 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if err != nil {
-		t.Errorf("error should be nil, but: %s", err)
+		t.Errorf("error should be nil, but: %v", err)
 	}
 }

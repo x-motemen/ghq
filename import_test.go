@@ -50,9 +50,9 @@ func TestDoImport(t *testing.T) {
 				if out != "" {
 					t.Errorf("out should be empty, but: %s", out)
 				}
-				log := buf.String()
+				log := filepath.ToSlash(buf.String())
 				for _, r := range in {
-					if !strings.Contains(log, filepath.FromSlash(r)) {
+					if !strings.Contains(log, r) {
 						t.Errorf("log should contains %q but not: %s", r, log)
 					}
 				}

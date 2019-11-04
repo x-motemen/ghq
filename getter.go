@@ -34,7 +34,8 @@ type getter struct {
 func (g *getter) get(argURL string) error {
 	// If argURL is a "./foo" or "../bar" form,
 	// find repository name trailing after github.com/USER/.
-	parts := strings.Split(argURL, string(filepath.Separator))
+	argURL = filepath.ToSlash(argURL)
+	parts := strings.Split(argURL, "/")
 	if parts[0] == "." || parts[0] == ".." {
 		if wd, err := os.Getwd(); err == nil {
 			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
