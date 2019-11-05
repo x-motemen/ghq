@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.12.8](https://github.com/motemen/ghq/compare/v0.12.7...v0.12.8) (2019-11-05)
+
+* [bugfix] lock in walking [#197](https://github.com/motemen/ghq/pull/197) ([Songmu](https://github.com/Songmu))
+
 ## [v0.12.7](https://github.com/motemen/ghq/compare/v0.12.6...v0.12.7) (2019-11-05)
 
 * fix accepted values of ghq.<url>.vcs in README [#196](https://github.com/motemen/ghq/pull/196) ([autopp](https://github.com/autopp))
