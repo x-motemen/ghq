@@ -84,6 +84,18 @@ ghq.<url>.vcs::
 vcs = git
 ....
 
+ghq.findVcs::
+    'ghq list' checks each directory under ghq.root to see which VCS is used.
+    With this option you can make 'ghq list' check only the VCS using. +
+    Acceptable values are the same as ghq.<url>.vcs. +
+    For example in .gitconfig:
+
+....
+[ghq]
+findVcs = git
+findVcs = mercurial
+....
+
 ghq.ghe.host::
     The hostname of your GitHub Enterprise installation. A repository that has a
     hostname set with this key will be regarded as same one as one on GitHub.
