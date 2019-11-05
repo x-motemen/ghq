@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/urfave/cli"
 	"golang.org/x/xerrors"
@@ -55,11 +56,16 @@ func doList(c *cli.Context) error {
 		return vcsRegistry[vcsBackend] == vcs
 	}
 
-	repos := []*LocalRepository{}
+	var (
+		repos []*LocalRepository
+		mu    sync.Mutex
+	)
 	if err := walkLocalRepositories(func(repo *LocalRepository) {
 		if !filterByQuery(repo) || !filterByVCS(repo) {
 			return
 		}
+		mu.Lock()
+		defer mu.Unlock()
 		repos = append(repos, repo)
 	}); err != nil {
 		return xerrors.Errorf("failed to filter repos while walkLocalRepositories(repo): %w", err)

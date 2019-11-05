@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/Songmu/gitconfig"
 	"github.com/saracen/walker"
@@ -72,12 +73,16 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	relPath := strings.TrimSuffix(filepath.Join(pathParts...), ".git")
 	pathParts[len(pathParts)-1] = strings.TrimSuffix(pathParts[len(pathParts)-1], ".git")
 
-	var localRepository *LocalRepository
-
+	var (
+		localRepository *LocalRepository
+		mu              sync.Mutex
+	)
 	// Find existing local repository first
 	if err := walkLocalRepositories(func(repo *LocalRepository) {
 		if repo.RelPath == relPath {
+			mu.Lock()
 			localRepository = repo
+			mu.Unlock()
 		}
 	}); err != nil {
 		return nil, err

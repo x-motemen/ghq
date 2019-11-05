@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/motemen/ghq/cmdutil"
 	"github.com/urfave/cli"
@@ -174,10 +175,15 @@ func doLook(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	reposFound := []*LocalRepository{}
+	var (
+		reposFound []*LocalRepository
+		mu         sync.Mutex
+	)
 	if err := walkLocalRepositories(func(repo *LocalRepository) {
 		if repo.Matches(name) {
+			mu.Lock()
 			reposFound = append(reposFound, repo)
+			mu.Unlock()
 		}
 	}); err != nil {
 		return err
