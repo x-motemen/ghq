@@ -75,5 +75,5 @@ docker-release:
       -w /ghq \
       -e GITHUB_TOKEN="$(GITHUB_TOKEN)" \
       --rm        \
-      golang:1.12 \
+      golang:1.13 \
       make crossbuild upload
