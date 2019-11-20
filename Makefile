@@ -15,6 +15,7 @@ deps:
 devel-deps: deps
 	sh -c '\
 	tmpdir=$$(mktemp -d); \
+	cd $$tmpdir; \
 	go get ${u} \
 	  golang.org/x/lint/golint            \
 	  github.com/mattn/goveralls          \
