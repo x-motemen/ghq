@@ -23,12 +23,12 @@ var commands = []cli.Command{
 }
 
 var cloneFlags = []cli.Flag{
-	cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
-	cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
-	cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
-	cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
-	cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
-	cli.BoolFlag{Name: "silent, s", Usage: "clone or update silently"},
+	&cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
+	&cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
+	&cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
+	&cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
+	&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
+	&cli.BoolFlag{Name: "silent, s", Usage: "clone or update silently"},
 }
 
 var commandGet = cli.Command{
@@ -56,10 +56,10 @@ var commandList = cli.Command{
 `,
 	Action: doList,
 	Flags: []cli.Flag{
-		cli.BoolFlag{Name: "exact, e", Usage: "Perform an exact match"},
-		cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for matching"},
-		cli.BoolFlag{Name: "full-path, p", Usage: "Print full paths"},
-		cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
+		&cli.BoolFlag{Name: "exact, e", Usage: "Perform an exact match"},
+		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for matching"},
+		&cli.BoolFlag{Name: "full-path, p", Usage: "Print full paths"},
+		&cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
 	},
 }
 
@@ -77,7 +77,7 @@ var commandImport = cli.Command{
 	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
 	Flags: append(cloneFlags,
-		cli.BoolFlag{Name: "parallel, P", Usage: "[Experimental] Import parallely"}),
+		&cli.BoolFlag{Name: "parallel, P", Usage: "[Experimental] Import parallely"}),
 }
 
 var commandRoot = cli.Command{
@@ -85,7 +85,7 @@ var commandRoot = cli.Command{
 	Usage:  "Show repositories' root",
 	Action: doRoot,
 	Flags: []cli.Flag{
-		cli.BoolFlag{Name: "all", Usage: "Show all roots"},
+		&cli.BoolFlag{Name: "all", Usage: "Show all roots"},
 	},
 }
 
