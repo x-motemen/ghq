@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.12.9](https://github.com/motemen/ghq/compare/v0.12.8...v0.12.9) (2019-11-20)
+
+* update deps [#201](https://github.com/motemen/ghq/pull/201) ([Songmu](https://github.com/Songmu))
+
 ## [v0.12.8](https://github.com/motemen/ghq/compare/v0.12.7...v0.12.8) (2019-11-05)
 
 * [bugfix] lock in walking [#197](https://github.com/motemen/ghq/pull/197) ([Songmu](https://github.com/Songmu))
