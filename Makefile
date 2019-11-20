@@ -13,14 +13,14 @@ deps:
 
 .PHONY: devel-deps
 devel-deps: deps
-	GO111MODULE=off go get ${u} \
-	  golang.org/x/lint/golint                  \
-	  github.com/mattn/goveralls                \
-	  github.com/Songmu/godzil/cmd/godzil       \
-	  github.com/Songmu/goxz/cmd/goxz           \
-	  github.com/Songmu/ghch/cmd/ghch           \
-	  github.com/Songmu/gocredits/cmd/gocredits \
-	  github.com/tcnksm/ghr
+	sh -c '\
+	tmpdir=$$(mktemp -d); \
+	go get ${u} \
+	  golang.org/x/lint/golint            \
+	  github.com/mattn/goveralls          \
+	  github.com/Songmu/godzil/cmd/godzil \
+	  github.com/tcnksm/ghr; \
+	rm -rf $$tmpdir'
 
 .PHONY: test
 test: deps
@@ -28,7 +28,6 @@ test: deps
 
 .PHONY: lint
 lint: devel-deps
-	go vet ./...
 	golint -set_exit_status ./...
 
 .PHONY: cover
@@ -48,19 +47,19 @@ bump: devel-deps
 	godzil release
 
 CREDITS: devel-deps go.sum
-	gocredits -w
+	godzil credits -w
 
 DIST_DIR = dist/v$(VERSION)
 .PHONY: crossbuild
 crossbuild: CREDITS
 	rm -rf $(DIST_DIR)
-	goxz -arch=386,amd64 -build-ldflags=$(BUILD_LDFLAGS) \
+	godzil crossbuild -arch=386,amd64 -build-ldflags=$(BUILD_LDFLAGS) \
       -include='zsh/_ghq' -z -d $(DIST_DIR)
 	cd $(DIST_DIR) && shasum $$(find * -type f -maxdepth 0) > SHASUMS
 
 .PHONY: upload
 upload:
-	ghr -body="$$(ghch --latest -F markdown)" v$(VERSION) $(DIST_DIR)
+	ghr -body="$$(godzil changelog --latest -F markdown)" v$(VERSION) $(DIST_DIR)
 
 .PHONY: release
 release: bump docker-release
