@@ -16,7 +16,7 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 == SYNOPSIS
 
 [verse]
-ghq get [-u] [-p] [--shallow] [--vcs] [--look] [--silent] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
+ghq get [-u] [-p] [--shallow] [--vcs] [--look] [--silent] [--branch] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
 ghq list [-p] [-e] [<query>]
 ghq look (<project> | <path/to/project> | <host>/<user>/<project> | <repository URL>)
 ghq import [-u] [-p] [--shalow] [--vcs] [--parallel] < FILE
@@ -33,10 +33,13 @@ get::
     If there are multiple +ghq.root+ s, existing local clones are searched
     first. Then a new repository clone is created under the primary root if
     none is found. +
-    With '-shallow' option, a "shallow clone" will be performed (for Git
+    With '--shallow' option, a "shallow clone" will be performed (for Git
     repositories only, 'git clone --depth 1 ...' eg.). Be careful that a
-    shallow-cloned repository cannot be pushed to remote. +
-    Currently Git and Mercurial repositories are supported.
+    shallow-cloned repository cannot be pushed to remote.
+    Currently Git and Mercurial repositories are supported. +
+    With '--branch' option, you can clone the repository with specified
+    repository. This option is currently supported for Git, Mercurial,
+    Subversion and git-svn.
 
 list::
     List locally cloned repositories. If a query argument is given, only
