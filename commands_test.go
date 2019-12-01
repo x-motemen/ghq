@@ -32,6 +32,7 @@ type _cloneArgs struct {
 	remote  *url.URL
 	local   string
 	shallow bool
+	branch  string
 }
 
 type _updateArgs struct {
@@ -50,11 +51,12 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 
 	var originalGitBackend = GitBackend
 	tmpBackend := &VCSBackend{
-		Clone: func(remote *url.URL, local string, shallow, silent bool) error {
+		Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
 			cloneArgs = _cloneArgs{
 				remote:  remote,
 				local:   filepath.FromSlash(local),
 				shallow: shallow,
+				branch:  branch,
 			}
 			return nil
 		},
@@ -95,6 +97,9 @@ func TestCommandGet(t *testing.T) {
 				}
 				if cloneArgs.shallow {
 					t.Errorf("cloneArgs.shallow should be false")
+				}
+				if cloneArgs.branch != "" {
+					t.Errorf("cloneArgs.branch should be empty")
 				}
 			},
 		},
@@ -189,6 +194,26 @@ func TestCommandGet(t *testing.T) {
 				expectDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-another-test-repo")
 				if cloneArgs.local != expectDir {
 					t.Errorf("got: %s, expect: %s", cloneArgs.local, expectDir)
+				}
+			},
+		},
+		{
+			name: "specific branch",
+			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+
+				expectBranch := "hello"
+				app.Run([]string{"", "get", "-shallow", "-b", expectBranch, "motemen/ghq-test-repo"})
+
+				expect := "https://github.com/motemen/ghq-test-repo"
+				if cloneArgs.remote.String() != expect {
+					t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+				}
+				if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+					t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+				}
+				if cloneArgs.branch != expectBranch {
+					t.Errorf("got: %q, expect: %q", cloneArgs.branch, expectBranch)
 				}
 			},
 		},

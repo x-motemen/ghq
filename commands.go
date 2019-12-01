@@ -29,6 +29,7 @@ var cloneFlags = []cli.Flag{
 	&cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
 	&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
 	&cli.BoolFlag{Name: "silent, s", Usage: "clone or update silently"},
+	&cli.StringFlag{Name: "branch, b", Usage: "Specify branch name. This flag implies --single-branch on Git"},
 }
 
 var commandGet = cli.Command{
@@ -140,6 +141,7 @@ func doGet(c *cli.Context) error {
 		ssh:     c.Bool("p"),
 		vcs:     c.String("vcs"),
 		silent:  c.Bool("silent"),
+		branch:  c.String("branch"),
 	}
 
 	if argURL == "" {
