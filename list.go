@@ -48,20 +48,13 @@ func doList(c *cli.Context) error {
 			}
 		}
 	}
-	filterByVCS := func(repo *LocalRepository) bool {
-		if vcsBackend == "" {
-			return true
-		}
-		vcs, _ := repo.VCS()
-		return vcsRegistry[vcsBackend] == vcs
-	}
 
 	var (
 		repos []*LocalRepository
 		mu    sync.Mutex
 	)
-	if err := walkLocalRepositories(func(repo *LocalRepository) {
-		if !filterByQuery(repo) || !filterByVCS(repo) {
+	if err := walkLocalRepositories(vcsBackend, func(repo *LocalRepository) {
+		if !filterByQuery(repo) {
 			return
 		}
 		mu.Lock()

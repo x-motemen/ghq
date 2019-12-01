@@ -181,7 +181,7 @@ func doLook(c *cli.Context) error {
 		reposFound []*LocalRepository
 		mu         sync.Mutex
 	)
-	if err := walkLocalRepositories(func(repo *LocalRepository) {
+	if err := walkAllLocalRepositories(func(repo *LocalRepository) {
 		if repo.Matches(name) {
 			mu.Lock()
 			reposFound = append(reposFound, repo)

@@ -169,7 +169,7 @@ func TestList_Symlink(t *testing.T) {
 	}
 
 	paths := []string{}
-	walkLocalRepositories(func(repo *LocalRepository) {
+	walkAllLocalRepositories(func(repo *LocalRepository) {
 		paths = append(paths, repo.RelPath)
 	})
 
@@ -209,7 +209,7 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 	}
 
 	paths := []string{}
-	walkLocalRepositories(func(repo *LocalRepository) {
+	walkAllLocalRepositories(func(repo *LocalRepository) {
 		paths = append(paths, repo.RelPath)
 	})
 
@@ -221,35 +221,55 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 func TestFindVCSBackend(t *testing.T) {
 	testCases := []struct {
 		name   string
-		setup  func(t *testing.T) (string, func())
+		setup  func(t *testing.T) (string, string, func())
 		expect *VCSBackend
 	}{{
 		name: "git",
-		setup: func(t *testing.T) (string, func()) {
+		setup: func(t *testing.T) (string, string, func()) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, func() {
+			return dir, "", func() {
 				os.RemoveAll(dir)
 			}
 		},
 		expect: GitBackend,
 	}, {
 		name: "git svn",
-		setup: func(t *testing.T) (string, func()) {
+		setup: func(t *testing.T) (string, string, func()) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git", "svn"), 0755)
-			return dir, func() {
+			return dir, "", func() {
 				os.RemoveAll(dir)
 			}
 		},
 		expect: GitsvnBackend,
+	}, {
+		name: "git with matched vcs",
+		setup: func(t *testing.T) (string, string, func()) {
+			dir := newTempDir(t)
+			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
+			return dir, "git", func() {
+				os.RemoveAll(dir)
+			}
+		},
+		expect: GitBackend,
+	}, {
+		name: "git with not matched vcs",
+		setup: func(t *testing.T) (string, string, func()) {
+			dir := newTempDir(t)
+			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
+			return dir, "mercurial", func() {
+				os.RemoveAll(dir)
+			}
+		},
+		expect: nil,
 	}}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			fpath, teardown := tc.setup(t)
+			fpath, vcs, teardown := tc.setup(t)
 			defer teardown()
-			backend := findVCSBackend(fpath)
+			backend := findVCSBackend(fpath, vcs)
 			if backend != tc.expect {
 				t.Errorf("got: %v, expect: %v", backend, tc.expect)
 			}
