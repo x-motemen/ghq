@@ -69,6 +69,8 @@ var SubversionBackend = &VCSBackend{
 			args = append(args, "--depth", "1")
 		}
 		if branch != "" {
+			copied := *remote
+			remote = &copied
 			remote.Path += "/branches/" + url.PathEscape(branch)
 		}
 		args = append(args, remote.String(), local)
@@ -89,6 +91,8 @@ var GitsvnBackend = &VCSBackend{
 			return err
 		}
 		if branch != "" {
+			copied := *remote
+			remote = &copied
 			remote.Path += "/branches/" + url.PathEscape(branch)
 		}
 
@@ -107,10 +111,11 @@ var MercurialBackend = &VCSBackend{
 		if err != nil {
 			return err
 		}
-		args := []string{"clone", remote.String(), local}
+		args := []string{"clone"}
 		if branch != "" {
 			args = append(args, "--branch", branch)
 		}
+		args = append(args, remote.String(), local)
 
 		return run(silent)("hg", args...)
 	},

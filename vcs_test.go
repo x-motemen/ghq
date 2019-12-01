@@ -34,15 +34,21 @@ func TestVCSBackend(t *testing.T) {
 	}{{
 		name: "[git] clone",
 		f: func() error {
-			return GitBackend.Clone(remoteDummyURL, localDir, false, false)
+			return GitBackend.Clone(remoteDummyURL, localDir, false, false, "")
 		},
 		expect: []string{"git", "clone", remoteDummyURL.String(), localDir},
 	}, {
 		name: "[git] shallow clone",
 		f: func() error {
-			return GitBackend.Clone(remoteDummyURL, localDir, true, true)
+			return GitBackend.Clone(remoteDummyURL, localDir, true, true, "")
 		},
 		expect: []string{"git", "clone", "--depth", "1", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[git] clone specific branch",
+		f: func() error {
+			return GitBackend.Clone(remoteDummyURL, localDir, false, false, "hello")
+		},
+		expect: []string{"git", "clone", "--branch", "hello", "--single-branch", remoteDummyURL.String(), localDir},
 	}, {
 		name: "[git] update",
 		f: func() error {
@@ -53,15 +59,21 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[svn] checkout",
 		f: func() error {
-			return SubversionBackend.Clone(remoteDummyURL, localDir, false, false)
+			return SubversionBackend.Clone(remoteDummyURL, localDir, false, false, "")
 		},
 		expect: []string{"svn", "checkout", remoteDummyURL.String(), localDir},
 	}, {
 		name: "[svn] checkout shallow",
 		f: func() error {
-			return SubversionBackend.Clone(remoteDummyURL, localDir, true, false)
+			return SubversionBackend.Clone(remoteDummyURL, localDir, true, false, "")
 		},
 		expect: []string{"svn", "checkout", "--depth", "1", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[svn] checkout specific branch",
+		f: func() error {
+			return SubversionBackend.Clone(remoteDummyURL, localDir, false, false, "hello")
+		},
+		expect: []string{"svn", "checkout", remoteDummyURL.String() + "/branches/hello", localDir},
 	}, {
 		name: "[svn] update",
 		f: func() error {
@@ -72,7 +84,7 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[git-svn] clone",
 		f: func() error {
-			return GitsvnBackend.Clone(remoteDummyURL, localDir, false, false)
+			return GitsvnBackend.Clone(remoteDummyURL, localDir, false, false, "")
 		},
 		expect: []string{"git", "svn", "clone", remoteDummyURL.String(), localDir},
 	}, {
@@ -85,13 +97,19 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[git-svn] clone shallow",
 		f: func() error {
-			return GitsvnBackend.Clone(remoteDummyURL, localDir, true, false)
+			return GitsvnBackend.Clone(remoteDummyURL, localDir, true, false, "")
 		},
 		expect: []string{"git", "svn", "clone", remoteDummyURL.String(), localDir},
 	}, {
+		name: "[git-svn] clone specific branch",
+		f: func() error {
+			return GitsvnBackend.Clone(remoteDummyURL, localDir, false, false, "hello")
+		},
+		expect: []string{"git", "svn", "clone", remoteDummyURL.String() + "/branches/hello", localDir},
+	}, {
 		name: "[hg] clone",
 		f: func() error {
-			return MercurialBackend.Clone(remoteDummyURL, localDir, false, false)
+			return MercurialBackend.Clone(remoteDummyURL, localDir, false, false, "")
 		},
 		expect: []string{"hg", "clone", remoteDummyURL.String(), localDir},
 	}, {
@@ -104,19 +122,25 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[hg] clone shallow",
 		f: func() error {
-			return MercurialBackend.Clone(remoteDummyURL, localDir, true, false)
+			return MercurialBackend.Clone(remoteDummyURL, localDir, true, false, "")
 		},
 		expect: []string{"hg", "clone", remoteDummyURL.String(), localDir},
 	}, {
+		name: "[hg] clone specific branch",
+		f: func() error {
+			return MercurialBackend.Clone(remoteDummyURL, localDir, false, false, "hello")
+		},
+		expect: []string{"hg", "clone", "--branch", "hello", remoteDummyURL.String(), localDir},
+	}, {
 		name: "[darcs] clone",
 		f: func() error {
-			return DarcsBackend.Clone(remoteDummyURL, localDir, false, false)
+			return DarcsBackend.Clone(remoteDummyURL, localDir, false, false, "")
 		},
 		expect: []string{"darcs", "get", remoteDummyURL.String(), localDir},
 	}, {
 		name: "[darcs] clone shallow",
 		f: func() error {
-			return DarcsBackend.Clone(remoteDummyURL, localDir, true, false)
+			return DarcsBackend.Clone(remoteDummyURL, localDir, true, false, "")
 		},
 		expect: []string{"darcs", "get", "--lazy", remoteDummyURL.String(), localDir},
 	}, {
@@ -129,7 +153,7 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[bzr] clone",
 		f: func() error {
-			return BazaarBackend.Clone(remoteDummyURL, localDir, false, false)
+			return BazaarBackend.Clone(remoteDummyURL, localDir, false, false, "")
 		},
 		expect: []string{"bzr", "branch", remoteDummyURL.String(), localDir},
 	}, {
@@ -142,13 +166,13 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[bzr] clone shallow",
 		f: func() error {
-			return BazaarBackend.Clone(remoteDummyURL, localDir, true, false)
+			return BazaarBackend.Clone(remoteDummyURL, localDir, true, false, "")
 		},
 		expect: []string{"bzr", "branch", remoteDummyURL.String(), localDir},
 	}, {
 		name: "[fossil] clone",
 		f: func() error {
-			return FossilBackend.Clone(remoteDummyURL, localDir, false, false)
+			return FossilBackend.Clone(remoteDummyURL, localDir, false, false, "")
 		},
 		expect: []string{"fossil", "open", fossilRepoName},
 		dir:    localDir,
@@ -182,15 +206,33 @@ func TestCvsDummyBackend(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
 
-	if err := cvsDummyBackend.Clone(remoteDummyURL, localDir, false, false); err == nil {
+	if err := cvsDummyBackend.Clone(remoteDummyURL, localDir, false, false, ""); err == nil {
 		t.Error("error should be occurred, but nil")
 	}
 
-	if err := cvsDummyBackend.Clone(remoteDummyURL, localDir, true, false); err == nil {
+	if err := cvsDummyBackend.Clone(remoteDummyURL, localDir, true, false, ""); err == nil {
 		t.Error("error should be occurred, but nil")
 	}
 
 	if err := cvsDummyBackend.Update(localDir, false); err == nil {
+		t.Error("error should be occurred, but nil")
+	}
+}
+
+func TestBranchOptionIgnoredErrors(t *testing.T) {
+	tempDir := newTempDir(t)
+	defer os.RemoveAll(tempDir)
+	localDir := filepath.Join(tempDir, "repo")
+
+	if err := DarcsBackend.Clone(remoteDummyURL, localDir, false, false, "hello"); err == nil {
+		t.Error("error should be occurred, but nil")
+	}
+
+	if err := FossilBackend.Clone(remoteDummyURL, localDir, false, false, "hello"); err == nil {
+		t.Error("error should be occurred, but nil")
+	}
+
+	if err := BazaarBackend.Clone(remoteDummyURL, localDir, false, false, "hello"); err == nil {
 		t.Error("error should be occurred, but nil")
 	}
 }
