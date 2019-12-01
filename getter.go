@@ -28,7 +28,7 @@ func getRepoLock(localRepoRoot string) bool {
 
 type getter struct {
 	update, shallow, silent, ssh bool
-	vcs                          string
+	vcs, branch                  string
 }
 
 func (g *getter) get(argURL string) error {
@@ -135,7 +135,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 		}
 
 		if getRepoLock(localRepoRoot) {
-			return vcs.Clone(repoURL, localRepoRoot, g.shallow, g.silent)
+			return vcs.Clone(repoURL, localRepoRoot, g.shallow, g.silent, g.branch)
 		}
 		return nil
 	}
