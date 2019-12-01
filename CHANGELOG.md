@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.13.0](https://github.com/motemen/ghq/compare/v0.12.9...v0.13.0) (2019-12-01)
+
+* update deps [#204](https://github.com/motemen/ghq/pull/204) ([Songmu](https://github.com/Songmu))
+* Add --branch option to `ghq get` for specifying branch [#203](https://github.com/motemen/ghq/pull/203) ([rhysd](https://github.com/rhysd))
+
 ## [v0.12.9](https://github.com/motemen/ghq/compare/v0.12.8...v0.12.9) (2019-11-20)
 
 * update deps [#201](https://github.com/motemen/ghq/pull/201) ([Songmu](https://github.com/Songmu))
