@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.13.1](https://github.com/motemen/ghq/compare/v0.13.0...v0.13.1) (2019-12-04)
+
+* optimize `--vcs` option of list [#205](https://github.com/motemen/ghq/pull/205) ([autopp](https://github.com/autopp))
+
 ## [v0.13.0](https://github.com/motemen/ghq/compare/v0.12.9...v0.13.0) (2019-12-01)
 
 * update deps [#204](https://github.com/motemen/ghq/pull/204) ([Songmu](https://github.com/Songmu))
