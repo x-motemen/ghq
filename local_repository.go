@@ -78,7 +78,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 		mu              sync.Mutex
 	)
 	// Find existing local repository first
-	if err := walkLocalRepositories(func(repo *LocalRepository) {
+	if err := walkAllLocalRepositories(func(repo *LocalRepository) {
 		if repo.RelPath == relPath {
 			mu.Lock()
 			localRepository = repo
@@ -158,7 +158,7 @@ func (repo *LocalRepository) Matches(pathQuery string) bool {
 func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 	if repo.vcsBackend == nil {
 		for _, dir := range repo.repoRootCandidates() {
-			backend := findVCSBackend(dir)
+			backend := findVCSBackend(dir, "")
 			if backend != nil {
 				repo.vcsBackend = backend
 				repo.repoPath = dir
@@ -194,7 +194,20 @@ func init() {
 	})
 }
 
-func findVCSBackend(fpath string) *VCSBackend {
+func findVCSBackend(fpath, vcs string) *VCSBackend {
+	// When vcs is not empty, search only specified contents of vcs
+	if vcs != "" {
+		vcsBackend, ok := vcsRegistry[vcs]
+		if !ok {
+			return nil
+		}
+		for _, d := range vcsBackend.Contents() {
+			if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
+				return vcsBackend
+			}
+		}
+		return nil
+	}
 	for _, d := range vcsContents {
 		if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
 			return vcsContentsMap[d]
@@ -203,7 +216,11 @@ func findVCSBackend(fpath string) *VCSBackend {
 	return nil
 }
 
-func walkLocalRepositories(callback func(*LocalRepository)) error {
+func walkAllLocalRepositories(callback func(*LocalRepository)) error {
+	return walkLocalRepositories("", callback)
+}
+
+func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 	roots, err := localRepositoryRoots()
 	if err != nil {
 		return err
@@ -225,7 +242,7 @@ func walkLocalRepositories(callback func(*LocalRepository)) error {
 		if !fi.IsDir() {
 			return nil
 		}
-		vcsBackend := findVCSBackend(fpath)
+		vcsBackend := findVCSBackend(fpath, vcs)
 		if vcsBackend == nil {
 			return nil
 		}
