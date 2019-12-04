@@ -1,4 +1,4 @@
-= ghq(1) image:https://travis-ci.org/motemen/ghq.svg?branch=master["Build Status", link="https://travis-ci.org/motemen/ghq"]
+= ghq(1) image:https://github.com/motemenghq/workflows/test/badge.svg?branch=master["Build Status", link="https://github.com/motemen/ghq/actions?workflow=test"]
 
 == NAME
 
