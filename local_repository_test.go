@@ -296,6 +296,10 @@ func TestLocalRepository_VCS(t *testing.T) {
 		if err != nil {
 			t.Errorf("error should be nil, but: %s", err)
 		}
+		if repo == nil {
+			t.Errorf("repo should not be nil, but: %v", repo)
+			return
+		}
 		vcs, repoPath := repo.VCS()
 		if vcs != GitBackend {
 			t.Errorf("repo.VCS() = %+v, expect: GitBackend", vcs)
