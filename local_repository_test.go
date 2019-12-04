@@ -299,6 +299,7 @@ func TestLocalRepository_VCS(t *testing.T) {
 		vcs, repoPath := repo.VCS()
 		if vcs != GitBackend {
 			t.Errorf("repo.VCS() = %+v, expect: GitBackend", vcs)
+			return
 		}
 		if repoPath != pkg {
 			t.Errorf("got: %s, expect: %s", repoPath, pkg)
