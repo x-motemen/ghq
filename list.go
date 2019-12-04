@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -26,7 +27,7 @@ func doList(c *cli.Context) error {
 		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
 			if url, err := newURL(query); err == nil {
 				if repo, err := LocalRepositoryFromURL(url); err == nil {
-					query = repo.RelPath
+					query = filepath.ToSlash(repo.RelPath)
 				}
 			}
 		}
