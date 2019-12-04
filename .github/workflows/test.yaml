@@ -13,7 +13,6 @@ jobs:
         os:
         - ubuntu-latest
         - macOS-latest
-        - windows-latest
     steps:
     - name: setup go
       uses: actions/setup-go@v1
@@ -27,7 +26,6 @@ jobs:
       run: |
         GO111MODULE=off GOBIN=$(pwd)/bin go get golang.org/x/lint/golint
         bin/golint -set_exit_status ./...
-      if: "matrix.os == 'ubuntu-latest' || matrix.os == 'macOS-latest'"
     - name: test
       run: go test -coverprofile coverage.out -covermode atomic ./...
     - name: Send coverage
