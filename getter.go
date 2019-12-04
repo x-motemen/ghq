@@ -156,9 +156,9 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 
 func detectLocalRepoRoot(remotePath, repoPath string) string {
 	pathParts := strings.Split(repoPath, "/")
-	pathParts = pathParts[1:len(pathParts)]
+	pathParts = pathParts[1:]
 	for i := 0; i < len(pathParts); i++ {
-		subPath := "/" + path.Join(pathParts[i:len(pathParts)]...)
+		subPath := "/" + path.Join(pathParts[i:]...)
 		if subIdx := strings.Index(remotePath, subPath); subIdx >= 0 {
 			return remotePath[0:subIdx] + subPath
 		}
