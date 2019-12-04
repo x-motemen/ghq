@@ -18,7 +18,6 @@ devel-deps: deps
 	cd $$tmpdir; \
 	go get ${u} \
 	  golang.org/x/lint/golint            \
-	  github.com/mattn/goveralls          \
 	  github.com/Songmu/godzil/cmd/godzil \
 	  github.com/tcnksm/ghr; \
 	rm -rf $$tmpdir'
@@ -43,8 +42,8 @@ build: deps
 install: deps
 	go install $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS)
 
-.PHONY: bump
-bump: devel-deps
+.PHONY: release
+release: devel-deps
 	godzil release
 
 CREDITS: devel-deps go.sum
@@ -61,19 +60,3 @@ crossbuild: CREDITS
 .PHONY: upload
 upload:
 	ghr -body="$$(godzil changelog --latest -F markdown)" v$(VERSION) $(DIST_DIR)
-
-.PHONY: release
-release: bump docker-release
-
-.PHONY: local-release
-local-release: bump crossbuild upload
-
-.PHONY: docker-release
-docker-release:
-	@docker run \
-      -v $(PWD):/ghq \
-      -w /ghq \
-      -e GITHUB_TOKEN="$(GITHUB_TOKEN)" \
-      --rm        \
-      golang:1.13 \
-      make crossbuild upload

@@ -1,7 +1,0 @@
-language: go
-go:
-- 1.x
-script:
-- make test VERBOSE=1
-after_script:
-- make cover

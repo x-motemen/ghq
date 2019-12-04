@@ -33,6 +33,7 @@ type VCSBackend struct {
 	Contents func() []string
 }
 
+// GitBackend is the VCSBackend of git
 var GitBackend = &VCSBackend{
 	// support submodules?
 	Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
@@ -61,6 +62,7 @@ var GitBackend = &VCSBackend{
 	},
 }
 
+// SubversionBackend is the VCSBackend for subversion
 var SubversionBackend = &VCSBackend{
 	Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
 		dir, _ := filepath.Split(local)
@@ -90,6 +92,7 @@ var SubversionBackend = &VCSBackend{
 	},
 }
 
+// GitsvnBackend is the VCSBackend for git-svn
 var GitsvnBackend = &VCSBackend{
 	// git-svn seems not supporting shallow clone currently.
 	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool, branch string) error {
@@ -114,6 +117,7 @@ var GitsvnBackend = &VCSBackend{
 	},
 }
 
+// MercurialBackend is the VCSBackend for mercurial
 var MercurialBackend = &VCSBackend{
 	// Mercurial seems not supporting shallow clone currently.
 	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool, branch string) error {
@@ -138,6 +142,7 @@ var MercurialBackend = &VCSBackend{
 	},
 }
 
+// DarcsBackend is the VCSBackend for darcs
 var DarcsBackend = &VCSBackend{
 	Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
 		if branch != "" {
@@ -180,6 +185,7 @@ var cvsDummyBackend = &VCSBackend{
 
 const fossilRepoName = ".fossil" // same as Go
 
+// FossilBackend is the VCSBackend for fossil
 var FossilBackend = &VCSBackend{
 	Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
 		if branch != "" {
@@ -202,6 +208,7 @@ var FossilBackend = &VCSBackend{
 	},
 }
 
+// BazaarBackend is the VCSBackend for bazaar
 var BazaarBackend = &VCSBackend{
 	// bazaar seems not supporting shallow clone currently.
 	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool, branch string) error {

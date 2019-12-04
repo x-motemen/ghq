@@ -14,6 +14,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// LocalRepository represents local repository
 type LocalRepository struct {
 	FullPath  string
 	RelPath   string
@@ -24,6 +25,7 @@ type LocalRepository struct {
 	vcsBackend *VCSBackend
 }
 
+// RepoPath returns local repository path
 func (repo *LocalRepository) RepoPath() string {
 	if repo.repoPath != "" {
 		return repo.repoPath
@@ -31,6 +33,7 @@ func (repo *LocalRepository) RepoPath() string {
 	return repo.FullPath
 }
 
+// LocalRepositoryFromFullPath resolve LocalRepository from file path
 func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRepository, error) {
 	var relPath string
 
@@ -66,6 +69,7 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 	}, nil
 }
 
+// LocalRepositoryFromURL resolve LocalRepository from URL
 func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	pathParts := append(
 		[]string{remoteURL.Hostname()}, strings.Split(remoteURL.Path, "/")...,
@@ -117,6 +121,7 @@ func (repo *LocalRepository) Subpaths() []string {
 	return tails
 }
 
+// NonHostPath returns non host path
 func (repo *LocalRepository) NonHostPath() string {
 	return strings.Join(repo.PathParts[1:], "/")
 }
@@ -136,6 +141,7 @@ func (repo *LocalRepository) repoRootCandidates() []string {
 	return candidates
 }
 
+// IsUnderPrimaryRoot or not
 func (repo *LocalRepository) IsUnderPrimaryRoot() bool {
 	prim, err := primaryLocalRepositoryRoot()
 	if err != nil {
@@ -155,6 +161,7 @@ func (repo *LocalRepository) Matches(pathQuery string) bool {
 	return false
 }
 
+// VCS returns VCSBackend of the repository
 func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 	if repo.vcsBackend == nil {
 		for _, dir := range repo.repoRootCandidates() {
