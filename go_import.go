@@ -45,7 +45,7 @@ func detectGoImport(u *url.URL) (string, *url.URL, error) {
 	return detectVCSAndRepoURL(resp.Body)
 }
 
-// find meta tag like following from thml
+// find meta tag like following from html
 // <meta name="go-import" content="gopkg.in/yaml.v2 git https://gopkg.in/yaml.v2">
 // ref. https://golang.org/cmd/go/#hdr-Remote_import_paths
 func detectVCSAndRepoURL(r io.Reader) (string, *url.URL, error) {

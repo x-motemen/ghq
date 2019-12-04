@@ -156,7 +156,7 @@ func TestCommandGet(t *testing.T) {
 			},
 		},
 		{
-			name: "dot slach ./",
+			name: "dot slash ./",
 			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 				localDir := filepath.Join(tmpRoot, "github.com", "motemen")
 				os.MkdirAll(localDir, 0755)
