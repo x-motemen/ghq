@@ -26,10 +26,12 @@ type GitHubRepository struct {
 	url *url.URL
 }
 
+// URL reutrns URL of the repository
 func (repo *GitHubRepository) URL() *url.URL {
 	return repo.url
 }
 
+// IsValid determine if the repository is valid or not
 func (repo *GitHubRepository) IsValid() bool {
 	if strings.HasPrefix(repo.url.Path, "/blog/") {
 		return false
@@ -38,6 +40,7 @@ func (repo *GitHubRepository) IsValid() bool {
 	return len(pathComponents) >= 2
 }
 
+// VCS returns VCSBackend of the repository
 func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL) {
 	origU := repo.URL()
 	u := &url.URL{ // clone
@@ -61,46 +64,57 @@ type GitHubGistRepository struct {
 	url *url.URL
 }
 
+// URL returns URL of the GistRepositroy
 func (repo *GitHubGistRepository) URL() *url.URL {
 	return repo.url
 }
 
+// IsValid determin if the gist rpository is valid or not
 func (repo *GitHubGistRepository) IsValid() bool {
 	return true
 }
 
+// VCS returns VCSBackend of the gist
 func (repo *GitHubGistRepository) VCS() (*VCSBackend, *url.URL) {
 	return GitBackend, repo.URL()
 }
 
+// DarksHubRepository represents DarcsHub Repository
 type DarksHubRepository struct {
 	url *url.URL
 }
 
+// URL returns URL of darks repository
 func (repo *DarksHubRepository) URL() *url.URL {
 	return repo.url
 }
 
+// IsValid determine if the darcshub repositroy is valid or not
 func (repo *DarksHubRepository) IsValid() bool {
 	return strings.Count(repo.url.Path, "/") == 2
 }
 
+// VCS returns VCSBackend of the DarcsHub repository
 func (repo *DarksHubRepository) VCS() (*VCSBackend, *url.URL) {
 	return DarcsBackend, repo.URL()
 }
 
+// OtherRepository represents other repository
 type OtherRepository struct {
 	url *url.URL
 }
 
+// URL returns URL of the repository
 func (repo *OtherRepository) URL() *url.URL {
 	return repo.url
 }
 
+// IsValid determine if the repository is valid or not
 func (repo *OtherRepository) IsValid() bool {
 	return true
 }
 
+// VCS detects VCSBackend of the OtherRepository
 func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 	// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
 	// (in gitconfig:)
@@ -136,6 +150,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 	return nil, nil
 }
 
+// NewRemoteRepository returns new RemoteRepository object from URL
 func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 	if url.Host == "github.com" {
 		return &GitHubRepository{url}, nil
