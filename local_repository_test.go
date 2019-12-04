@@ -33,6 +33,7 @@ func TestLocalRepositoryFromFullPath(t *testing.T) {
 			r, err := LocalRepositoryFromFullPath(tc.fpath, nil)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
+				return
 			}
 			if r.NonHostPath() != tc.expect {
 				t.Errorf("NonHostPath: got: %s, expect: %s", r.NonHostPath(), tc.expect)
@@ -294,10 +295,7 @@ func TestLocalRepository_VCS(t *testing.T) {
 	t.Run("reporoot", func(t *testing.T) {
 		repo, err := LocalRepositoryFromFullPath(pkg, nil)
 		if err != nil {
-			t.Errorf("error should be nil, but: %s", err)
-		}
-		if repo == nil {
-			t.Errorf("repo should not be nil, but: %v", repo)
+			t.Errorf("error should be nil, but: %s (%s)", err, pkg)
 			return
 		}
 		vcs, repoPath := repo.VCS()
@@ -314,6 +312,7 @@ func TestLocalRepository_VCS(t *testing.T) {
 		repo, err := LocalRepositoryFromFullPath(subpkg, nil)
 		if err != nil {
 			t.Errorf("error should be nil, but: %s", err)
+			return
 		}
 		vcs, repoPath := repo.VCS()
 		if vcs != GitBackend {
