@@ -28,8 +28,12 @@ func newApp() *cli.App {
 	app.Name = "ghq"
 	app.Usage = "Manage GitHub repository clones"
 	app.Version = fmt.Sprintf("%s (rev:%s)", version, revision)
-	app.Author = "motemen"
-	app.Email = "motemen@gmail.com"
+	app.Authors = []cli.Author{
+		{
+			Name:  "motemen",
+			Email: "motemen@gmail.com",
+		},
+	}
 	app.Commands = commands
 	return app
 }
