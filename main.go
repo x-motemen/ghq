@@ -30,7 +30,7 @@ func newApp() *cli.App {
 	app.Version = fmt.Sprintf("%s (rev:%s)", version, revision)
 	app.Authors = []cli.Author{
 		{
-			Name: "motemen",
+			Name:  "motemen",
 			Email: "motemen@gmail.com",
 		},
 	}
