@@ -68,7 +68,7 @@ func (g *getter) get(argURL string) error {
 	if g.ssh {
 		// Assume Git repository if `-p` is given.
 		if u, err = convertGitURLHTTPToSSH(u); err != nil {
-			return xerrors.Errorf("Could not convet URL %q: %w", u, err)
+			return xerrors.Errorf("Could not convert URL %q: %w", u, err)
 		}
 	}
 
