@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.14.0](https://github.com/motemen/ghq/compare/v0.13.1...v0.14.0) (2019-12-04)
+
+* introduce GitHub Actions [#208](https://github.com/motemen/ghq/pull/208) ([Songmu](https://github.com/Songmu))
+* Fix typos! [#210](https://github.com/motemen/ghq/pull/210) ([tockn](https://github.com/tockn))
+* Fix redundant index [#209](https://github.com/motemen/ghq/pull/209) ([tockn](https://github.com/tockn))
+* add Songmu to authors [#207](https://github.com/motemen/ghq/pull/207) ([Songmu](https://github.com/Songmu))
+* Fix deprecation of urfave/cli [#206](https://github.com/motemen/ghq/pull/206) ([tockn](https://github.com/tockn))
+
 ## [v0.13.1](https://github.com/motemen/ghq/compare/v0.13.0...v0.13.1) (2019-12-04)
 
 * optimize `--vcs` option of list [#205](https://github.com/motemen/ghq/pull/205) ([autopp](https://github.com/autopp))
