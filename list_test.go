@@ -57,9 +57,13 @@ func TestCommandListUnknown(t *testing.T) {
 }
 
 func sortLines(s string) string {
-	ss := strings.Split(s, "\n")
+	ss := strings.Split(strings.TrimSpace(s), "\n")
 	sort.Strings(ss)
 	return strings.Join(ss, "\n")
+}
+
+func equalPathLines(lhs, rhs string) bool {
+	return sortLines(lhs) == sortLines(rhs)
 }
 
 func TestDoList_query(t *testing.T) {
@@ -133,7 +137,7 @@ func TestDoList_query(t *testing.T) {
 				out, _, _ := capture(func() {
 					newApp().Run(args)
 				})
-				if sortLines(out) != sortLines(tc.expect) {
+				if !equalPathLines(out, tc.expect) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, tc.expect)
 				}
 				if strings.Contains(tc.name, "unique") {
@@ -152,7 +156,7 @@ func TestDoList_query(t *testing.T) {
 				out, _, _ = capture(func() {
 					newApp().Run(argsFull)
 				})
-				if sortLines(out) != sortLines(fullExpect) {
+				if !equalPathLines(out, fullExpect) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, fullExpect)
 				}
 			})
