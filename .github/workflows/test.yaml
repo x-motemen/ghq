@@ -33,5 +33,15 @@ jobs:
       with:
         github-token: ${{ secrets.github_token }}
         path-to-profile: coverage.out
-        parallel-finished: true
+        parallel: true
         job-number: ${{ strategy.job-index }}
+
+  finish:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: finish coverage report
+      uses: shogo82148/actions-goveralls@v1
+      with:
+        github-token: ${{ secrets.github_token }}
+        parallel-finished: true
