@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 
@@ -179,26 +178,26 @@ func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 var vcsContentsMap = map[string]*VCSBackend{
 	".git/svn":       GitsvnBackend,
 	".git":           GitBackend,
-	".svn":           SubversionBackend,
 	".hg":            MercurialBackend,
+	".svn":           SubversionBackend,
 	"_darcs":         DarcsBackend,
+	".bzr":           BazaarBackend,
 	".fslckout":      FossilBackend, // file
 	"_FOSSIL_":       FossilBackend, // file
 	"CVS/Repository": cvsDummyBackend,
-	".bzr":           BazaarBackend,
 }
 
-var vcsContents = make([]string, 0, len(vcsContentsMap))
-
-func init() {
-	for k := range vcsContentsMap {
-		vcsContents = append(vcsContents, k)
-	}
-	// Sort in order of length.
+var vcsContents = [...]string{
 	// This is to check git/svn before git.
-	sort.Slice(vcsContents, func(i, j int) bool {
-		return len(vcsContents[i]) > len(vcsContents[j])
-	})
+	".git/svn",
+	".git",
+	".hg",
+	".svn",
+	"_darcs",
+	".bzr",
+	".fslckout",
+	"._FOSSIL_",
+	"CVS/Repository",
 }
 
 func findVCSBackend(fpath, vcs string) *VCSBackend {
