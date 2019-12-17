@@ -26,36 +26,43 @@ func runInDir(silent bool) func(dir, command string, args ...string) error {
 // A VCSBackend represents a VCS backend.
 type VCSBackend struct {
 	// Clones a remote repository to local path.
-	Clone func(*url.URL, string, bool, bool, string) error
+	Clone func(*vcsGetOption) error
 	// Updates a cloned local repository.
-	Update func(string, bool) error
+	Update func(*vcsGetOption) error
 	// Returns VCS specific files
 	Contents func() []string
+}
+
+type vcsGetOption struct {
+	url                        *url.URL
+	dir                        string
+	recursive, shallow, silent bool
+	branch                     string
 }
 
 // GitBackend is the VCSBackend of git
 var GitBackend = &VCSBackend{
 	// support submodules?
-	Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
-		dir, _ := filepath.Split(local)
+	Clone: func(vg *vcsGetOption) error {
+		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
 
 		args := []string{"clone"}
-		if shallow {
+		if vg.shallow {
 			args = append(args, "--depth", "1")
 		}
-		if branch != "" {
-			args = append(args, "--branch", branch, "--single-branch")
+		if vg.branch != "" {
+			args = append(args, "--branch", vg.branch, "--single-branch")
 		}
-		args = append(args, remote.String(), local)
+		args = append(args, vg.url.String(), vg.dir)
 
-		return run(silent)("git", args...)
+		return run(vg.silent)("git", args...)
 	},
-	Update: func(local string, silent bool) error {
-		return runInDir(silent)(local, "git", "pull", "--ff-only")
+	Update: func(vg *vcsGetOption) error {
+		return runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
 	},
 	Contents: func() []string {
 		return []string{".git"}
@@ -64,28 +71,29 @@ var GitBackend = &VCSBackend{
 
 // SubversionBackend is the VCSBackend for subversion
 var SubversionBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
-		dir, _ := filepath.Split(local)
+	Clone: func(vg *vcsGetOption) error {
+		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
 
 		args := []string{"checkout"}
-		if shallow {
+		if vg.shallow {
 			args = append(args, "--depth", "1")
 		}
-		if branch != "" {
-			copied := *remote
+		remote := vg.url
+		if vg.branch != "" {
+			copied := *vg.url
 			remote = &copied
-			remote.Path += "/branches/" + url.PathEscape(branch)
+			remote.Path += "/branches/" + url.PathEscape(vg.branch)
 		}
-		args = append(args, remote.String(), local)
+		args = append(args, remote.String(), vg.dir)
 
-		return run(silent)("svn", args...)
+		return run(vg.silent)("svn", args...)
 	},
-	Update: func(local string, silent bool) error {
-		return runInDir(silent)(local, "svn", "update")
+	Update: func(vg *vcsGetOption) error {
+		return runInDir(vg.silent)(vg.dir, "svn", "update")
 	},
 	Contents: func() []string {
 		return []string{".svn"}
@@ -95,22 +103,23 @@ var SubversionBackend = &VCSBackend{
 // GitsvnBackend is the VCSBackend for git-svn
 var GitsvnBackend = &VCSBackend{
 	// git-svn seems not supporting shallow clone currently.
-	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool, branch string) error {
-		dir, _ := filepath.Split(local)
+	Clone: func(vg *vcsGetOption) error {
+		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
-		if branch != "" {
+		remote := vg.url
+		if vg.branch != "" {
 			copied := *remote
 			remote = &copied
-			remote.Path += "/branches/" + url.PathEscape(branch)
+			remote.Path += "/branches/" + url.PathEscape(vg.branch)
 		}
 
-		return run(silent)("git", "svn", "clone", remote.String(), local)
+		return run(vg.silent)("git", "svn", "clone", remote.String(), vg.dir)
 	},
-	Update: func(local string, silent bool) error {
-		return runInDir(silent)(local, "git", "svn", "rebase")
+	Update: func(vg *vcsGetOption) error {
+		return runInDir(vg.silent)(vg.dir, "git", "svn", "rebase")
 	},
 	Contents: func() []string {
 		return []string{".git/svn"}
@@ -120,22 +129,22 @@ var GitsvnBackend = &VCSBackend{
 // MercurialBackend is the VCSBackend for mercurial
 var MercurialBackend = &VCSBackend{
 	// Mercurial seems not supporting shallow clone currently.
-	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool, branch string) error {
-		dir, _ := filepath.Split(local)
+	Clone: func(vg *vcsGetOption) error {
+		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
 		args := []string{"clone"}
-		if branch != "" {
-			args = append(args, "--branch", branch)
+		if vg.branch != "" {
+			args = append(args, "--branch", vg.branch)
 		}
-		args = append(args, remote.String(), local)
+		args = append(args, vg.url.String(), vg.dir)
 
-		return run(silent)("hg", args...)
+		return run(vg.silent)("hg", args...)
 	},
-	Update: func(local string, silent bool) error {
-		return runInDir(silent)(local, "hg", "pull", "--update")
+	Update: func(vg *vcsGetOption) error {
+		return runInDir(vg.silent)(vg.dir, "hg", "pull", "--update")
 	},
 	Contents: func() []string {
 		return []string{".hg"}
@@ -144,27 +153,27 @@ var MercurialBackend = &VCSBackend{
 
 // DarcsBackend is the VCSBackend for darcs
 var DarcsBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
-		if branch != "" {
+	Clone: func(vg *vcsGetOption) error {
+		if vg.branch != "" {
 			return errors.New("Darcs does not support branch")
 		}
 
-		dir, _ := filepath.Split(local)
+		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
 
 		args := []string{"get"}
-		if shallow {
+		if vg.shallow {
 			args = append(args, "--lazy")
 		}
-		args = append(args, remote.String(), local)
+		args = append(args, vg.url.String(), vg.dir)
 
-		return run(silent)("darcs", args...)
+		return run(vg.silent)("darcs", args...)
 	},
-	Update: func(local string, silent bool) error {
-		return runInDir(silent)(local, "darcs", "pull")
+	Update: func(vg *vcsGetOption) error {
+		return runInDir(vg.silent)(vg.dir, "darcs", "pull")
 	},
 	Contents: func() []string {
 		return []string{"_darcs"}
@@ -172,10 +181,10 @@ var DarcsBackend = &VCSBackend{
 }
 
 var cvsDummyBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool, branch string) error {
+	Clone: func(vg *vcsGetOption) error {
 		return errors.New("CVS clone is not supported")
 	},
-	Update: func(local string, silent bool) error {
+	Update: func(vg *vcsGetOption) error {
 		return errors.New("CVS update is not supported")
 	},
 	Contents: func() []string {
@@ -187,21 +196,21 @@ const fossilRepoName = ".fossil" // same as Go
 
 // FossilBackend is the VCSBackend for fossil
 var FossilBackend = &VCSBackend{
-	Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
-		if branch != "" {
+	Clone: func(vg *vcsGetOption) error {
+		if vg.branch != "" {
 			return errors.New("Fossil does not support cloning specific branch")
 		}
-		if err := os.MkdirAll(local, 0755); err != nil {
+		if err := os.MkdirAll(vg.dir, 0755); err != nil {
 			return err
 		}
 
-		if err := run(silent)("fossil", "clone", remote.String(), filepath.Join(local, fossilRepoName)); err != nil {
+		if err := run(vg.silent)("fossil", "clone", vg.url.String(), filepath.Join(vg.dir, fossilRepoName)); err != nil {
 			return err
 		}
-		return runInDir(silent)(local, "fossil", "open", fossilRepoName)
+		return runInDir(vg.silent)(vg.dir, "fossil", "open", fossilRepoName)
 	},
-	Update: func(local string, silent bool) error {
-		return runInDir(silent)(local, "fossil", "update")
+	Update: func(vg *vcsGetOption) error {
+		return runInDir(vg.silent)(vg.dir, "fossil", "update")
 	},
 	Contents: func() []string {
 		return []string{".fslckout", "_FOSSIL_"}
@@ -211,20 +220,20 @@ var FossilBackend = &VCSBackend{
 // BazaarBackend is the VCSBackend for bazaar
 var BazaarBackend = &VCSBackend{
 	// bazaar seems not supporting shallow clone currently.
-	Clone: func(remote *url.URL, local string, ignoredShallow, silent bool, branch string) error {
-		if branch != "" {
+	Clone: func(vg *vcsGetOption) error {
+		if vg.branch != "" {
 			return errors.New("--branch option is unavailable for Bazaar since branch is included in remote URL")
 		}
-		dir, _ := filepath.Split(local)
+		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
-		return run(silent)("bzr", "branch", remote.String(), local)
+		return run(vg.silent)("bzr", "branch", vg.url.String(), vg.dir)
 	},
-	Update: func(local string, silent bool) error {
+	Update: func(vg *vcsGetOption) error {
 		// Without --overwrite bzr will not pull tags that changed.
-		return runInDir(silent)(local, "bzr", "pull", "--overwrite")
+		return runInDir(vg.silent)(vg.dir, "bzr", "pull", "--overwrite")
 	},
 	Contents: func() []string {
 		return []string{".bzr"}

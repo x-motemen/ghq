@@ -135,7 +135,13 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 		}
 
 		if getRepoLock(localRepoRoot) {
-			return vcs.Clone(repoURL, localRepoRoot, g.shallow, g.silent, g.branch)
+			return vcs.Clone(&vcsGetOption{
+				url:     repoURL,
+				dir:     localRepoRoot,
+				shallow: g.shallow,
+				silent:  g.silent,
+				branch:  g.branch,
+			})
 		}
 		return nil
 	}
@@ -146,7 +152,10 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			return fmt.Errorf("failed to detect VCS for %q", fpath)
 		}
 		if getRepoLock(localRepoRoot) {
-			return vcs.Update(localRepoRoot, g.silent)
+			return vcs.Update(&vcsGetOption{
+				dir:    localRepoRoot,
+				silent: g.silent,
+			})
 		}
 		return nil
 	}
