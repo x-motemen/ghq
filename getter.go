@@ -27,8 +27,8 @@ func getRepoLock(localRepoRoot string) bool {
 }
 
 type getter struct {
-	update, shallow, silent, ssh bool
-	vcs, branch                  string
+	update, shallow, recursive, silent, ssh bool
+	vcs, branch                             string
 }
 
 func (g *getter) get(argURL string) error {
