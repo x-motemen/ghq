@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.14.1](https://github.com/motemen/ghq/compare/v0.14.0...v0.14.1) (2019-12-18)
+
+* update deps [#218](https://github.com/motemen/ghq/pull/218) ([Songmu](https://github.com/Songmu))
+* refine local VCS detection order [#217](https://github.com/motemen/ghq/pull/217) ([Songmu](https://github.com/Songmu))
+* [refactor] define type vcsGetOption struct [#216](https://github.com/motemen/ghq/pull/216) ([Songmu](https://github.com/Songmu))
+* the import subcommand should not accept the --branch option [#214](https://github.com/motemen/ghq/pull/214) ([Songmu](https://github.com/Songmu))
+* fix broken coverage report [#213](https://github.com/motemen/ghq/pull/213) ([shogo82148](https://github.com/shogo82148))
+* Convertion for URL should return slash-ed paths. [#212](https://github.com/motemen/ghq/pull/212) ([mattn](https://github.com/mattn))
+
 ## [v0.14.0](https://github.com/motemen/ghq/compare/v0.13.1...v0.14.0) (2019-12-04)
 
 * introduce GitHub Actions [#208](https://github.com/motemen/ghq/pull/208) ([Songmu](https://github.com/Songmu))
