@@ -27,7 +27,6 @@ var cloneFlags = []cli.Flag{
 	&cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
 	&cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
 	&cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
-	&cli.BoolFlag{Name: "recursive", Usage: "clone recursively"},
 	&cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
 	&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
 	&cli.BoolFlag{Name: "silent, s", Usage: "clone or update silently"},
@@ -138,13 +137,12 @@ func doGet(c *cli.Context) error {
 		andLook = c.Bool("look")
 	)
 	g := &getter{
-		update:    c.Bool("update"),
-		shallow:   c.Bool("shallow"),
-		recursive: c.Bool("recursive"),
-		ssh:       c.Bool("p"),
-		vcs:       c.String("vcs"),
-		silent:    c.Bool("silent"),
-		branch:    c.String("branch"),
+		update:  c.Bool("update"),
+		shallow: c.Bool("shallow"),
+		ssh:     c.Bool("p"),
+		vcs:     c.String("vcs"),
+		silent:  c.Bool("silent"),
+		branch:  c.String("branch"),
 	}
 
 	if argURL == "" {
