@@ -22,6 +22,7 @@ var commands = []cli.Command{
 	commandRoot,
 }
 
+// cloneFlags are comman flags of `get` and `import` subcommands
 var cloneFlags = []cli.Flag{
 	&cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
 	&cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
@@ -29,7 +30,6 @@ var cloneFlags = []cli.Flag{
 	&cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
 	&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
 	&cli.BoolFlag{Name: "silent, s", Usage: "clone or update silently"},
-	&cli.StringFlag{Name: "branch, b", Usage: "Specify branch name. This flag implies --single-branch on Git"},
 }
 
 var commandGet = cli.Command{
@@ -42,7 +42,8 @@ var commandGet = cli.Command{
     When you use '-p' option, the repository is cloned via SSH.
 `,
 	Action: doGet,
-	Flags:  cloneFlags,
+	Flags: append(cloneFlags,
+		&cli.StringFlag{Name: "branch, b", Usage: "Specify branch name. This flag implies --single-branch on Git"}),
 }
 
 var commandList = cli.Command{
