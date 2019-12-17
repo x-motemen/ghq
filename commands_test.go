@@ -51,18 +51,18 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 
 	var originalGitBackend = GitBackend
 	tmpBackend := &VCSBackend{
-		Clone: func(remote *url.URL, local string, shallow, silent bool, branch string) error {
+		Clone: func(vg *vcsGetOption) error {
 			cloneArgs = _cloneArgs{
-				remote:  remote,
-				local:   filepath.FromSlash(local),
-				shallow: shallow,
-				branch:  branch,
+				remote:  vg.url,
+				local:   filepath.FromSlash(vg.dir),
+				shallow: vg.shallow,
+				branch:  vg.branch,
 			}
 			return nil
 		},
-		Update: func(local string, silent bool) error {
+		Update: func(vg *vcsGetOption) error {
 			updateArgs = _updateArgs{
-				local: local,
+				local: vg.dir,
 			}
 			return nil
 		},
