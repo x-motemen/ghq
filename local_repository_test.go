@@ -5,8 +5,20 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
 	"testing"
 )
+
+func samePathSlice(lhss, rhss []string) bool {
+	sort.Strings(lhss)
+	sort.Strings(rhss)
+	for i := range lhss {
+		if !samePath(lhss[i], rhss[i]) {
+			return false
+		}
+	}
+	return true
+}
 
 func TestLocalRepositoryFromFullPath(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)

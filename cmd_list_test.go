@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,6 +12,15 @@ import (
 	"github.com/urfave/cli"
 	"golang.org/x/xerrors"
 )
+
+func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
+	set := flag.NewFlagSet(name, flag.ContinueOnError)
+
+	for _, f := range flags {
+		f.Apply(set)
+	}
+	return set
+}
 
 func TestCommandList(t *testing.T) {
 	_, _, err := capture(func() {

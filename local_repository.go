@@ -204,7 +204,7 @@ func findVCSBackend(fpath, vcs string) *VCSBackend {
 		if !ok {
 			return nil
 		}
-		for _, d := range vcsBackend.Contents() {
+		for _, d := range vcsBackend.Contents {
 			if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
 				return vcsBackend
 			}

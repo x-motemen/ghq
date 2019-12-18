@@ -30,7 +30,7 @@ type VCSBackend struct {
 	// Updates a cloned local repository.
 	Update func(*vcsGetOption) error
 	// Returns VCS specific files
-	Contents func() []string
+	Contents []string
 }
 
 type vcsGetOption struct {
@@ -67,9 +67,7 @@ var GitBackend = &VCSBackend{
 		}
 		return runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
 	},
-	Contents: func() []string {
-		return []string{".git"}
-	},
+	Contents: []string{".git"},
 }
 
 // SubversionBackend is the VCSBackend for subversion
@@ -98,9 +96,7 @@ var SubversionBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "svn", "update")
 	},
-	Contents: func() []string {
-		return []string{".svn"}
-	},
+	Contents: []string{".svn"},
 }
 
 // GitsvnBackend is the VCSBackend for git-svn
@@ -124,9 +120,7 @@ var GitsvnBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "git", "svn", "rebase")
 	},
-	Contents: func() []string {
-		return []string{".git/svn"}
-	},
+	Contents: []string{".git/svn"},
 }
 
 // MercurialBackend is the VCSBackend for mercurial
@@ -149,9 +143,7 @@ var MercurialBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "hg", "pull", "--update")
 	},
-	Contents: func() []string {
-		return []string{".hg"}
-	},
+	Contents: []string{".hg"},
 }
 
 // DarcsBackend is the VCSBackend for darcs
@@ -178,9 +170,7 @@ var DarcsBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "darcs", "pull")
 	},
-	Contents: func() []string {
-		return []string{"_darcs"}
-	},
+	Contents: []string{"_darcs"},
 }
 
 var cvsDummyBackend = &VCSBackend{
@@ -190,9 +180,7 @@ var cvsDummyBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		return errors.New("CVS update is not supported")
 	},
-	Contents: func() []string {
-		return []string{"CVS/Repository"}
-	},
+	Contents: []string{"CVS/Repository"},
 }
 
 const fossilRepoName = ".fossil" // same as Go
@@ -215,9 +203,7 @@ var FossilBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "fossil", "update")
 	},
-	Contents: func() []string {
-		return []string{".fslckout", "_FOSSIL_"}
-	},
+	Contents: []string{".fslckout", "_FOSSIL_"},
 }
 
 // BazaarBackend is the VCSBackend for bazaar
@@ -238,9 +224,7 @@ var BazaarBackend = &VCSBackend{
 		// Without --overwrite bzr will not pull tags that changed.
 		return runInDir(vg.silent)(vg.dir, "bzr", "pull", "--overwrite")
 	},
-	Contents: func() []string {
-		return []string{".bzr"}
-	},
+	Contents: []string{".bzr"},
 }
 
 var vcsRegistry = map[string]*VCSBackend{
