@@ -176,7 +176,6 @@ func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 }
 
 var vcsContentsMap = map[string]*VCSBackend{
-	".git/svn":       GitsvnBackend,
 	".git":           GitBackend,
 	".hg":            MercurialBackend,
 	".svn":           SubversionBackend,
@@ -188,8 +187,6 @@ var vcsContentsMap = map[string]*VCSBackend{
 }
 
 var vcsContents = [...]string{
-	// This is to check git/svn before git.
-	".git/svn",
 	".git",
 	".hg",
 	".svn",

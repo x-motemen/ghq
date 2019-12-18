@@ -62,6 +62,9 @@ var GitBackend = &VCSBackend{
 		return run(vg.silent)("git", args...)
 	},
 	Update: func(vg *vcsGetOption) error {
+		if _, err := os.Stat(filepath.Join(vg.dir, ".git/svn")); err == nil {
+			return GitsvnBackend.Update(vg)
+		}
 		return runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
 	},
 	Contents: func() []string {
