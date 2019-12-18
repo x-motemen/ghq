@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.15.0](https://github.com/motemen/ghq/compare/v0.14.2...v0.15.0) (2019-12-19)
+
+* refactor test helpers [#225](https://github.com/motemen/ghq/pull/225) ([Songmu](https://github.com/Songmu))
+* drop deprecated `ghq.ghe.host` configuration [#224](https://github.com/motemen/ghq/pull/224) ([Songmu](https://github.com/Songmu))
+* remove os.Exit from inside code [#223](https://github.com/motemen/ghq/pull/223) ([Songmu](https://github.com/Songmu))
+* drop xerrors deps and update deps [#222](https://github.com/motemen/ghq/pull/222) ([Songmu](https://github.com/Songmu))
+* Ignore and just log inaccessible directories instead of failing [#221](https://github.com/motemen/ghq/pull/221) ([Songmu](https://github.com/Songmu))
+* adjust files structure [#220](https://github.com/motemen/ghq/pull/220) ([Songmu](https://github.com/Songmu))
+
 ## [v0.14.2](https://github.com/motemen/ghq/compare/v0.14.1...v0.14.2) (2019-12-18)
 
 * treat git-svn as a kind of git repository in local [#219](https://github.com/motemen/ghq/pull/219) ([Songmu](https://github.com/Songmu))
