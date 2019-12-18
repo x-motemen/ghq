@@ -29,8 +29,7 @@ func doLook(c *cli.Context) error {
 	name := c.Args().First()
 
 	if name == "" {
-		cli.ShowCommandHelp(c, "look")
-		os.Exit(1)
+		return fmt.Errorf("no project args specified. see `ghq look -h` for more details")
 	}
 
 	var (
