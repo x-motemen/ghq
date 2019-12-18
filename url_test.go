@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -8,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/Songmu/gitconfig"
-	"golang.org/x/xerrors"
 )
 
 func TestNewURL(t *testing.T) {
@@ -133,7 +133,7 @@ func TestNewURL_err(t *testing.T) {
 
 	var exitError *exec.ExitError
 	_, err = newURL("peco")
-	if !xerrors.As(err, &exitError) {
+	if !errors.As(err, &exitError) {
 		t.Errorf("error should be occurred but nil")
 	}
 }
