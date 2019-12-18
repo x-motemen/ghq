@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+	"fmt"
 
 	"github.com/urfave/cli"
 )
@@ -21,8 +21,7 @@ func doGet(c *cli.Context) error {
 	}
 
 	if argURL == "" {
-		cli.ShowCommandHelp(c, "get")
-		os.Exit(1)
+		return fmt.Errorf("no project args specified. see `ghq get -h` for more details")
 	}
 
 	if err := g.get(argURL); err != nil {
