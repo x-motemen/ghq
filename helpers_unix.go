@@ -2,6 +2,6 @@
 
 package main
 
-func toFullPath(s string) string {
-	return s
+func toFullPath(s string) (string, error) {
+	return s, nil
 }

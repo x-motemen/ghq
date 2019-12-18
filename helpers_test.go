@@ -112,7 +112,11 @@ func newTempDir(t *testing.T) string {
 		t.Fatalf("os.Getwd(): %s", err)
 	}
 
-	return toFullPath(tmpdir)
+	s, err := toFullPath(tmpdir)
+	if err != nil {
+		t.Fatalf("toFullPath(%q): %s", tmpdir, err)
+	}
+	return s
 }
 
 func tmpEnv(key, val string) func() {
