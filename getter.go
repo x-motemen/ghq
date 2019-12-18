@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/motemen/ghq/logger"
-	"golang.org/x/xerrors"
 )
 
 var (
@@ -62,13 +61,13 @@ func (g *getter) get(argURL string) error {
 
 	u, err := newURL(argURL)
 	if err != nil {
-		return xerrors.Errorf("Could not parse URL %q: %w", argURL, err)
+		return fmt.Errorf("Could not parse URL %q: %w", argURL, err)
 	}
 
 	if g.ssh {
 		// Assume Git repository if `-p` is given.
 		if u, err = convertGitURLHTTPToSSH(u); err != nil {
-			return xerrors.Errorf("Could not convert URL %q: %w", u, err)
+			return fmt.Errorf("Could not convert URL %q: %w", u, err)
 		}
 	}
 
