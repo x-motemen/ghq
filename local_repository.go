@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -9,8 +10,8 @@ import (
 	"sync"
 
 	"github.com/Songmu/gitconfig"
+	"github.com/motemen/ghq/logger"
 	"github.com/saracen/walker"
-	"golang.org/x/xerrors"
 )
 
 // LocalRepository represents local repository
@@ -263,7 +264,8 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 	}
 
 	errCb := walker.WithErrorCallback(func(pathname string, err error) error {
-		if os.IsPermission(xerrors.Unwrap(err)) {
+		if os.IsPermission(errors.Unwrap(err)) {
+			logger.Log("warning", fmt.Sprintf("%s: Permission denied", pathname))
 			return nil
 		}
 		return err
@@ -276,10 +278,9 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 				continue
 			}
 		}
-		// https://github.com/motemen/ghq/issues/173
-		// https://github.com/motemen/ghq/issues/187
 		if fi.Mode()&0444 == 0 {
-			return os.ErrPermission
+			logger.Log("warning", fmt.Sprintf("%s: Permission denied", root))
+			continue
 		}
 		if err := walker.Walk(root, walkFn, errCb); err != nil {
 			return err
