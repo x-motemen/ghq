@@ -243,7 +243,7 @@ func TestFindVCSBackend(t *testing.T) {
 				os.RemoveAll(dir)
 			}
 		},
-		expect: GitsvnBackend,
+		expect: GitBackend,
 	}, {
 		name: "git with matched vcs",
 		setup: func(t *testing.T) (string, string, func()) {
