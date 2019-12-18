@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/urfave/cli"
-	"golang.org/x/xerrors"
 )
 
 func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
@@ -224,8 +223,8 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 	os.Chmod(tmpdir, 0000)
 
 	err := newApp().Run([]string{"ghq", "list"})
-	if !os.IsPermission(xerrors.Unwrap(err)) {
-		t.Errorf("error should be ErrPermission, but: %#+v", err)
+	if err != nil {
+		t.Errorf("error should be nil, but: %+v", err)
 	}
 }
 
