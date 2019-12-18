@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.14.2](https://github.com/motemen/ghq/compare/v0.14.1...v0.14.2) (2019-12-18)
+
+* treat git-svn as a kind of git repository in local [#219](https://github.com/motemen/ghq/pull/219) ([Songmu](https://github.com/Songmu))
+
 ## [v0.14.1](https://github.com/motemen/ghq/compare/v0.14.0...v0.14.1) (2019-12-18)
 
 * update deps [#218](https://github.com/motemen/ghq/pull/218) ([Songmu](https://github.com/Songmu))
