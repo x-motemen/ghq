@@ -87,13 +87,6 @@ ghq.<url>.vcs::
 vcs = git
 ....
 
-ghq.ghe.host::
-    The hostname of your GitHub Enterprise installation. A repository that has a
-    hostname set with this key will be regarded as same one as one on GitHub.
-    This variable can have multiple values. If so, `ghq` tries matching with
-    each hostnames. +
-    This option is DEPRECATED, so use "ghq.<url>.vcs" configuration instead.
-
 == ENVIRONMENT VARIABLES
 
 GHQ_ROOT::

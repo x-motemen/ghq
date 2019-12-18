@@ -1,13 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/Songmu/gitconfig"
 	"github.com/motemen/ghq/cmdutil"
-
 	"github.com/motemen/ghq/logger"
 )
 
@@ -162,17 +160,6 @@ func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
 
 	if url.Host == "hub.darcs.net" {
 		return &DarksHubRepository{url}, nil
-	}
-
-	gheHosts, err := gitconfig.GetAll("ghq.ghe.host")
-	if err != nil && !gitconfig.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to retrieve GH:E hostname from .gitconfig: %s", err)
-	}
-
-	for _, host := range gheHosts {
-		if url.Host == host {
-			return &GitHubRepository{url}, nil
-		}
 	}
 
 	return &OtherRepository{url}, nil
