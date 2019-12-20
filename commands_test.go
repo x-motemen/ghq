@@ -12,6 +12,7 @@ type _cloneArgs struct {
 	local   string
 	shallow bool
 	branch  string
+	recursive  bool
 }
 
 type _updateArgs struct {
@@ -36,6 +37,7 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 				local:   filepath.FromSlash(vg.dir),
 				shallow: vg.shallow,
 				branch:  vg.branch,
+				recursive:  vg.recursive,
 			}
 			return nil
 		},

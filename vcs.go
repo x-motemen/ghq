@@ -57,6 +57,9 @@ var GitBackend = &VCSBackend{
 		if vg.branch != "" {
 			args = append(args, "--branch", vg.branch, "--single-branch")
 		}
+		if vg.recursive {
+			args = append(args, "--recursive")
+		}
 		args = append(args, vg.url.String(), vg.dir)
 
 		return run(vg.silent)("git", args...)

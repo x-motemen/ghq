@@ -36,7 +36,8 @@ var commandGet = cli.Command{
 `,
 	Action: doGet,
 	Flags: append(cloneFlags,
-		&cli.StringFlag{Name: "branch, b", Usage: "Specify branch name. This flag implies --single-branch on Git"}),
+		&cli.StringFlag{Name: "branch, b", Usage: "Specify branch name. This flag implies --single-branch on Git"},
+		&cli.BoolFlag{Name: "recursive", Usage: "This flag implies --recursive on Git"}),
 }
 
 var commandList = cli.Command{
