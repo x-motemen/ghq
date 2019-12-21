@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.16.0](https://github.com/motemen/ghq/compare/v0.15.0...v0.16.0) (2019-12-22)
+
+* fetch recursively by default on git repository and  add --no-recursive option to prevent it [#227](https://github.com/motemen/ghq/pull/227) ([moajo](https://github.com/moajo))
+* add tests for package cmdutil [#226](https://github.com/motemen/ghq/pull/226) ([Songmu](https://github.com/Songmu))
+
 ## [v0.15.0](https://github.com/motemen/ghq/compare/v0.14.2...v0.15.0) (2019-12-19)
 
 * refactor test helpers [#225](https://github.com/motemen/ghq/pull/225) ([Songmu](https://github.com/Songmu))
