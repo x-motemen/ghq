@@ -26,7 +26,7 @@ func getRepoLock(localRepoRoot string) bool {
 }
 
 type getter struct {
-	update, shallow, silent, ssh bool
+	update, shallow, silent, ssh, recursive bool
 	vcs, branch                  string
 }
 
@@ -140,6 +140,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 				shallow: g.shallow,
 				silent:  g.silent,
 				branch:  g.branch,
+				recursive:  g.recursive,
 			})
 		}
 		return nil

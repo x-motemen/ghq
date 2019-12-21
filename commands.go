@@ -23,6 +23,7 @@ var cloneFlags = []cli.Flag{
 	&cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
 	&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
 	&cli.BoolFlag{Name: "silent, s", Usage: "clone or update silently"},
+	&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
 }
 
 var commandGet = cli.Command{

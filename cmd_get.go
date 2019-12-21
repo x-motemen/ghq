@@ -12,12 +12,13 @@ func doGet(c *cli.Context) error {
 		andLook = c.Bool("look")
 	)
 	g := &getter{
-		update:  c.Bool("update"),
-		shallow: c.Bool("shallow"),
-		ssh:     c.Bool("p"),
-		vcs:     c.String("vcs"),
-		silent:  c.Bool("silent"),
-		branch:  c.String("branch"),
+		update:    c.Bool("update"),
+		shallow:   c.Bool("shallow"),
+		ssh:       c.Bool("p"),
+		vcs:       c.String("vcs"),
+		silent:    c.Bool("silent"),
+		branch:    c.String("branch"),
+		recursive: !c.Bool("--no-recursive"),
 	}
 
 	if argURL == "" {

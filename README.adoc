@@ -16,10 +16,10 @@ You can also list local repositories (+ghq list+), jump into local repositories 
 == SYNOPSIS
 
 [verse]
-ghq get [-u] [-p] [--shallow] [--vcs] [--look] [--silent] [--branch] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
+ghq get [-u] [-p] [--shallow] [--vcs] [--look] [--silent] [--branch] [--no-recursive] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
 ghq list [-p] [-e] [<query>]
 ghq look (<project> | <path/to/project> | <host>/<user>/<project> | <repository URL>)
-ghq import [-u] [-p] [--shalow] [--vcs] [--parallel] < FILE
+ghq import [-u] [-p] [--shalow] [--vcs] [--silent] [--no-recursive] [--parallel] < FILE
 ghq root [--all]
 
 == COMMANDS
@@ -39,7 +39,9 @@ get::
     Currently Git and Mercurial repositories are supported. +
     With '--branch' option, you can clone the repository with specified
     repository. This option is currently supported for Git, Mercurial,
-    Subversion and git-svn.
+    Subversion and git-svn. +
+    The 'ghq' gets the git repository recursively by default. +
+    We can prevent it with '--no-recursive' option.
 
 list::
     List locally cloned repositories. If a query argument is given, only

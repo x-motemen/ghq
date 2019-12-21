@@ -33,6 +33,9 @@ func TestCommandGet(t *testing.T) {
 				if cloneArgs.branch != "" {
 					t.Errorf("cloneArgs.branch should be empty")
 				}
+				if !cloneArgs.recursive {
+					t.Errorf("cloneArgs.recursive should be true")
+				}
 			},
 		},
 		{
@@ -146,6 +149,20 @@ func TestCommandGet(t *testing.T) {
 				}
 				if cloneArgs.branch != expectBranch {
 					t.Errorf("got: %q, expect: %q", cloneArgs.branch, expectBranch)
+				}
+			},
+		},
+		{
+			name: "with --no-recursive option",
+			scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+				app.Run([]string{"", "get", "--no-recursive", "motemen/ghq-test-repo"})
+
+				localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+				if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+					t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+				}
+				if !cloneArgs.recursive {
+					t.Errorf("cloneArgs.recursive should be false")
 				}
 			},
 		},

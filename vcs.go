@@ -57,6 +57,9 @@ var GitBackend = &VCSBackend{
 		if vg.branch != "" {
 			args = append(args, "--branch", vg.branch, "--single-branch")
 		}
+		if vg.recursive {
+			args = append(args, "--recursive")
+		}
 		args = append(args, vg.url.String(), vg.dir)
 
 		return run(vg.silent)("git", args...)
@@ -65,7 +68,14 @@ var GitBackend = &VCSBackend{
 		if _, err := os.Stat(filepath.Join(vg.dir, ".git/svn")); err == nil {
 			return GitsvnBackend.Update(vg)
 		}
-		return runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
+		err := runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
+		if err != nil {
+			return err
+		}
+		if vg.recursive {
+			return runInDir(vg.silent)(vg.dir, "git", "submodule", "update", "--init", "--recursive")
+		}
+		return nil
 	},
 	Contents: []string{".git"},
 }
