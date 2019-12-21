@@ -13,11 +13,12 @@ import (
 func doImport(c *cli.Context) error {
 	var parallel = c.Bool("parallel")
 	g := &getter{
-		update:  c.Bool("update"),
-		shallow: c.Bool("shallow"),
-		ssh:     c.Bool("p"),
-		vcs:     c.String("vcs"),
-		silent:  c.Bool("silent"),
+		update:    c.Bool("update"),
+		shallow:   c.Bool("shallow"),
+		ssh:       c.Bool("p"),
+		vcs:       c.String("vcs"),
+		silent:    c.Bool("silent"),
+		recursive: !c.Bool("--no-recursive"),
 	}
 	if parallel {
 		// force silent in parallel import
