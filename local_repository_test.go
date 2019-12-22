@@ -355,7 +355,7 @@ func TestURLMatchLocalRepositoryRoots(t *testing.T) {
 
 	want := []string{"/home/tmp/proj/hatena", "/backups/hatena", "/home/tmp/proj/natureglobal"}
 	if runtime.GOOS == "windows" {
-		want = []string{`C:\home\tmp\proj\hatena`, "/backups/hatena", `C:home\tmp\proj\natureglobal`}
+		want = []string{`C:\home\tmp\proj\hatena`, "/backups/hatena", `C:\home\tmp\proj\natureglobal`}
 	}
 	got, err := urlMatchLocalRepositoryRoots()
 	if err != nil {
