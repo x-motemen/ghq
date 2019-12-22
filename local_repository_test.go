@@ -107,6 +107,9 @@ func TestNewLocalRepository(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			defer func(orig string) { _home = orig }(_home)
+			_home = ""
+			defer gitconfig.WithConfig(t, "")()
 			r, err := LocalRepositoryFromURL(mustParseURL(tc.url))
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)

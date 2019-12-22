@@ -96,9 +96,15 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 		return localRepository, nil
 	}
 
-	prim, err := primaryLocalRepositoryRoot()
-	if err != nil {
+	prim, err := gitconfig.Do("--path", "--get-urlmatch", "ghq.root", remoteURL.String())
+	if err != nil && !gitconfig.IsNotFound(err) {
 		return nil, err
+	}
+	if prim == "" {
+		prim, err = primaryLocalRepositoryRoot()
+		if err != nil {
+			return nil, err
+		}
 	}
 	// No local repository found, returning new one
 	return &LocalRepository{

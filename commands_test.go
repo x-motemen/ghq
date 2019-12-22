@@ -5,14 +5,16 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/Songmu/gitconfig"
 )
 
 type _cloneArgs struct {
-	remote  *url.URL
-	local   string
-	shallow bool
-	branch  string
-	recursive  bool
+	remote    *url.URL
+	local     string
+	shallow   bool
+	branch    string
+	recursive bool
 }
 
 type _updateArgs struct {
@@ -33,11 +35,11 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 	tmpBackend := &VCSBackend{
 		Clone: func(vg *vcsGetOption) error {
 			cloneArgs = _cloneArgs{
-				remote:  vg.url,
-				local:   filepath.FromSlash(vg.dir),
-				shallow: vg.shallow,
-				branch:  vg.branch,
-				recursive:  vg.recursive,
+				remote:    vg.url,
+				local:     filepath.FromSlash(vg.dir),
+				shallow:   vg.shallow,
+				branch:    vg.branch,
+				recursive: vg.recursive,
 			}
 			return nil
 		},
@@ -48,9 +50,12 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 			return nil
 		},
 	}
+	defer func(orig string) { _home = orig }(_home)
+	_home = ""
+	defer gitconfig.WithConfig(t, "")()
+
 	GitBackend = tmpBackend
 	vcsContentsMap[".git"] = tmpBackend
 	defer func() { GitBackend = originalGitBackend; vcsContentsMap[".git"] = originalGitBackend }()
-
 	block(t, tmpRoot, &cloneArgs, &updateArgs)
 }
