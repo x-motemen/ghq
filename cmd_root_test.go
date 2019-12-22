@@ -99,6 +99,8 @@ func TestDoRoot(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 			_localRepositoryRoots = nil
+			defer func(orig string) { _home = orig }(_home)
+			_home = ""
 			defer tc.setup()()
 			out, _, _ := capture(func() {
 				newApp().Run([]string{"", "root"})
