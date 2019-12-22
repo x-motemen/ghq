@@ -37,7 +37,7 @@ func (repo *LocalRepository) RepoPath() string {
 func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRepository, error) {
 	var relPath string
 
-	roots, err := localRepositoryRoots()
+	roots, err := localRepositoryRoots(true)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func walkAllLocalRepositories(callback func(*LocalRepository)) error {
 }
 
 func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
-	roots, err := localRepositoryRoots()
+	roots, err := localRepositoryRoots(true)
 	if err != nil {
 		return err
 	}
@@ -308,7 +308,7 @@ var _localRepositoryRoots []string
 //   - If GHQ_ROOT environment variable is nonempty, use it as the only root dir.
 //   - Otherwise, use the result of `git config --get-all ghq.root` as the dirs.
 //   - Otherwise, fallback to the default root, `~/.ghq`.
-func localRepositoryRoots() ([]string, error) {
+func localRepositoryRoots(all bool) ([]string, error) {
 	if len(_localRepositoryRoots) != 0 {
 		return _localRepositoryRoots, nil
 	}
@@ -332,11 +332,13 @@ func localRepositoryRoots() ([]string, error) {
 		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
 	}
 
-	roots, err := urlMatchLocalRepositoryRoots()
-	if err != nil {
-		return nil, err
+	if all {
+		roots, err := urlMatchLocalRepositoryRoots()
+		if err != nil {
+			return nil, err
+		}
+		_localRepositoryRoots = append(_localRepositoryRoots, roots...)
 	}
-	_localRepositoryRoots = append(_localRepositoryRoots, roots...)
 
 	for i, v := range _localRepositoryRoots {
 		path := filepath.Clean(v)
@@ -385,7 +387,7 @@ func urlMatchLocalRepositoryRoots() ([]string, error) {
 }
 
 func primaryLocalRepositoryRoot() (string, error) {
-	roots, err := localRepositoryRoots()
+	roots, err := localRepositoryRoots(false)
 	if err != nil {
 		return "", err
 	}

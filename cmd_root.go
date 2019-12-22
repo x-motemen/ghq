@@ -12,7 +12,7 @@ func doRoot(c *cli.Context) error {
 		all = c.Bool("all")
 	)
 	if all {
-		roots, err := localRepositoryRoots()
+		roots, err := localRepositoryRoots(true)
 		if err != nil {
 			return err
 		}

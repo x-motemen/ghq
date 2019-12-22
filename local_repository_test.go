@@ -145,7 +145,7 @@ func TestLocalRepositoryRoots(t *testing.T) {
 		t.Run(tc.root, func(t *testing.T) {
 			_localRepositoryRoots = nil
 			os.Setenv("GHQ_ROOT", tc.root)
-			got, err := localRepositoryRoots()
+			got, err := localRepositoryRoots(true)
 			if err != nil {
 				t.Errorf("error should be nil, but: %s", err)
 			}
