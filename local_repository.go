@@ -289,6 +289,17 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 	return nil
 }
 
+var _home string
+
+func getHome() (string, error) {
+	if _home != "" {
+		return _home, nil
+	}
+	var err error
+	_home, err = os.UserHomeDir()
+	return _home, err
+}
+
 var _localRepositoryRoots []string
 
 // localRepositoryRoots returns locally cloned repositories' root directories.
@@ -314,7 +325,7 @@ func localRepositoryRoots() ([]string, error) {
 	}
 
 	if len(_localRepositoryRoots) == 0 {
-		homeDir, err := os.UserHomeDir()
+		homeDir, err := getHome()
 		if err != nil {
 			return nil, err
 		}
@@ -338,6 +349,30 @@ func localRepositoryRoots() ([]string, error) {
 	}
 
 	return _localRepositoryRoots, nil
+}
+
+func urlMatchLocalRepositoryRoots() ([]string, error) {
+	out, err := gitconfig.Do("--list")
+	if err != nil {
+		return nil, err
+	}
+	var ret []string
+	for _, kvStr := range strings.Split(out, "\x00") {
+		kv := strings.SplitN(kvStr, "\n", 2)
+		if len(kv) != 2 || !strings.HasPrefix(kv[0], "ghq.") || !strings.HasSuffix(kv[0], ".root") {
+			continue
+		}
+		p := kv[1]
+		if strings.HasPrefix(p, "~/") {
+			h, err := getHome()
+			if err != nil {
+				return nil, err
+			}
+			p = filepath.Join(h, p[2:])
+		}
+		ret = append(ret, p)
+	}
+	return ret, nil
 }
 
 func primaryLocalRepositoryRoot() (string, error) {

@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"sort"
 	"testing"
+
+	"github.com/Songmu/gitconfig"
 )
 
 func samePathSlice(lhss, rhss []string) bool {
@@ -334,4 +336,31 @@ func TestLocalRepository_VCS(t *testing.T) {
 			t.Errorf("got: %s, expect: %s", repoPath, pkg)
 		}
 	})
+}
+
+func TestURLMatchLocalRepositoryRoots(t *testing.T) {
+	origCachedHome := _home
+	_home = ""
+	origHome := os.Getenv("HOME")
+	os.Setenv("HOME", "/home/tmp")
+	teardown := gitconfig.WithConfig(t, `
+[ghq "https://github.com/hatena"]
+  root = ~/proj/hatena
+  root = /backups/hatena
+[ghq "https://github.com/natureglobal"]
+  root = ~/proj/natureglobal
+`)
+	defer func() {
+		os.Setenv("HOME", origHome)
+		_home = origCachedHome
+		teardown()
+	}()
+	want := []string{"/home/tmp/proj/hatena", "/backups/hatena", "/home/tmp/proj/natureglobal"}
+	got, err := urlMatchLocalRepositoryRoots()
+	if err != nil {
+		t.Errorf("error should be nil but: %s", err)
+	}
+	if !reflect.DeepEqual(want, got) {
+		t.Errorf("urlMatchLocalRepositoryRoots() = %+v, want: %+v", got, want)
+	}
 }
