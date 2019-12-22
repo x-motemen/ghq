@@ -344,6 +344,8 @@ func TestURLMatchLocalRepositoryRoots(t *testing.T) {
 	origHome := os.Getenv("HOME")
 	os.Setenv("HOME", "/home/tmp")
 	teardown := gitconfig.WithConfig(t, `
+[ghq]
+  root = /hoge
 [ghq "https://github.com/hatena"]
   root = ~/proj/hatena
   root = /backups/hatena

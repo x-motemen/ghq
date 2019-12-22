@@ -332,6 +332,12 @@ func localRepositoryRoots() ([]string, error) {
 		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
 	}
 
+	roots, err := urlMatchLocalRepositoryRoots()
+	if err != nil {
+		return nil, err
+	}
+	_localRepositoryRoots = append(_localRepositoryRoots, roots...)
+
 	for i, v := range _localRepositoryRoots {
 		path := filepath.Clean(v)
 		if _, err := os.Stat(path); err == nil {
@@ -359,7 +365,10 @@ func urlMatchLocalRepositoryRoots() ([]string, error) {
 	var ret []string
 	for _, kvStr := range strings.Split(out, "\x00") {
 		kv := strings.SplitN(kvStr, "\n", 2)
-		if len(kv) != 2 || !strings.HasPrefix(kv[0], "ghq.") || !strings.HasSuffix(kv[0], ".root") {
+		if len(kv) != 2 ||
+			!strings.HasPrefix(kv[0], "ghq.") ||
+			!strings.HasSuffix(kv[0], ".root") ||
+			kv[0] == "ghq.root" {
 			continue
 		}
 		p := kv[1]

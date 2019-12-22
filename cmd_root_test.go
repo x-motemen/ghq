@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -68,11 +69,23 @@ func TestDoRoot(t *testing.T) {
 	}, {
 		name: "default home",
 		setup: func() func() {
+			tmpd, err := ioutil.TempDir("", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			fpath := filepath.Join(tmpd, "unknown-ghq-dummy")
+			f, err := os.Create(fpath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f.Close()
+
 			restore1 := tmpEnv(ghqrootEnv, "")
-			restore2 := tmpEnv("GIT_CONFIG", "/tmp/unknown-ghq-dummy")
+			restore2 := tmpEnv("GIT_CONFIG", fpath)
 			restore3 := tmpEnv("HOME", "/path/to/ghqhome")
 
 			return func() {
+				os.RemoveAll(tmpd)
 				restore1()
 				restore2()
 				restore3()
