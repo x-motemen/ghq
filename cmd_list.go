@@ -24,7 +24,7 @@ func doList(c *cli.Context) error {
 	}
 	if query != "" {
 		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
-			if url, err := newURL(query, false); err == nil {
+			if url, err := newURL(query, false, false); err == nil {
 				if repo, err := LocalRepositoryFromURL(url); err == nil {
 					query = filepath.ToSlash(repo.RelPath)
 				}

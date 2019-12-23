@@ -77,7 +77,7 @@ completeUser = false`)
 			if tc.setup != nil {
 				defer tc.setup()()
 			}
-			repo, err := newURL(tc.url, false)
+			repo, err := newURL(tc.url, false, false)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
@@ -107,7 +107,7 @@ func TestConvertGitURLHTTPToSSH(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.url, func(t *testing.T) {
-			httpsURL, err := newURL(tc.url, false)
+			httpsURL, err := newURL(tc.url, false, false)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
@@ -124,15 +124,15 @@ func TestConvertGitURLHTTPToSSH(t *testing.T) {
 
 func TestNewURL_err(t *testing.T) {
 	invalidURL := "http://foo.com/?foo\nbar"
-	_, err := newURL(invalidURL, false)
+	_, err := newURL(invalidURL, false, false)
 	const wantSub = "net/url: invalid control character in URL"
 	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
-		t.Errorf("newURL(%q, false) error = %q; want substring %q", invalidURL, got, wantSub)
+		t.Errorf("newURL(%q, false, false) error = %q; want substring %q", invalidURL, got, wantSub)
 	}
 	defer gitconfig.WithConfig(t, `[[[`)()
 
 	var exitError *exec.ExitError
-	_, err = newURL("peco", false)
+	_, err = newURL("peco", false, false)
 	if !errors.As(err, &exitError) {
 		t.Errorf("error should be occurred but nil")
 	}
