@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/Songmu/gitconfig"
 )
 
 func TestCommandGet(t *testing.T) {
@@ -155,6 +158,22 @@ func TestCommandGet(t *testing.T) {
 			}
 			if !cloneArgs.recursive {
 				t.Errorf("cloneArgs.recursive should be false")
+			}
+		},
+	}, {
+		name: "ghq.<url>.root",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			tmpd := newTempDir(t)
+			defer os.RemoveAll(tmpd)
+			defer gitconfig.WithConfig(t, fmt.Sprintf(`
+[ghq "https://github.com/motemen"]
+  root = %s
+`, tmpd))()
+			app.Run([]string{"", "get", "motemen/ghq-test-repo"})
+
+			localDir := filepath.Join(tmpd, "github.com", "motemen", "ghq-test-repo")
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
 			}
 		},
 	}}

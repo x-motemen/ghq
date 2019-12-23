@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -69,10 +68,7 @@ func TestDoRoot(t *testing.T) {
 	}, {
 		name: "default home",
 		setup: func() func() {
-			tmpd, err := ioutil.TempDir("", "")
-			if err != nil {
-				t.Fatal(err)
-			}
+			tmpd := newTempDir(t)
 			fpath := filepath.Join(tmpd, "unknown-ghq-dummy")
 			f, err := os.Create(fpath)
 			if err != nil {
