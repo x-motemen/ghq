@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"sort"
 	"testing"
+
+	"github.com/Songmu/gitconfig"
 )
 
 func samePathSlice(lhss, rhss []string) bool {
@@ -105,6 +107,9 @@ func TestNewLocalRepository(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			defer func(orig string) { _home = orig }(_home)
+			_home = ""
+			defer gitconfig.WithConfig(t, "")()
 			r, err := LocalRepositoryFromURL(mustParseURL(tc.url))
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
@@ -143,7 +148,7 @@ func TestLocalRepositoryRoots(t *testing.T) {
 		t.Run(tc.root, func(t *testing.T) {
 			_localRepositoryRoots = nil
 			os.Setenv("GHQ_ROOT", tc.root)
-			got, err := localRepositoryRoots()
+			got, err := localRepositoryRoots(true)
 			if err != nil {
 				t.Errorf("error should be nil, but: %s", err)
 			}
@@ -334,4 +339,31 @@ func TestLocalRepository_VCS(t *testing.T) {
 			t.Errorf("got: %s, expect: %s", repoPath, pkg)
 		}
 	})
+}
+
+func TestURLMatchLocalRepositoryRoots(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
+	defer tmpEnv("HOME", "/home/tmp")()
+	defer func(orig string) { _home = orig }(_home)
+	_home = ""
+	defer gitconfig.WithConfig(t, `
+[ghq]
+  root = /hoge
+[ghq "https://github.com/hatena"]
+  root = ~/proj/hatena
+  root = /backups/hatena
+[ghq "https://github.com/natureglobal"]
+  root = ~/proj/natureglobal
+`)()
+
+	want := []string{"/home/tmp/proj/hatena", "/backups/hatena", "/home/tmp/proj/natureglobal"}
+	got, err := urlMatchLocalRepositoryRoots()
+	if err != nil {
+		t.Errorf("error should be nil but: %s", err)
+	}
+	if !reflect.DeepEqual(want, got) {
+		t.Errorf("urlMatchLocalRepositoryRoots() = %+v, want: %+v", got, want)
+	}
 }

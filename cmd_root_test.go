@@ -68,11 +68,20 @@ func TestDoRoot(t *testing.T) {
 	}, {
 		name: "default home",
 		setup: func() func() {
+			tmpd := newTempDir(t)
+			fpath := filepath.Join(tmpd, "unknown-ghq-dummy")
+			f, err := os.Create(fpath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f.Close()
+
 			restore1 := tmpEnv(ghqrootEnv, "")
-			restore2 := tmpEnv("GIT_CONFIG", "/tmp/unknown-ghq-dummy")
+			restore2 := tmpEnv("GIT_CONFIG", fpath)
 			restore3 := tmpEnv("HOME", "/path/to/ghqhome")
 
 			return func() {
+				os.RemoveAll(tmpd)
 				restore1()
 				restore2()
 				restore3()
@@ -86,6 +95,8 @@ func TestDoRoot(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 			_localRepositoryRoots = nil
+			defer func(orig string) { _home = orig }(_home)
+			_home = ""
 			defer tc.setup()()
 			out, _, _ := capture(func() {
 				newApp().Run([]string{"", "root"})

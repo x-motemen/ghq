@@ -27,7 +27,7 @@ func getRepoLock(localRepoRoot string) bool {
 
 type getter struct {
 	update, shallow, silent, ssh, recursive bool
-	vcs, branch                  string
+	vcs, branch                             string
 }
 
 func (g *getter) get(argURL string) error {
@@ -40,7 +40,7 @@ func (g *getter) get(argURL string) error {
 			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
 
 			var localRepoRoot string
-			roots, err := localRepositoryRoots()
+			roots, err := localRepositoryRoots(true)
 			if err != nil {
 				return err
 			}
@@ -135,12 +135,12 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 
 		if getRepoLock(localRepoRoot) {
 			return vcs.Clone(&vcsGetOption{
-				url:     repoURL,
-				dir:     localRepoRoot,
-				shallow: g.shallow,
-				silent:  g.silent,
-				branch:  g.branch,
-				recursive:  g.recursive,
+				url:       repoURL,
+				dir:       localRepoRoot,
+				shallow:   g.shallow,
+				silent:    g.silent,
+				branch:    g.branch,
+				recursive: g.recursive,
 			})
 		}
 		return nil

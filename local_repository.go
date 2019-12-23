@@ -37,7 +37,7 @@ func (repo *LocalRepository) RepoPath() string {
 func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRepository, error) {
 	var relPath string
 
-	roots, err := localRepositoryRoots()
+	roots, err := localRepositoryRoots(true)
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +96,15 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 		return localRepository, nil
 	}
 
-	prim, err := primaryLocalRepositoryRoot()
-	if err != nil {
+	prim, err := gitconfig.Do("--path", "--get-urlmatch", "ghq.root", remoteURL.String())
+	if err != nil && !gitconfig.IsNotFound(err) {
 		return nil, err
+	}
+	if prim == "" {
+		prim, err = primaryLocalRepositoryRoot()
+		if err != nil {
+			return nil, err
+		}
 	}
 	// No local repository found, returning new one
 	return &LocalRepository{
@@ -225,7 +231,7 @@ func walkAllLocalRepositories(callback func(*LocalRepository)) error {
 }
 
 func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
-	roots, err := localRepositoryRoots()
+	roots, err := localRepositoryRoots(true)
 	if err != nil {
 		return err
 	}
@@ -289,6 +295,17 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 	return nil
 }
 
+var _home string
+
+func getHome() (string, error) {
+	if _home != "" {
+		return _home, nil
+	}
+	var err error
+	_home, err = os.UserHomeDir()
+	return _home, err
+}
+
 var _localRepositoryRoots []string
 
 // localRepositoryRoots returns locally cloned repositories' root directories.
@@ -297,7 +314,7 @@ var _localRepositoryRoots []string
 //   - If GHQ_ROOT environment variable is nonempty, use it as the only root dir.
 //   - Otherwise, use the result of `git config --get-all ghq.root` as the dirs.
 //   - Otherwise, fallback to the default root, `~/.ghq`.
-func localRepositoryRoots() ([]string, error) {
+func localRepositoryRoots(all bool) ([]string, error) {
 	if len(_localRepositoryRoots) != 0 {
 		return _localRepositoryRoots, nil
 	}
@@ -314,11 +331,19 @@ func localRepositoryRoots() ([]string, error) {
 	}
 
 	if len(_localRepositoryRoots) == 0 {
-		homeDir, err := os.UserHomeDir()
+		homeDir, err := getHome()
 		if err != nil {
 			return nil, err
 		}
 		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
+	}
+
+	if all {
+		roots, err := urlMatchLocalRepositoryRoots()
+		if err != nil {
+			return nil, err
+		}
+		_localRepositoryRoots = append(_localRepositoryRoots, roots...)
 	}
 
 	for i, v := range _localRepositoryRoots {
@@ -340,8 +365,25 @@ func localRepositoryRoots() ([]string, error) {
 	return _localRepositoryRoots, nil
 }
 
+func urlMatchLocalRepositoryRoots() ([]string, error) {
+	out, err := gitconfig.Do("--path", "--get-regexp", `^ghq\..+\.root$`)
+	if err != nil {
+		if gitconfig.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	items := strings.Split(out, "\x00")
+	ret := make([]string, len(items))
+	for i, kvStr := range items {
+		kv := strings.SplitN(kvStr, "\n", 2)
+		ret[i] = kv[1]
+	}
+	return ret, nil
+}
+
 func primaryLocalRepositoryRoot() (string, error) {
-	roots, err := localRepositoryRoots()
+	roots, err := localRepositoryRoots(false)
 	if err != nil {
 		return "", err
 	}
