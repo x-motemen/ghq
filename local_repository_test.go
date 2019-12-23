@@ -342,8 +342,10 @@ func TestLocalRepository_VCS(t *testing.T) {
 }
 
 func TestURLMatchLocalRepositoryRoots(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
 	defer tmpEnv("HOME", "/home/tmp")()
-	defer tmpEnv("USERPROFILE", `C:\home\tmp`)()
 	defer func(orig string) { _home = orig }(_home)
 	_home = ""
 	defer gitconfig.WithConfig(t, `
@@ -357,9 +359,6 @@ func TestURLMatchLocalRepositoryRoots(t *testing.T) {
 `)()
 
 	want := []string{"/home/tmp/proj/hatena", "/backups/hatena", "/home/tmp/proj/natureglobal"}
-	if runtime.GOOS == "windows" {
-		want = []string{`C:\home\tmp\proj\hatena`, "/backups/hatena", `C:\home\tmp\proj\natureglobal`}
-	}
 	got, err := urlMatchLocalRepositoryRoots()
 	if err != nil {
 		t.Errorf("error should be nil but: %s", err)
