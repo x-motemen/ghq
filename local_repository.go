@@ -366,28 +366,18 @@ func localRepositoryRoots(all bool) ([]string, error) {
 }
 
 func urlMatchLocalRepositoryRoots() ([]string, error) {
-	out, err := gitconfig.Do("--list")
+	out, err := gitconfig.Do("--path", "--get-regexp", `^ghq\..+\.root$`)
 	if err != nil {
+		if gitconfig.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	var ret []string
-	for _, kvStr := range strings.Split(out, "\x00") {
+	items := strings.Split(out, "\x00")
+	ret := make([]string, len(items))
+	for i, kvStr := range items {
 		kv := strings.SplitN(kvStr, "\n", 2)
-		if len(kv) != 2 ||
-			!strings.HasPrefix(kv[0], "ghq.") ||
-			!strings.HasSuffix(kv[0], ".root") ||
-			kv[0] == "ghq.root" {
-			continue
-		}
-		p := kv[1]
-		if strings.HasPrefix(p, "~/") {
-			h, err := getHome()
-			if err != nil {
-				return nil, err
-			}
-			p = filepath.Join(h, p[2:])
-		}
-		ret = append(ret, p)
+		ret[i] = kv[1]
 	}
 	return ret, nil
 }
