@@ -49,7 +49,7 @@ func newURL(ref string) (*url.URL, error) {
 
 	if !url.IsAbs() {
 		if !strings.Contains(url.Path, "/") {
-			url.Path, err = fillUsernameToPath(url.Path)
+			url.Path, err = fillUsernameToPath(url.Path, false)
 			if err != nil {
 				return url, err
 			}
@@ -97,15 +97,16 @@ func detectUserName() (string, error) {
 	return user, nil
 }
 
-func fillUsernameToPath(path string) (string, error) {
-	completeUser, err := gitconfig.Bool("ghq.completeUser")
-	if err != nil && !gitconfig.IsNotFound(err) {
-		return path, err
+func fillUsernameToPath(path string, forceMe bool) (string, error) {
+	if !forceMe {
+		completeUser, err := gitconfig.Bool("ghq.completeUser")
+		if err != nil && !gitconfig.IsNotFound(err) {
+			return path, err
+		}
+		if err == nil && !completeUser {
+			return path + "/" + path, nil
+		}
 	}
-	if err == nil && !completeUser {
-		return path + "/" + path, nil
-	}
-
 	user, err := detectUserName()
 	if err != nil {
 		return path, err
