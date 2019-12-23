@@ -47,7 +47,7 @@ func doLook(c *cli.Context) error {
 	}
 
 	if len(reposFound) == 0 {
-		if url, err := newURL(name); err == nil {
+		if url, err := newURL(name, false); err == nil {
 			repo, err := LocalRepositoryFromURL(url)
 			if err != nil {
 				return err

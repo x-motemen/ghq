@@ -20,7 +20,7 @@ var (
 	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?$`)
 )
 
-func newURL(ref string) (*url.URL, error) {
+func newURL(ref string, forceMe bool) (*url.URL, error) {
 	if !hasSchemePattern.MatchString(ref) {
 		if scpLikeURLPattern.MatchString(ref) {
 			matched := scpLikeURLPattern.FindStringSubmatch(ref)
@@ -49,7 +49,7 @@ func newURL(ref string) (*url.URL, error) {
 
 	if !url.IsAbs() {
 		if !strings.Contains(url.Path, "/") {
-			url.Path, err = fillUsernameToPath(url.Path, false)
+			url.Path, err = fillUsernameToPath(url.Path, forceMe)
 			if err != nil {
 				return url, err
 			}

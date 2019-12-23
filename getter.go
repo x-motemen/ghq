@@ -59,7 +59,7 @@ func (g *getter) get(argURL string) error {
 		}
 	}
 
-	u, err := newURL(argURL)
+	u, err := newURL(argURL, false)
 	if err != nil {
 		return fmt.Errorf("Could not parse URL %q: %w", argURL, err)
 	}
