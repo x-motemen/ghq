@@ -22,6 +22,7 @@ func TestDoCreate(t *testing.T) {
 		return nil
 	}
 	defer func(orig string) { _home = orig }(_home)
+	_home = ""
 	defer gitconfig.WithConfig(t, "")()
 	tmpd := newTempDir(t)
 	defer os.RemoveAll(tmpd)
