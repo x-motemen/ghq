@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.17.0](https://github.com/motemen/ghq/compare/v0.16.0...v0.17.0) (2019-12-24)
+
+* add create subcommand [#229](https://github.com/motemen/ghq/pull/229) ([Songmu](https://github.com/Songmu))
+* ghq.<url>.root configuration [#228](https://github.com/motemen/ghq/pull/228) ([Songmu](https://github.com/Songmu))
+
 ## [v0.16.0](https://github.com/motemen/ghq/compare/v0.15.0...v0.16.0) (2019-12-22)
 
 * fetch recursively by default on git repository and  add --no-recursive option to prevent it [#227](https://github.com/motemen/ghq/pull/227) ([moajo](https://github.com/moajo))
