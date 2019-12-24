@@ -156,7 +156,7 @@ func TestCommandGet(t *testing.T) {
 			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
 				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
 			}
-			if !cloneArgs.recursive {
+			if cloneArgs.recursive {
 				t.Errorf("cloneArgs.recursive should be false")
 			}
 		},

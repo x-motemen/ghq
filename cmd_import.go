@@ -18,7 +18,7 @@ func doImport(c *cli.Context) error {
 		ssh:       c.Bool("p"),
 		vcs:       c.String("vcs"),
 		silent:    c.Bool("silent"),
-		recursive: !c.Bool("--no-recursive"),
+		recursive: !c.Bool("no-recursive"),
 	}
 	if parallel {
 		// force silent in parallel import
