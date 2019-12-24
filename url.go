@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 
 	"github.com/Songmu/gitconfig"
+	"github.com/motemen/ghq/logger"
 )
 
 // Convert SCP-like URL to SSH URL(e.g. [user@]host.xz:path/to/repo.git/)
@@ -20,7 +22,35 @@ var (
 	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?$`)
 )
 
-func newURL(ref string) (*url.URL, error) {
+func newURL(ref string, ssh, forceMe bool) (*url.URL, error) {
+	// If argURL is a "./foo" or "../bar" form,
+	// find repository name trailing after github.com/USER/.
+	ref = filepath.ToSlash(ref)
+	parts := strings.Split(ref, "/")
+	if parts[0] == "." || parts[0] == ".." {
+		if wd, err := os.Getwd(); err == nil {
+			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
+
+			var localRepoRoot string
+			roots, err := localRepositoryRoots(true)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range roots {
+				p := strings.TrimPrefix(path, r+string(filepath.Separator))
+				if p != path && (localRepoRoot == "" || len(p) < len(localRepoRoot)) {
+					localRepoRoot = filepath.ToSlash(p)
+				}
+			}
+
+			if localRepoRoot != "" {
+				// Guess it
+				logger.Log("resolved", fmt.Sprintf("relative %q to %q", ref, "https://"+localRepoRoot))
+				ref = "https://" + localRepoRoot
+			}
+		}
+	}
+
 	if !hasSchemePattern.MatchString(ref) {
 		if scpLikeURLPattern.MatchString(ref) {
 			matched := scpLikeURLPattern.FindStringSubmatch(ref)
@@ -42,35 +72,41 @@ func newURL(ref string) (*url.URL, error) {
 		}
 	}
 
-	url, err := url.Parse(ref)
+	u, err := url.Parse(ref)
 	if err != nil {
-		return url, err
+		return nil, err
 	}
-
-	if !url.IsAbs() {
-		if !strings.Contains(url.Path, "/") {
-			url.Path, err = fillUsernameToPath(url.Path)
+	if !u.IsAbs() {
+		if !strings.Contains(u.Path, "/") {
+			u.Path, err = fillUsernameToPath(u.Path, forceMe)
 			if err != nil {
-				return url, err
+				return nil, err
 			}
 		}
-		url.Scheme = "https"
-		url.Host = "github.com"
-		if url.Path[0] != '/' {
-			url.Path = "/" + url.Path
+		u.Scheme = "https"
+		u.Host = "github.com"
+		if u.Path[0] != '/' {
+			u.Path = "/" + u.Path
 		}
 	}
 
-	return url, nil
+	if ssh {
+		// Assume Git repository if `-p` is given.
+		if u, err = convertGitURLHTTPToSSH(u); err != nil {
+			return nil, fmt.Errorf("Could not convert URL %q: %w", u, err)
+		}
+	}
+
+	return u, nil
 }
 
-func convertGitURLHTTPToSSH(url *url.URL) (*url.URL, error) {
+func convertGitURLHTTPToSSH(u *url.URL) (*url.URL, error) {
 	user := "git"
-	if url.User != nil {
-		user = url.User.Username()
+	if u.User != nil {
+		user = u.User.Username()
 	}
-	sshURL := fmt.Sprintf("ssh://%s@%s%s", user, url.Host, url.Path)
-	return url.Parse(sshURL)
+	sshURL := fmt.Sprintf("ssh://%s@%s%s", user, u.Host, u.Path)
+	return u.Parse(sshURL)
 }
 
 func detectUserName() (string, error) {
@@ -97,15 +133,16 @@ func detectUserName() (string, error) {
 	return user, nil
 }
 
-func fillUsernameToPath(path string) (string, error) {
-	completeUser, err := gitconfig.Bool("ghq.completeUser")
-	if err != nil && !gitconfig.IsNotFound(err) {
-		return path, err
+func fillUsernameToPath(path string, forceMe bool) (string, error) {
+	if !forceMe {
+		completeUser, err := gitconfig.Bool("ghq.completeUser")
+		if err != nil && !gitconfig.IsNotFound(err) {
+			return path, err
+		}
+		if err == nil && !completeUser {
+			return path + "/" + path, nil
+		}
 	}
-	if err == nil && !completeUser {
-		return path + "/" + path, nil
-	}
-
 	user, err := detectUserName()
 	if err != nil {
 		return path, err

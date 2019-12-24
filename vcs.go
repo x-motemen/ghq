@@ -29,6 +29,7 @@ type VCSBackend struct {
 	Clone func(*vcsGetOption) error
 	// Updates a cloned local repository.
 	Update func(*vcsGetOption) error
+	Init   func(dir string) error
 	// Returns VCS specific files
 	Contents []string
 }
@@ -76,6 +77,9 @@ var GitBackend = &VCSBackend{
 			return runInDir(vg.silent)(vg.dir, "git", "submodule", "update", "--init", "--recursive")
 		}
 		return nil
+	},
+	Init: func(dir string) error {
+		return cmdutil.RunInDirStderr(dir, "git", "init")
 	},
 	Contents: []string{".git"},
 }
@@ -153,6 +157,9 @@ var MercurialBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "hg", "pull", "--update")
 	},
+	Init: func(dir string) error {
+		return cmdutil.RunInDirStderr(dir, "hg", "init")
+	},
 	Contents: []string{".hg"},
 }
 
@@ -179,6 +186,9 @@ var DarcsBackend = &VCSBackend{
 	},
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "darcs", "pull")
+	},
+	Init: func(dir string) error {
+		return cmdutil.RunInDirStderr(dir, "darcs", "init")
 	},
 	Contents: []string{"_darcs"},
 }
@@ -213,6 +223,12 @@ var FossilBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "fossil", "update")
 	},
+	Init: func(dir string) error {
+		if err := cmdutil.RunInDirStderr(dir, "fossil", "init", fossilRepoName); err != nil {
+			return err
+		}
+		return cmdutil.RunInDirStderr(dir, "fossil", "open", fossilRepoName)
+	},
 	Contents: []string{".fslckout", "_FOSSIL_"},
 }
 
@@ -233,6 +249,9 @@ var BazaarBackend = &VCSBackend{
 	Update: func(vg *vcsGetOption) error {
 		// Without --overwrite bzr will not pull tags that changed.
 		return runInDir(vg.silent)(vg.dir, "bzr", "pull", "--overwrite")
+	},
+	Init: func(dir string) error {
+		return cmdutil.RunInDirStderr(dir, "bzr", "init")
 	},
 	Contents: []string{".bzr"},
 }

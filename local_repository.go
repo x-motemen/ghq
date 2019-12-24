@@ -96,16 +96,11 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 		return localRepository, nil
 	}
 
-	prim, err := gitconfig.Do("--path", "--get-urlmatch", "ghq.root", remoteURL.String())
-	if err != nil && !gitconfig.IsNotFound(err) {
+	prim, err := getRoot(remoteURL.String())
+	if err != nil {
 		return nil, err
 	}
-	if prim == "" {
-		prim, err = primaryLocalRepositoryRoot()
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	// No local repository found, returning new one
 	return &LocalRepository{
 		FullPath:  filepath.Join(prim, relPath),
@@ -113,6 +108,20 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 		RootPath:  prim,
 		PathParts: pathParts,
 	}, nil
+}
+
+func getRoot(u string) (string, error) {
+	prim, err := gitconfig.Do("--path", "--get-urlmatch", "ghq.root", u)
+	if err != nil && !gitconfig.IsNotFound(err) {
+		return "", err
+	}
+	if prim == "" {
+		prim, err = primaryLocalRepositoryRoot()
+		if err != nil {
+			return "", err
+		}
+	}
+	return prim, nil
 }
 
 // Subpaths returns lists of tail parts of relative path from the root directory (shortest first)

@@ -13,6 +13,7 @@ var commands = []cli.Command{
 	commandLook,
 	commandImport,
 	commandRoot,
+	commandCreate,
 }
 
 // cloneFlags are comman flags of `get` and `import` subcommands
@@ -85,6 +86,15 @@ var commandRoot = cli.Command{
 	},
 }
 
+var commandCreate = cli.Command{
+	Name:   "create",
+	Usage:  "Create repository",
+	Action: doCreate,
+	Flags: []cli.Flag{
+		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend explicitly"},
+	},
+}
+
 type commandDoc struct {
 	Parent    string
 	Arguments string
@@ -96,6 +106,7 @@ var commandDocs = map[string]commandDoc{
 	"look":   {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 	"import": {"", "< file"},
 	"root":   {"", ""},
+	"create": {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 }
 
 // Makes template conditionals to generate per-command documents.

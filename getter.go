@@ -31,53 +31,14 @@ type getter struct {
 }
 
 func (g *getter) get(argURL string) error {
-	// If argURL is a "./foo" or "../bar" form,
-	// find repository name trailing after github.com/USER/.
-	argURL = filepath.ToSlash(argURL)
-	parts := strings.Split(argURL, "/")
-	if parts[0] == "." || parts[0] == ".." {
-		if wd, err := os.Getwd(); err == nil {
-			path := filepath.Clean(filepath.Join(wd, filepath.Join(parts...)))
-
-			var localRepoRoot string
-			roots, err := localRepositoryRoots(true)
-			if err != nil {
-				return err
-			}
-			for _, r := range roots {
-				p := strings.TrimPrefix(path, r+string(filepath.Separator))
-				if p != path && (localRepoRoot == "" || len(p) < len(localRepoRoot)) {
-					localRepoRoot = filepath.ToSlash(p)
-				}
-			}
-
-			if localRepoRoot != "" {
-				// Guess it
-				logger.Log("resolved", fmt.Sprintf("relative %q to %q", argURL, "https://"+localRepoRoot))
-				argURL = "https://" + localRepoRoot
-			}
-		}
-	}
-
-	u, err := newURL(argURL)
+	u, err := newURL(argURL, g.ssh, false)
 	if err != nil {
 		return fmt.Errorf("Could not parse URL %q: %w", argURL, err)
-	}
-
-	if g.ssh {
-		// Assume Git repository if `-p` is given.
-		if u, err = convertGitURLHTTPToSSH(u); err != nil {
-			return fmt.Errorf("Could not convert URL %q: %w", u, err)
-		}
 	}
 
 	remote, err := NewRemoteRepository(u)
 	if err != nil {
 		return err
-	}
-
-	if !remote.IsValid() {
-		return fmt.Errorf("Not a valid repository: %s", u)
 	}
 
 	return g.getRemoteRepository(remote)
@@ -112,19 +73,15 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 	if newPath {
 		logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, fpath))
 		var (
-			vcs           = vcsRegistry[g.vcs]
 			localRepoRoot = fpath
 			repoURL       = remoteURL
 		)
-		vcs2, repoURL2 := remote.VCS()
-		if vcs == nil && vcs2 == nil {
-			return fmt.Errorf("Could not find version control system: %s", remoteURL)
-		}
-		if vcs == nil {
-			vcs = vcs2
-		}
-		if repoURL2 != nil {
-			repoURL = repoURL2
+		vcs, ok := vcsRegistry[g.vcs]
+		if !ok {
+			vcs, repoURL = remote.VCS()
+			if vcs == nil {
+				return fmt.Errorf("Could not find version control system: %s", remoteURL)
+			}
 		}
 		l := detectLocalRepoRoot(
 			strings.TrimSuffix(remoteURL.Path, ".git"),
@@ -153,8 +110,9 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 		}
 		if getRepoLock(localRepoRoot) {
 			return vcs.Update(&vcsGetOption{
-				dir:    localRepoRoot,
-				silent: g.silent,
+				dir:       localRepoRoot,
+				silent:    g.silent,
+				recursive: g.recursive,
 			})
 		}
 		return nil
