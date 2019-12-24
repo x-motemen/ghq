@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -149,18 +150,21 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 }
 
 // NewRemoteRepository returns new RemoteRepository object from URL
-func NewRemoteRepository(url *url.URL) (RemoteRepository, error) {
-	if url.Host == "github.com" {
-		return &GitHubRepository{url}, nil
+func NewRemoteRepository(u *url.URL) (RemoteRepository, error) {
+	repo := func() RemoteRepository {
+		switch u.Host {
+		case "github.com":
+			return &GitHubRepository{u}
+		case "gist.github.com":
+			return &GitHubGistRepository{u}
+		case "hub.darcs.net":
+			return &DarksHubRepository{u}
+		default:
+			return &OtherRepository{u}
+		}
+	}()
+	if !repo.IsValid() {
+		return nil, fmt.Errorf("Not a valid repository: %s", u)
 	}
-
-	if url.Host == "gist.github.com" {
-		return &GitHubGistRepository{url}, nil
-	}
-
-	if url.Host == "hub.darcs.net" {
-		return &DarksHubRepository{url}, nil
-	}
-
-	return &OtherRepository{url}, nil
+	return repo, nil
 }

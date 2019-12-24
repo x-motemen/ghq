@@ -90,6 +90,9 @@ var commandCreate = cli.Command{
 	Name:   "create",
 	Usage:  "Create repository",
 	Action: doCreate,
+	Flags: []cli.Flag{
+		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend explicitly"},
+	},
 }
 
 type commandDoc struct {

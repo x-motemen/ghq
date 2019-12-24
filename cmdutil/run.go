@@ -48,6 +48,16 @@ func RunInDirSilently(dir, command string, args ...string) error {
 	return RunCommand(cmd, true)
 }
 
+// RunInDirStderr run the command in the specified directory and prevent stdout output
+func RunInDirStderr(dir, command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	cmd.Stdout = os.Stderr
+	cmd.Stderr = os.Stderr
+	cmd.Dir = dir
+
+	return RunCommand(cmd, true)
+}
+
 // RunFunc for the type command execution
 type RunFunc func(*exec.Cmd) error
 

@@ -41,10 +41,6 @@ func (g *getter) get(argURL string) error {
 		return err
 	}
 
-	if !remote.IsValid() {
-		return fmt.Errorf("Not a valid repository: %s", u)
-	}
-
 	return g.getRemoteRepository(remote)
 }
 
@@ -118,8 +114,9 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 		}
 		if getRepoLock(localRepoRoot) {
 			return vcs.Update(&vcsGetOption{
-				dir:    localRepoRoot,
-				silent: g.silent,
+				dir:       localRepoRoot,
+				silent:    g.silent,
+				recursive: g.recursive,
 			})
 		}
 		return nil
