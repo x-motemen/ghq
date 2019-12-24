@@ -73,19 +73,15 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 	if newPath {
 		logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, fpath))
 		var (
-			vcs           = vcsRegistry[g.vcs]
 			localRepoRoot = fpath
 			repoURL       = remoteURL
 		)
-		vcs2, repoURL2 := remote.VCS()
-		if vcs == nil && vcs2 == nil {
-			return fmt.Errorf("Could not find version control system: %s", remoteURL)
-		}
-		if vcs == nil {
-			vcs = vcs2
-		}
-		if repoURL2 != nil {
-			repoURL = repoURL2
+		vcs, ok := vcsRegistry[g.vcs]
+		if !ok {
+			vcs, repoURL = remote.VCS()
+			if vcs == nil {
+				return fmt.Errorf("Could not find version control system: %s", remoteURL)
+			}
 		}
 		l := detectLocalRepoRoot(
 			strings.TrimSuffix(remoteURL.Path, ".git"),
