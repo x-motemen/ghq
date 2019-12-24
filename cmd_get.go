@@ -18,7 +18,7 @@ func doGet(c *cli.Context) error {
 		vcs:       c.String("vcs"),
 		silent:    c.Bool("silent"),
 		branch:    c.String("branch"),
-		recursive: !c.Bool("--no-recursive"),
+		recursive: !c.Bool("no-recursive"),
 	}
 
 	if argURL == "" {
