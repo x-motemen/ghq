@@ -9,6 +9,7 @@ import (
 
 var commands = []cli.Command{
 	commandGet,
+	commandExpand,
 	commandList,
 	commandLook,
 	commandImport,
@@ -109,6 +110,13 @@ var commandDocs = map[string]commandDoc{
 	"create": {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 }
 
+var commandExpand = cli.Command{
+	Name:   "expand",
+	Usage:  "Expand to relative path from root root",
+	Action: doExpand,
+	Flags:  []cli.Flag{},
+}
+
 // Makes template conditionals to generate per-command documents.
 func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
 	template := "{{if false}}"
@@ -134,4 +142,23 @@ OPTIONS:
     {{range .Flags}}{{.}}
     {{end}}
 {{end}}`
+}
+
+func doExpand(c *cli.Context) error {
+	var (
+		name = c.Args().First()
+		w    = c.App.Writer
+	)
+	u, err := newURL(name, false, true)
+	if err != nil {
+		return err
+	}
+
+	localRepo, err := LocalRepositoryFromURL(u)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintln(w, localRepo.FullPath)
+	return err
 }
