@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.17.1](https://github.com/motemen/ghq/compare/v0.17.0...v0.17.1) (2019-12-25)
+
+* [bugfix] fix --no-recursive [#232](https://github.com/motemen/ghq/pull/232) ([Songmu](https://github.com/Songmu))
+* Add bash-completion [#231](https://github.com/motemen/ghq/pull/231) ([mattn](https://github.com/mattn))
+
 ## [v0.17.0](https://github.com/motemen/ghq/compare/v0.16.0...v0.17.0) (2019-12-24)
 
 * add create subcommand [#229](https://github.com/motemen/ghq/pull/229) ([Songmu](https://github.com/Songmu))
