@@ -26,7 +26,7 @@ func main() {
 func newApp() *cli.App {
 	app := cli.NewApp()
 	app.Name = "ghq"
-	app.Usage = "Manage GitHub repository clones"
+	app.Usage = "Manage remote repository clones"
 	app.Version = fmt.Sprintf("%s (rev:%s)", version, revision)
 	app.Authors = []*cli.Author{{
 		Name:  "motemen",

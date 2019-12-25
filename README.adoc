@@ -62,6 +62,9 @@ root::
     Prints repositories' root (i.e. `ghq.root`). Without '--all' option, the
     primary one is shown.
 
+create::
+    Creates new repository.
+
 == CONFIGURATION
 
 Configuration uses 'git-config' variables.
