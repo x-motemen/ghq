@@ -87,8 +87,8 @@ func TestDoRoot(t *testing.T) {
 				restore3()
 			}
 		},
-		expect:    "/path/to/ghqhome/.ghq\n",
-		allExpect: "/path/to/ghqhome/.ghq\n",
+		expect:    "/path/to/ghqhome/ghq\n",
+		allExpect: "/path/to/ghqhome/ghq\n",
 	}}
 
 	for _, tc := range testCases {

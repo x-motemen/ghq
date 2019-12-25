@@ -322,7 +322,7 @@ var _localRepositoryRoots []string
 //
 //   - If GHQ_ROOT environment variable is nonempty, use it as the only root dir.
 //   - Otherwise, use the result of `git config --get-all ghq.root` as the dirs.
-//   - Otherwise, fallback to the default root, `~/.ghq`.
+//   - Otherwise, fallback to the default root, `~/ghq`.
 func localRepositoryRoots(all bool) ([]string, error) {
 	if len(_localRepositoryRoots) != 0 {
 		return _localRepositoryRoots, nil
@@ -344,7 +344,7 @@ func localRepositoryRoots(all bool) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
+		_localRepositoryRoots = []string{filepath.Join(homeDir, "ghq")}
 	}
 
 	if all {
