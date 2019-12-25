@@ -24,7 +24,7 @@ func TestDoImport(t *testing.T) {
 		args: []string{},
 	}, {
 		name: "parallel (Experimental)",
-		args: []string{"-P"},
+		args: []string{"-parallel"},
 	}}
 
 	buf := &bytes.Buffer{}

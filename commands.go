@@ -7,7 +7,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var commands = []cli.Command{
+var commands = []*cli.Command{
 	commandGet,
 	commandList,
 	commandLook,
@@ -27,7 +27,7 @@ var cloneFlags = []cli.Flag{
 	&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
 }
 
-var commandGet = cli.Command{
+var commandGet = &cli.Command{
 	Name:  "get",
 	Usage: "Clone/sync with a remote repository",
 	Description: `
@@ -41,7 +41,7 @@ var commandGet = cli.Command{
 		&cli.StringFlag{Name: "branch, b", Usage: "Specify branch name. This flag implies --single-branch on Git"}),
 }
 
-var commandList = cli.Command{
+var commandList = &cli.Command{
 	Name:  "list",
 	Usage: "List local repositories",
 	Description: `
@@ -60,7 +60,7 @@ var commandList = cli.Command{
 	},
 }
 
-var commandLook = cli.Command{
+var commandLook = &cli.Command{
 	Name:  "look",
 	Usage: "Look into a local repository",
 	Description: `
@@ -69,7 +69,7 @@ var commandLook = cli.Command{
 	Action: doLook,
 }
 
-var commandImport = cli.Command{
+var commandImport = &cli.Command{
 	Name:   "import",
 	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
@@ -77,7 +77,7 @@ var commandImport = cli.Command{
 		&cli.BoolFlag{Name: "parallel, P", Usage: "[Experimental] Import parallely"}),
 }
 
-var commandRoot = cli.Command{
+var commandRoot = &cli.Command{
 	Name:   "root",
 	Usage:  "Show repositories' root",
 	Action: doRoot,
@@ -86,7 +86,7 @@ var commandRoot = cli.Command{
 	},
 }
 
-var commandCreate = cli.Command{
+var commandCreate = &cli.Command{
 	Name:   "create",
 	Usage:  "Create repository",
 	Action: doCreate,
