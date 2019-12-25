@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func doCreate(c *cli.Context) error {

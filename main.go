@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/motemen/ghq/logger"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 const version = "0.17.1"

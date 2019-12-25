@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/motemen/ghq/cmdutil"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func detectShell() string {
