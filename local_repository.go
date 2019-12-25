@@ -347,7 +347,7 @@ func localRepositoryRoots(all bool) ([]string, error) {
 		_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
 	}
 
-	if all {
+	if all && envRoot == "" {
 		roots, err := urlMatchLocalRepositoryRoots()
 		if err != nil {
 			return nil, err
