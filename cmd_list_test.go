@@ -175,7 +175,7 @@ func TestDoList_query(t *testing.T) {
 
 func TestDoList_unique(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	defer func(orig string) { os.Setenv("GHQ_ROOT", orig) }(os.Getenv("GHQ_ROOT"))
+	defer func(orig string) { os.Setenv(envGhqRoot, orig) }(os.Getenv(envGhqRoot))
 
 	tmp1 := newTempDir(t)
 	defer os.RemoveAll(tmp1)
@@ -184,7 +184,7 @@ func TestDoList_unique(t *testing.T) {
 
 	_localRepositoryRoots = nil
 	rootPaths := []string{tmp1, tmp2}
-	os.Setenv("GHQ_ROOT", strings.Join(rootPaths, string(os.PathListSeparator)))
+	os.Setenv(envGhqRoot, strings.Join(rootPaths, string(os.PathListSeparator)))
 	for _, rootPath := range rootPaths {
 		os.MkdirAll(filepath.Join(rootPath, "github.com/motemen/ghq/.git"), 0755)
 	}
@@ -198,7 +198,7 @@ func TestDoList_unique(t *testing.T) {
 
 func TestDoList_unknownRoot(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	defer tmpEnv("GHQ_ROOT", "/path/to/unknown-ghq")()
+	defer tmpEnv(envGhqRoot, "/path/to/unknown-ghq")()
 	_localRepositoryRoots = nil
 
 	err := newApp().Run([]string{"ghq", "list"})
@@ -217,7 +217,7 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 		os.Chmod(dir, 0755)
 		os.RemoveAll(dir)
 	}(tmpdir)
-	defer tmpEnv("GHQ_ROOT", tmpdir)()
+	defer tmpEnv(envGhqRoot, tmpdir)()
 
 	_localRepositoryRoots = nil
 	os.Chmod(tmpdir, 0000)
@@ -240,7 +240,7 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 		os.Chmod(systemHidden, 0755)
 		os.RemoveAll(dir)
 	}(tmpdir)
-	defer tmpEnv("GHQ_ROOT", tmpdir)()
+	defer tmpEnv(envGhqRoot, tmpdir)()
 
 	_localRepositoryRoots = nil
 

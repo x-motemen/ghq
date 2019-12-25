@@ -14,6 +14,8 @@ import (
 	"github.com/saracen/walker"
 )
 
+const envGhqRoot = "GHQ_ROOT"
+
 // LocalRepository represents local repository
 type LocalRepository struct {
 	FullPath  string
@@ -328,7 +330,7 @@ func localRepositoryRoots(all bool) ([]string, error) {
 		return _localRepositoryRoots, nil
 	}
 
-	envRoot := os.Getenv("GHQ_ROOT")
+	envRoot := os.Getenv(envGhqRoot)
 	if envRoot != "" {
 		_localRepositoryRoots = filepath.SplitList(envRoot)
 	} else {
