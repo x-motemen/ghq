@@ -77,7 +77,7 @@ var commandImport = &cli.Command{
 	Action: doImport,
 	Flags: append(cloneFlags,
 		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"},
-			Usage: "[Experimental] Import parallely"}),
+			Usage: "Import parallely"}),
 }
 
 var commandRoot = &cli.Command{
