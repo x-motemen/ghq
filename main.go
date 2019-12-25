@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/motemen/ghq/logger"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 const version = "0.17.1"
@@ -28,7 +28,7 @@ func newApp() *cli.App {
 	app.Name = "ghq"
 	app.Usage = "Manage GitHub repository clones"
 	app.Version = fmt.Sprintf("%s (rev:%s)", version, revision)
-	app.Authors = []cli.Author{{
+	app.Authors = []*cli.Author{{
 		Name:  "motemen",
 		Email: "motemen@gmail.com",
 	}, {

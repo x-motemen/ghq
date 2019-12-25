@@ -58,13 +58,13 @@ func TestCommandGet(t *testing.T) {
 			}
 		},
 	}, {
-		name: "already cloned with -u",
+		name: "already cloned with -update",
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 			// mark as "already cloned", the condition may change later
 			os.MkdirAll(filepath.Join(localDir, ".git"), 0755)
 
-			app.Run([]string{"", "get", "-u", "motemen/ghq-test-repo"})
+			app.Run([]string{"", "get", "-update", "motemen/ghq-test-repo"})
 
 			if updateArgs.local != localDir {
 				t.Errorf("got: %s, expect: %s", updateArgs.local, localDir)
@@ -97,7 +97,7 @@ func TestCommandGet(t *testing.T) {
 			os.Chdir(localDir)
 			defer os.Chdir(wd)
 
-			app.Run([]string{"", "get", "-u", "." + string(filepath.Separator) + "ghq-test-repo"})
+			app.Run([]string{"", "get", "-update", "." + string(filepath.Separator) + "ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -117,7 +117,7 @@ func TestCommandGet(t *testing.T) {
 			os.Chdir(localDir)
 			defer os.Chdir(wd)
 
-			app.Run([]string{"", "get", "-u", ".." + string(filepath.Separator) + "ghq-another-test-repo"})
+			app.Run([]string{"", "get", "-update", ".." + string(filepath.Separator) + "ghq-another-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-another-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -134,7 +134,7 @@ func TestCommandGet(t *testing.T) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
 			expectBranch := "hello"
-			app.Run([]string{"", "get", "-shallow", "-b", expectBranch, "motemen/ghq-test-repo"})
+			app.Run([]string{"", "get", "-shallow", "-branch", expectBranch, "motemen/ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {

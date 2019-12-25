@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
@@ -117,7 +117,7 @@ func TestDoList_query(t *testing.T) {
 		expect: "github.com/motemen/ghq\n",
 	}, {
 		name:   "exact",
-		args:   []string{"-e", "gobump"},
+		args:   []string{"-exact", "gobump"},
 		expect: "github.com/Songmu/gobump\ngithub.com/motemen/gobump\n",
 	}, {
 		name:   "query",
@@ -125,7 +125,7 @@ func TestDoList_query(t *testing.T) {
 		expect: "github.com/motemen/gobump\ngithub.com/motemen/gore\n",
 	}, {
 		name:   "exact query",
-		args:   []string{"-e", "men/go"},
+		args:   []string{"-exact", "men/go"},
 		expect: "",
 	}, {
 		name:   "vcs",

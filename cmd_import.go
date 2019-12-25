@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/motemen/ghq/logger"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 )
 
