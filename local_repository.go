@@ -14,6 +14,8 @@ import (
 	"github.com/saracen/walker"
 )
 
+const envGhqRoot = "GHQ_ROOT"
+
 // LocalRepository represents local repository
 type LocalRepository struct {
 	FullPath  string
@@ -111,6 +113,10 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 }
 
 func getRoot(u string) (string, error) {
+	prim := os.Getenv(envGhqRoot)
+	if prim != "" {
+		return prim, nil
+	}
 	prim, err := gitconfig.Do("--path", "--get-urlmatch", "ghq.root", u)
 	if err != nil && !gitconfig.IsNotFound(err) {
 		return "", err
@@ -323,12 +329,14 @@ var _localRepositoryRoots []string
 //   - If GHQ_ROOT environment variable is nonempty, use it as the only root dir.
 //   - Otherwise, use the result of `git config --get-all ghq.root` as the dirs.
 //   - Otherwise, fallback to the default root, `~/ghq`.
+//   - When GHQ_ROOT is empty, specific root dirs are added from the result of
+//     `git config --path --get-regexp '^ghq\..+\.root$`
 func localRepositoryRoots(all bool) ([]string, error) {
 	if len(_localRepositoryRoots) != 0 {
 		return _localRepositoryRoots, nil
 	}
 
-	envRoot := os.Getenv("GHQ_ROOT")
+	envRoot := os.Getenv(envGhqRoot)
 	if envRoot != "" {
 		_localRepositoryRoots = filepath.SplitList(envRoot)
 	} else {
@@ -347,7 +355,7 @@ func localRepositoryRoots(all bool) ([]string, error) {
 		_localRepositoryRoots = []string{filepath.Join(homeDir, "ghq")}
 	}
 
-	if all {
+	if all && envRoot == "" {
 		roots, err := urlMatchLocalRepositoryRoots()
 		if err != nil {
 			return nil, err

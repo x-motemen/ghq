@@ -35,7 +35,6 @@ func samePaths(lhs, rhs string) bool {
 }
 
 func TestDoRoot(t *testing.T) {
-	ghqrootEnv := "GHQ_ROOT"
 	testCases := []struct {
 		name              string
 		setup             func() func()
@@ -43,23 +42,23 @@ func TestDoRoot(t *testing.T) {
 	}{{
 		name: "env",
 		setup: func() func() {
-			orig := os.Getenv(ghqrootEnv)
-			os.Setenv(ghqrootEnv, "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
-			return func() { os.Setenv(ghqrootEnv, orig) }
+			orig := os.Getenv(envGhqRoot)
+			os.Setenv(envGhqRoot, "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
+			return func() { os.Setenv(envGhqRoot, orig) }
 		},
 		expect:    "/path/to/ghqroot1\n",
 		allExpect: "/path/to/ghqroot1\n/path/to/ghqroot2\n",
 	}, {
 		name: "gitconfig",
 		setup: func() func() {
-			orig := os.Getenv(ghqrootEnv)
-			os.Setenv(ghqrootEnv, "")
+			orig := os.Getenv(envGhqRoot)
+			os.Setenv(envGhqRoot, "")
 			teardown := gitconfig.WithConfig(t, `[ghq]
   root = /path/to/ghqroot11
   root = /path/to/ghqroot12
 `)
 			return func() {
-				os.Setenv(ghqrootEnv, orig)
+				os.Setenv(envGhqRoot, orig)
 				teardown()
 			}
 		},
@@ -76,7 +75,7 @@ func TestDoRoot(t *testing.T) {
 			}
 			f.Close()
 
-			restore1 := tmpEnv(ghqrootEnv, "")
+			restore1 := tmpEnv(envGhqRoot, "")
 			restore2 := tmpEnv("GIT_CONFIG", fpath)
 			restore3 := tmpEnv("HOME", "/path/to/ghqhome")
 
