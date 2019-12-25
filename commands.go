@@ -18,12 +18,13 @@ var commands = []*cli.Command{
 
 // cloneFlags are comman flags of `get` and `import` subcommands
 var cloneFlags = []cli.Flag{
-	&cli.BoolFlag{Name: "update, u", Usage: "Update local repository if cloned already"},
+	&cli.BoolFlag{Name: "update", Aliases: []string{"u"},
+		Usage: "Update local repository if cloned already"},
 	&cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
 	&cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
-	&cli.BoolFlag{Name: "look, l", Usage: "Look after get"},
+	&cli.BoolFlag{Name: "look", Aliases: []string{"l"}, Usage: "Look after get"},
 	&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
-	&cli.BoolFlag{Name: "silent, s", Usage: "clone or update silently"},
+	&cli.BoolFlag{Name: "silent", Aliases: []string{"s"}, Usage: "clone or update silently"},
 	&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
 }
 
@@ -38,7 +39,8 @@ var commandGet = &cli.Command{
 `,
 	Action: doGet,
 	Flags: append(cloneFlags,
-		&cli.StringFlag{Name: "branch, b", Usage: "Specify branch name. This flag implies --single-branch on Git"}),
+		&cli.StringFlag{Name: "branch", Aliases: []string{"b"},
+			Usage: "Specify branch name. This flag implies --single-branch on Git"}),
 }
 
 var commandList = &cli.Command{
@@ -53,9 +55,9 @@ var commandList = &cli.Command{
 `,
 	Action: doList,
 	Flags: []cli.Flag{
-		&cli.BoolFlag{Name: "exact, e", Usage: "Perform an exact match"},
+		&cli.BoolFlag{Name: "exact", Aliases: []string{"e"}, Usage: "Perform an exact match"},
 		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for matching"},
-		&cli.BoolFlag{Name: "full-path, p", Usage: "Print full paths"},
+		&cli.BoolFlag{Name: "full-path", Aliases: []string{"p"}, Usage: "Print full paths"},
 		&cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
 	},
 }
@@ -74,7 +76,8 @@ var commandImport = &cli.Command{
 	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
 	Flags: append(cloneFlags,
-		&cli.BoolFlag{Name: "parallel, P", Usage: "[Experimental] Import parallely"}),
+		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"},
+			Usage: "[Experimental] Import parallely"}),
 }
 
 var commandRoot = &cli.Command{
