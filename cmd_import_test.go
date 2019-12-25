@@ -23,7 +23,7 @@ func TestDoImport(t *testing.T) {
 		name: "normal",
 		args: []string{},
 	}, {
-		name: "parallel (Experimental)",
+		name: "parallel",
 		args: []string{"-parallel"},
 	}}
 
