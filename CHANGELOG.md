@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.17.3](https://github.com/motemen/ghq/compare/v0.17.2...v0.17.3) (2019-12-26)
+
+* [incompatible] fix localRepositoryRoots order [#240](https://github.com/motemen/ghq/pull/240) ([Songmu](https://github.com/Songmu))
+
 ## [v0.17.2](https://github.com/motemen/ghq/compare/v0.17.1...v0.17.2) (2019-12-26)
 
 * adjust ghq.root detection [#238](https://github.com/motemen/ghq/pull/238) ([Songmu](https://github.com/Songmu))
