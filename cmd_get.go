@@ -76,6 +76,9 @@ func doGet(c *cli.Context) error {
 	if err := scr.Err(); err != nil {
 		return fmt.Errorf("While reading input: %s", err)
 	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
 	if andLook && firstArg != "" {
 		return look(firstArg)
 	}
