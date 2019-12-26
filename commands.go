@@ -10,7 +10,6 @@ import (
 var commands = []*cli.Command{
 	commandGet,
 	commandList,
-	commandLook,
 	commandImport,
 	commandRoot,
 	commandCreate,
@@ -62,15 +61,6 @@ var commandList = &cli.Command{
 	},
 }
 
-var commandLook = &cli.Command{
-	Name:  "look",
-	Usage: "Look into a local repository",
-	Description: `
-    Look into a locally cloned repository with the shell.
-`,
-	Action: doLook,
-}
-
 var commandImport = &cli.Command{
 	Name:   "import",
 	Usage:  "Bulk get repositories from stdin",
@@ -106,7 +96,6 @@ type commandDoc struct {
 var commandDocs = map[string]commandDoc{
 	"get":    {"", "[-u] [--vcs <vcs>] <repository URL> | [-u] [-p] <user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
-	"look":   {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 	"import": {"", "< file"},
 	"root":   {"", ""},
 	"create": {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
