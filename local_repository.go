@@ -345,6 +345,12 @@ func localRepositoryRoots(all bool) ([]string, error) {
 		if err != nil && !gitconfig.IsNotFound(err) {
 			return nil, err
 		}
+		// reverse slice
+		for i := len(_localRepositoryRoots)/2 - 1; i >= 0; i-- {
+			opp := len(_localRepositoryRoots) - 1 - i
+			_localRepositoryRoots[i], _localRepositoryRoots[opp] =
+				_localRepositoryRoots[opp], _localRepositoryRoots[i]
+		}
 	}
 
 	if len(_localRepositoryRoots) == 0 {

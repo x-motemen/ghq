@@ -53,9 +53,10 @@ func TestDoRoot(t *testing.T) {
 		setup: func() func() {
 			orig := os.Getenv(envGhqRoot)
 			os.Setenv(envGhqRoot, "")
-			teardown := gitconfig.WithConfig(t, `[ghq]
-  root = /path/to/ghqroot11
+			teardown := gitconfig.WithConfig(t, `
+[ghq]
   root = /path/to/ghqroot12
+  root = /path/to/ghqroot11
 `)
 			return func() {
 				os.Setenv(envGhqRoot, orig)
