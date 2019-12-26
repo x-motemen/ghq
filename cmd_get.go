@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -9,15 +10,20 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/motemen/ghq/cmdutil"
+	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/sync/errgroup"
 )
 
 func doGet(c *cli.Context) error {
 	var (
-		args    = c.Args().Slice()
-		andLook = c.Bool("look")
+		args     = c.Args().Slice()
+		andLook  = c.Bool("look")
+		parallel = c.Bool("parallel")
 	)
 	g := &getter{
 		update:    c.Bool("update"),
@@ -28,21 +34,76 @@ func doGet(c *cli.Context) error {
 		branch:    c.String("branch"),
 		recursive: !c.Bool("no-recursive"),
 	}
-
-	if len(args) == 0 {
-		return fmt.Errorf("no project args specified. see `ghq get -h` for more details")
+	if parallel {
+		// force silent in parallel import
+		g.silent = true
 	}
 
-	for _, target := range args {
-		if err := g.get(target); err != nil {
-			return err
+	var (
+		firstArg string
+		scr      scanner
+	)
+	if len(args) > 0 {
+		scr = &sliceScanner{slice: args}
+	} else {
+		if terminal.IsTerminal(syscall.Stdin) {
+			return fmt.Errorf("no project args specified. see `ghq get -h` for more details")
+		}
+		scr = bufio.NewScanner(os.Stdin)
+	}
+	eg := &errgroup.Group{}
+	sem := make(chan struct{}, 6)
+	for scr.Scan() {
+		target := scr.Text()
+		if firstArg != "" {
+			firstArg = target
+		}
+		if parallel {
+			eg.Go(func() error {
+				sem <- struct{}{}
+				defer func() { <-sem }()
+				if err := g.get(target); err != nil {
+					logger.Log("error", err.Error())
+				}
+				return nil
+			})
+		} else {
+			if err := g.get(target); err != nil {
+				return err
+			}
 		}
 	}
-
-	if andLook {
-		return look(args[0])
+	if err := scr.Err(); err != nil {
+		return fmt.Errorf("While reading input: %s", err)
+	}
+	if andLook && firstArg != "" {
+		return look(firstArg)
 	}
 	return nil
+}
+
+type sliceScanner struct {
+	slice []string
+	index int
+}
+
+func (s *sliceScanner) Scan() bool {
+	s.index++
+	return s.index <= len(s.slice)
+}
+
+func (s *sliceScanner) Text() string {
+	return s.slice[s.index-1]
+}
+
+func (s *sliceScanner) Err() error {
+	return nil
+}
+
+type scanner interface {
+	Scan() bool
+	Text() string
+	Err() error
 }
 
 func detectShell() string {

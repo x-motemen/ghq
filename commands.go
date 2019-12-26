@@ -25,6 +25,7 @@ var cloneFlags = []cli.Flag{
 	&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
 	&cli.BoolFlag{Name: "silent", Aliases: []string{"s"}, Usage: "clone or update silently"},
 	&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
+	&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallely"},
 }
 
 var commandGet = &cli.Command{
@@ -65,9 +66,7 @@ var commandImport = &cli.Command{
 	Name:   "import",
 	Usage:  "Bulk get repositories from stdin",
 	Action: doImport,
-	Flags: append(cloneFlags,
-		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"},
-			Usage: "Import parallely"}),
+	Flags:  cloneFlags,
 }
 
 var commandRoot = &cli.Command{
