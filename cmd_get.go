@@ -16,7 +16,7 @@ import (
 
 func doGet(c *cli.Context) error {
 	var (
-		argURL  = c.Args().Get(0)
+		args    = c.Args().Slice()
 		andLook = c.Bool("look")
 	)
 	g := &getter{
@@ -29,15 +29,18 @@ func doGet(c *cli.Context) error {
 		recursive: !c.Bool("no-recursive"),
 	}
 
-	if argURL == "" {
+	if len(args) == 0 {
 		return fmt.Errorf("no project args specified. see `ghq get -h` for more details")
 	}
 
-	if err := g.get(argURL); err != nil {
-		return err
+	for _, target := range args {
+		if err := g.get(target); err != nil {
+			return err
+		}
 	}
+
 	if andLook {
-		return look(argURL)
+		return look(args[0])
 	}
 	return nil
 }
