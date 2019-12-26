@@ -10,12 +10,10 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"syscall"
 
 	"github.com/motemen/ghq/cmdutil"
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -46,7 +44,7 @@ func doGet(c *cli.Context) error {
 	if len(args) > 0 {
 		scr = &sliceScanner{slice: args}
 	} else {
-		if terminal.IsTerminal(syscall.Stdin) {
+		if !stdinIsPipe() {
 			return fmt.Errorf("no project args specified. see `ghq get -h` for more details")
 		}
 		scr = bufio.NewScanner(os.Stdin)
