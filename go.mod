@@ -9,6 +9,7 @@ require (
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
+	github.com/mattn/go-isatty v0.0.11
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
 	github.com/saracen/walker v0.0.0-20191201085201-324a081bae7e
 	github.com/urfave/cli/v2 v2.1.0

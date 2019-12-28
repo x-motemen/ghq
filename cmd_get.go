@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mattn/go-isatty"
 	"github.com/motemen/ghq/cmdutil"
 	"github.com/motemen/ghq/logger"
 	"github.com/urfave/cli/v2"
@@ -44,11 +45,8 @@ func doGet(c *cli.Context) error {
 	if len(args) > 0 {
 		scr = &sliceScanner{slice: args}
 	} else {
-		fi, err := os.Stdin.Stat()
-		if err != nil {
-			return err
-		}
-		if fi.Size() <= 0 {
+		fd := os.Stdin.Fd()
+		if isatty.IsTerminal(fd) || isatty.IsCygwinTerminal(fd) {
 			return fmt.Errorf("no target args specified. see `ghq get -h` for more details")
 		}
 		scr = bufio.NewScanner(os.Stdin)
