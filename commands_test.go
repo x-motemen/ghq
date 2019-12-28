@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/Songmu/gitconfig"
@@ -52,6 +53,7 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 	}
 	defer func(orig string) { _home = orig }(_home)
 	_home = ""
+	homeOnce = &sync.Once{}
 	defer gitconfig.WithConfig(t, "")()
 
 	GitBackend = tmpBackend

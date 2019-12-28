@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/Songmu/gitconfig"
@@ -53,9 +54,11 @@ func TestDoRoot(t *testing.T) {
 		setup: func() func() {
 			orig := os.Getenv(envGhqRoot)
 			os.Setenv(envGhqRoot, "")
-			teardown := gitconfig.WithConfig(t, `[ghq]
-  root = /path/to/ghqroot11
+			teardown := gitconfig.WithConfig(t, `
+[ghq]
   root = /path/to/ghqroot12
+  root = /path/to/ghqroot12
+  root = /path/to/ghqroot11
 `)
 			return func() {
 				os.Setenv(envGhqRoot, orig)
@@ -94,8 +97,10 @@ func TestDoRoot(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 			_localRepositoryRoots = nil
+			localRepoOnce = &sync.Once{}
 			defer func(orig string) { _home = orig }(_home)
 			_home = ""
+			homeOnce = &sync.Once{}
 			defer tc.setup()()
 			out, _, _ := capture(func() {
 				newApp().Run([]string{"", "root"})

@@ -1,5 +1,22 @@
 # Changelog
 
+## [v0.17.4](https://github.com/motemen/ghq/compare/v0.17.3...v0.17.4) (2019-12-29)
+
+* [fix] uniq local roots [#246](https://github.com/motemen/ghq/pull/246) ([Songmu](https://github.com/Songmu))
+* [bugfix] fix race conditions by using sync.Once [#245](https://github.com/motemen/ghq/pull/245) ([Songmu](https://github.com/Songmu))
+
+## [v0.17.3](https://github.com/motemen/ghq/compare/v0.17.2...v0.17.3) (2019-12-26)
+
+* [incompatible] fix localRepositoryRoots order [#240](https://github.com/motemen/ghq/pull/240) ([Songmu](https://github.com/Songmu))
+
+## [v0.17.2](https://github.com/motemen/ghq/compare/v0.17.1...v0.17.2) (2019-12-26)
+
+* adjust ghq.root detection [#238](https://github.com/motemen/ghq/pull/238) ([Songmu](https://github.com/Songmu))
+* adjust document [#236](https://github.com/motemen/ghq/pull/236) ([Songmu](https://github.com/Songmu))
+* stop providing 32bit binary [#235](https://github.com/motemen/ghq/pull/235) ([Songmu](https://github.com/Songmu))
+* The parallel option is now an official feature [#234](https://github.com/motemen/ghq/pull/234) ([Songmu](https://github.com/Songmu))
+* Update urfave/cli to v2 [#233](https://github.com/motemen/ghq/pull/233) ([Songmu](https://github.com/Songmu))
+
 ## [v0.17.1](https://github.com/motemen/ghq/compare/v0.17.0...v0.17.1) (2019-12-25)
 
 * [bugfix] fix --no-recursive [#232](https://github.com/motemen/ghq/pull/232) ([Songmu](https://github.com/Songmu))
