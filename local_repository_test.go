@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"sync"
 	"testing"
 
 	"github.com/Songmu/gitconfig"
@@ -109,6 +110,7 @@ func TestNewLocalRepository(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer func(orig string) { _home = orig }(_home)
 			_home = ""
+			homeOnce = &sync.Once{}
 			defer gitconfig.WithConfig(t, "")()
 			r, err := LocalRepositoryFromURL(mustParseURL(tc.url))
 			if err != nil {
@@ -147,6 +149,7 @@ func TestLocalRepositoryRoots(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.root, func(t *testing.T) {
 			_localRepositoryRoots = nil
+			localRepoOnce = &sync.Once{}
 			os.Setenv(envGhqRoot, tc.root)
 			got, err := localRepositoryRoots(true)
 			if err != nil {
@@ -300,6 +303,7 @@ func TestLocalRepository_VCS(t *testing.T) {
 	defer func(orig string) { os.Setenv(envGhqRoot, orig) }(os.Getenv(envGhqRoot))
 
 	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
 	tmpdir := newTempDir(t)
 	os.Setenv(envGhqRoot, tmpdir)
 
@@ -348,6 +352,7 @@ func TestURLMatchLocalRepositoryRoots(t *testing.T) {
 	defer tmpEnv("HOME", "/home/tmp")()
 	defer func(orig string) { _home = orig }(_home)
 	_home = ""
+	homeOnce = &sync.Once{}
 	defer gitconfig.WithConfig(t, `
 [ghq]
   root = /hoge

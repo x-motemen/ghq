@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/urfave/cli/v2"
@@ -183,6 +184,7 @@ func TestDoList_unique(t *testing.T) {
 	defer os.RemoveAll(tmp2)
 
 	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
 	rootPaths := []string{tmp1, tmp2}
 	os.Setenv(envGhqRoot, strings.Join(rootPaths, string(os.PathListSeparator)))
 	for _, rootPath := range rootPaths {
@@ -200,6 +202,7 @@ func TestDoList_unknownRoot(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	defer tmpEnv(envGhqRoot, "/path/to/unknown-ghq")()
 	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if err != nil {
@@ -220,6 +223,7 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 	defer tmpEnv(envGhqRoot, tmpdir)()
 
 	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
 	os.Chmod(tmpdir, 0000)
 
 	err := newApp().Run([]string{"ghq", "list"})
@@ -243,6 +247,7 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 	defer tmpEnv(envGhqRoot, tmpdir)()
 
 	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
 
 	err := newApp().Run([]string{"ghq", "list"})
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/Songmu/gitconfig"
@@ -23,11 +24,14 @@ func TestDoCreate(t *testing.T) {
 	}
 	defer func(orig string) { _home = orig }(_home)
 	_home = ""
+	homeOnce = &sync.Once{}
 	defer gitconfig.WithConfig(t, "")()
 	tmpd := newTempDir(t)
 	defer os.RemoveAll(tmpd)
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	_localRepositoryRoots = []string{tmpd}
+	defer tmpEnv(envGhqRoot, tmpd)()
+	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
 
 	out, _, _ := capture(func() {
 		newApp().Run([]string{"", "create", "motemen/ghqq"})
