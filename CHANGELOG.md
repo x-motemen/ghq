@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.17.4](https://github.com/motemen/ghq/compare/v0.17.3...v0.17.4) (2019-12-29)
+
+* [fix] uniq local roots [#246](https://github.com/motemen/ghq/pull/246) ([Songmu](https://github.com/Songmu))
+* [bugfix] fix race conditions by using sync.Once [#245](https://github.com/motemen/ghq/pull/245) ([Songmu](https://github.com/Songmu))
+
 ## [v0.17.3](https://github.com/motemen/ghq/compare/v0.17.2...v0.17.3) (2019-12-26)
 
 * [incompatible] fix localRepositoryRoots order [#240](https://github.com/motemen/ghq/pull/240) ([Songmu](https://github.com/Songmu))
