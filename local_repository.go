@@ -339,31 +339,32 @@ var (
 //     `git config --path --get-regexp '^ghq\..+\.root$`
 func localRepositoryRoots(all bool) ([]string, error) {
 	localRepoOnce.Do(func() {
+		var roots []string
 		envRoot := os.Getenv(envGhqRoot)
 		if envRoot != "" {
-			_localRepositoryRoots = filepath.SplitList(envRoot)
+			roots = filepath.SplitList(envRoot)
 		} else {
 			var err error
-			_localRepositoryRoots, err = gitconfig.PathAll("ghq.root")
+			roots, err = gitconfig.PathAll("ghq.root")
 			if err != nil && !gitconfig.IsNotFound(err) {
 				_localRepoErr = err
 				return
 			}
 			// reverse slice
-			for i := len(_localRepositoryRoots)/2 - 1; i >= 0; i-- {
-				opp := len(_localRepositoryRoots) - 1 - i
-				_localRepositoryRoots[i], _localRepositoryRoots[opp] =
-					_localRepositoryRoots[opp], _localRepositoryRoots[i]
+			for i := len(roots)/2 - 1; i >= 0; i-- {
+				opp := len(roots) - 1 - i
+				roots[i], roots[opp] =
+					roots[opp], roots[i]
 			}
 		}
 
-		if len(_localRepositoryRoots) == 0 {
+		if len(roots) == 0 {
 			homeDir, err := getHome()
 			if err != nil {
 				_localRepoErr = err
 				return
 			}
-			_localRepositoryRoots = []string{filepath.Join(homeDir, ".ghq")}
+			roots = []string{filepath.Join(homeDir, ".ghq")}
 		}
 
 		if all && envRoot == "" {
@@ -372,10 +373,11 @@ func localRepositoryRoots(all bool) ([]string, error) {
 				_localRepoErr = err
 				return
 			}
-			_localRepositoryRoots = append(_localRepositoryRoots, roots...)
+			roots = append(roots, roots...)
 		}
 
-		for i, v := range _localRepositoryRoots {
+		seen := make(map[string]bool, len(roots))
+		for _, v := range roots {
 			path := filepath.Clean(v)
 			if _, err := os.Stat(path); err == nil {
 				if path, err = filepath.EvalSymlinks(path); err != nil {
@@ -390,7 +392,11 @@ func localRepositoryRoots(all bool) ([]string, error) {
 					return
 				}
 			}
-			_localRepositoryRoots[i] = path
+			if seen[path] {
+				continue
+			}
+			seen[path] = true
+			_localRepositoryRoots = append(_localRepositoryRoots, path)
 		}
 	})
 	return _localRepositoryRoots, _localRepoErr

@@ -57,6 +57,7 @@ func TestDoRoot(t *testing.T) {
 			teardown := gitconfig.WithConfig(t, `
 [ghq]
   root = /path/to/ghqroot12
+  root = /path/to/ghqroot12
   root = /path/to/ghqroot11
 `)
 			return func() {
