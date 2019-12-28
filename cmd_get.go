@@ -48,9 +48,8 @@ func doGet(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		// check if from pipe or not
-		if fi.Mode()&os.ModeCharDevice != 0 || fi.Size() <= 0 {
-			return fmt.Errorf("no project args specified. see `ghq get -h` for more details")
+		if fi.Size() <= 0 {
+			return fmt.Errorf("no target args specified. see `ghq get -h` for more details")
 		}
 		scr = bufio.NewScanner(os.Stdin)
 	}
