@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -145,23 +149,73 @@ var SubversionBackend = &VCSBackend{
 	Contents: []string{".svn"},
 }
 
+var svnLastRevReg = regexp.MustCompile(`(?m)^Last Changed Rev: (\d+)$`)
+
 // GitsvnBackend is the VCSBackend for git-svn
 var GitsvnBackend = &VCSBackend{
-	// git-svn seems not supporting shallow clone currently.
 	Clone: func(vg *vcsGetOption) error {
+		standard := true
+		if strings.HasSuffix(vg.dir, trunk) {
+			standard = false
+			vg.dir = strings.TrimSuffix(vg.dir, trunk)
+		} else {
+			orig := vg.dir
+			vg.dir = replaceOnce(svnReg, vg.dir, "")
+			standard = orig == vg.dir
+		}
+
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
+
+		var svnInfo string
+		args := []string{"svn", "clone"}
 		remote := vg.url
 		if vg.branch != "" {
 			copied := *remote
 			remote = &copied
 			remote.Path += "/branches/" + url.PathEscape(vg.branch)
+			standard = false
+		} else if standard {
+			copied := *remote
+			copied.Path += trunk
+			buf := &bytes.Buffer{}
+			cmd := exec.Command("svn", "info", copied.String())
+			cmd.Stdout = buf
+			cmd.Stderr = ioutil.Discard
+			if err := cmdutil.RunCommand(cmd, true); err == nil {
+				args = append(args, "-s")
+				svnInfo = buf.String()
+			} else {
+				standard = false
+			}
 		}
 
-		return run(vg.silent)("git", "svn", "clone", remote.String(), vg.dir)
+		if vg.shallow {
+			if svnInfo == "" {
+				copied := *remote
+				if standard {
+					copied.Path += trunk
+				}
+				buf := &bytes.Buffer{}
+				cmd := exec.Command("svn", "info", copied.String())
+				cmd.Stdout = buf
+				cmd.Stderr = ioutil.Discard
+				if err := cmdutil.RunCommand(cmd, true); err != nil {
+					return err
+				}
+				svnInfo = buf.String()
+			}
+			m := svnLastRevReg.FindStringSubmatch(svnInfo)
+			if len(m) < 2 {
+				return fmt.Errorf("no revisions are taken from svn info output: %s", svnInfo)
+			}
+			args = append(args, fmt.Sprintf("-r%s:HEAD", m[1]))
+		}
+		args = append(args, remote.String(), vg.dir)
+		return run(vg.silent)("git", args...)
 	},
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "git", "svn", "rebase")
