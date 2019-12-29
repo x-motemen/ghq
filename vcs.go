@@ -95,7 +95,7 @@ var SubversionBackend = &VCSBackend{
 
 		args := []string{"checkout"}
 		if vg.shallow {
-			args = append(args, "--depth", "1")
+			args = append(args, "--depth", "immediates")
 		}
 		remote := vg.url
 		if vg.branch != "" {
