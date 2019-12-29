@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/motemen/ghq/cmdutil"
 )
@@ -84,9 +86,30 @@ var GitBackend = &VCSBackend{
 	Contents: []string{".git"},
 }
 
+var svnReg = regexp.MustCompile(`/(?:tags|branches)/[^/]+$`)
+
+func replaceOnce(reg *regexp.Regexp, str, replace string) string {
+	replaced := false
+	return reg.ReplaceAllStringFunc(str, func(match string) string {
+		if replaced {
+			return match
+		}
+		replaced = true
+		return reg.ReplaceAllString(match, replace)
+	})
+}
+
+const trunk = "/trunk"
+
 // SubversionBackend is the VCSBackend for subversion
 var SubversionBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
+		if strings.HasSuffix(vg.dir, trunk) {
+			vg.dir = strings.TrimSuffix(vg.dir, trunk)
+		} else {
+			vg.dir = replaceOnce(svnReg, vg.dir, "")
+		}
+
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -101,7 +124,16 @@ var SubversionBackend = &VCSBackend{
 		if vg.branch != "" {
 			copied := *vg.url
 			remote = &copied
+			if strings.HasSuffix(remote.Path, trunk) {
+				remote.Path = strings.TrimSuffix(remote.Path, trunk)
+			}
 			remote.Path += "/branches/" + url.PathEscape(vg.branch)
+		} else if !strings.HasSuffix(remote.Path, trunk) {
+			copied := *vg.url
+			copied.Path += trunk
+			if err := cmdutil.RunSilently("svn", "info", copied.String()); err == nil {
+				remote = &copied
+			}
 		}
 		args = append(args, remote.String(), vg.dir)
 
