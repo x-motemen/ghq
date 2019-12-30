@@ -16,8 +16,9 @@ You can also list local repositories (+ghq list+).
 == SYNOPSIS
 
 [verse]
-ghq get [-u] [-p] [--shallow] [--vcs] [--look] [--silent] [--branch] [--no-recursive] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
+ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq list [-p] [-e] [<query>]
+ghq create [--vcs <vcs>] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq root [--all]
 
 == COMMANDS
