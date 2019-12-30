@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,6 +24,9 @@ func TestVCSBackend(t *testing.T) {
 	}(cmdutil.CommandRunner)
 	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 		_commands = append(_commands, cmd)
+		if reflect.DeepEqual(cmd.Args, []string{"svn", "info", "https://example.com/git/repo/trunk"}) {
+			return fmt.Errorf("[test] failed to svn info")
+		}
 		return nil
 	}
 
@@ -74,13 +78,13 @@ func TestVCSBackend(t *testing.T) {
 		name: "[git] recursive",
 		f: func() error {
 			return GitBackend.Clone(&vcsGetOption{
-				url:    remoteDummyURL,
-				dir:    localDir,
+				url:       remoteDummyURL,
+				dir:       localDir,
 				recursive: true,
 			})
 		},
 		expect: []string{"git", "clone", "--recursive", remoteDummyURL.String(), localDir},
-	},{
+	}, {
 		name: "[svn] checkout",
 		f: func() error {
 			return SubversionBackend.Clone(&vcsGetOption{
@@ -98,7 +102,7 @@ func TestVCSBackend(t *testing.T) {
 				shallow: true,
 			})
 		},
-		expect: []string{"svn", "checkout", "--depth", "1", remoteDummyURL.String(), localDir},
+		expect: []string{"svn", "checkout", "--depth", "immediates", remoteDummyURL.String(), localDir},
 	}, {
 		name: "[svn] checkout specific branch",
 		f: func() error {
@@ -140,13 +144,33 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[git-svn] clone shallow",
 		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(cmd.Args, []string{"svn", "info", "https://example.com/git/repo/trunk"}) {
+					cmd.Stdout.Write([]byte(`Path: trunk
+URL: https://svn.apache.org/repos/asf/subversion/trunk
+Relative URL: ^/subversion/trunk
+Repository Root: https://svn.apache.org/repos/asf
+Repository UUID: 13f79535-47bb-0310-9956-ffa450edef68
+Revision: 1872085
+Node Kind: directory
+Last Changed Author: julianfoad
+Last Changed Rev: 1872031
+Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
+`))
+				}
+				return nil
+			}
 			return GitsvnBackend.Clone(&vcsGetOption{
 				url:     remoteDummyURL,
 				dir:     localDir,
 				shallow: true,
 			})
 		},
-		expect: []string{"git", "svn", "clone", remoteDummyURL.String(), localDir},
+		expect: []string{"git", "svn", "clone", "-s", "-r1872031:HEAD", remoteDummyURL.String(), localDir},
 	}, {
 		name: "[git-svn] clone specific branch",
 		f: func() error {

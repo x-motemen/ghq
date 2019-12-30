@@ -1,10 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/motemen/ghq/cmdutil"
 )
@@ -84,9 +90,46 @@ var GitBackend = &VCSBackend{
 	Contents: []string{".git"},
 }
 
+/*
+If the svn target is under standard svn directory structure, "ghq" canonicalizes the checkout path.
+For example, all following targets are checked-out into `$(ghq root)/svn.example.com/proj/repo`.
+
+- svn.example.com/proj/repo
+- svn.example.com/proj/repo/trunk
+- svn.example.com/proj/repo/branches/featureN
+- svn.example.com/proj/repo/tags/v1.0.1
+
+Addition, when the svn target may be project root, "ghq" tries to checkout "/trunk".
+
+The checkout rule using "git-svn" also has the same behavior.
+*/
+
+const trunk = "/trunk"
+
+var svnReg = regexp.MustCompile(`/(?:tags|branches)/[^/]+$`)
+
+func replaceOnce(reg *regexp.Regexp, str, replace string) string {
+	replaced := false
+	return reg.ReplaceAllStringFunc(str, func(match string) string {
+		if replaced {
+			return match
+		}
+		replaced = true
+		return reg.ReplaceAllString(match, replace)
+	})
+}
+
+func svnBase(p string) string {
+	if strings.HasSuffix(p, trunk) {
+		return strings.TrimSuffix(p, trunk)
+	}
+	return replaceOnce(svnReg, p, "")
+}
+
 // SubversionBackend is the VCSBackend for subversion
 var SubversionBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
+		vg.dir = svnBase(vg.dir)
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -95,13 +138,20 @@ var SubversionBackend = &VCSBackend{
 
 		args := []string{"checkout"}
 		if vg.shallow {
-			args = append(args, "--depth", "1")
+			args = append(args, "--depth", "immediates")
 		}
 		remote := vg.url
 		if vg.branch != "" {
 			copied := *vg.url
 			remote = &copied
+			remote.Path = svnBase(remote.Path)
 			remote.Path += "/branches/" + url.PathEscape(vg.branch)
+		} else if !strings.HasSuffix(remote.Path, trunk) {
+			copied := *vg.url
+			copied.Path += trunk
+			if err := cmdutil.RunSilently("svn", "info", copied.String()); err == nil {
+				remote = &copied
+			}
 		}
 		args = append(args, remote.String(), vg.dir)
 
@@ -113,23 +163,66 @@ var SubversionBackend = &VCSBackend{
 	Contents: []string{".svn"},
 }
 
+var svnLastRevReg = regexp.MustCompile(`(?m)^Last Changed Rev: (\d+)$`)
+
 // GitsvnBackend is the VCSBackend for git-svn
 var GitsvnBackend = &VCSBackend{
-	// git-svn seems not supporting shallow clone currently.
 	Clone: func(vg *vcsGetOption) error {
+		orig := vg.dir
+		vg.dir = svnBase(vg.dir)
+		standard := orig == vg.dir
+
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
+
+		var getSvnInfo = func(u string) (string, error) {
+			buf := &bytes.Buffer{}
+			cmd := exec.Command("svn", "info", u)
+			cmd.Stdout = buf
+			cmd.Stderr = ioutil.Discard
+			err := cmdutil.RunCommand(cmd, true)
+			return buf.String(), err
+		}
+		var svnInfo string
+		args := []string{"svn", "clone"}
 		remote := vg.url
 		if vg.branch != "" {
 			copied := *remote
 			remote = &copied
+			remote.Path = svnBase(remote.Path)
 			remote.Path += "/branches/" + url.PathEscape(vg.branch)
+			standard = false
+		} else if standard {
+			copied := *remote
+			copied.Path += trunk
+			info, err := getSvnInfo(copied.String())
+			if err == nil {
+				args = append(args, "-s")
+				svnInfo = info
+			} else {
+				standard = false
+			}
 		}
 
-		return run(vg.silent)("git", "svn", "clone", remote.String(), vg.dir)
+		if vg.shallow {
+			if svnInfo == "" {
+				info, err := getSvnInfo(remote.String())
+				if err != nil {
+					return err
+				}
+				svnInfo = info
+			}
+			m := svnLastRevReg.FindStringSubmatch(svnInfo)
+			if len(m) < 2 {
+				return fmt.Errorf("no revisions are taken from svn info output: %s", svnInfo)
+			}
+			args = append(args, fmt.Sprintf("-r%s:HEAD", m[1]))
+		}
+		args = append(args, remote.String(), vg.dir)
+		return run(vg.silent)("git", args...)
 	},
 	Update: func(vg *vcsGetOption) error {
 		return runInDir(vg.silent)(vg.dir, "git", "svn", "rebase")
