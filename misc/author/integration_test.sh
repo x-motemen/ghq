@@ -20,7 +20,7 @@ ghq get https://launchpad.net/terminator
 ghq get --vcs fossil https://www.sqlite.org/src
 ghq get --shallow --vcs=git-svn https://svn.apache.org/repos/asf/httpd/httpd
 ghq get https://svn.apache.org/repos/asf/subversion
-ghq get hub.darcs.net/byorgey/split
+ghq get --shallow hub.darcs.net/byorgey/split
 
 test -d $tmpdir/github.com/motemen/ghq/.git
 test -d $tmpdir/www.mercurial-scm.org/repo/hello/.hg
