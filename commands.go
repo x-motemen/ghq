@@ -10,21 +10,8 @@ import (
 var commands = []*cli.Command{
 	commandGet,
 	commandList,
-	commandImport,
 	commandRoot,
 	commandCreate,
-}
-
-// cloneFlags are comman flags of `get` and `import` subcommands
-var cloneFlags = []cli.Flag{
-	&cli.BoolFlag{Name: "update", Aliases: []string{"u"},
-		Usage: "Update local repository if cloned already"},
-	&cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
-	&cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
-	&cli.BoolFlag{Name: "look", Aliases: []string{"l"}, Usage: "Look after get"},
-	&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
-	&cli.BoolFlag{Name: "silent", Aliases: []string{"s"}, Usage: "clone or update silently"},
-	&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
 }
 
 var commandGet = &cli.Command{
@@ -37,9 +24,19 @@ var commandGet = &cli.Command{
     When you use '-p' option, the repository is cloned via SSH.
 `,
 	Action: doGet,
-	Flags: append(cloneFlags,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{Name: "update", Aliases: []string{"u"},
+			Usage: "Update local repository if cloned already"},
+		&cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
+		&cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
+		&cli.BoolFlag{Name: "look", Aliases: []string{"l"}, Usage: "Look after get"},
+		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
+		&cli.BoolFlag{Name: "silent", Aliases: []string{"s"}, Usage: "clone or update silently"},
+		&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
 		&cli.StringFlag{Name: "branch", Aliases: []string{"b"},
-			Usage: "Specify branch name. This flag implies --single-branch on Git"}),
+			Usage: "Specify branch name. This flag implies --single-branch on Git"},
+		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallely"},
+	},
 }
 
 var commandList = &cli.Command{
@@ -59,15 +56,6 @@ var commandList = &cli.Command{
 		&cli.BoolFlag{Name: "full-path", Aliases: []string{"p"}, Usage: "Print full paths"},
 		&cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
 	},
-}
-
-var commandImport = &cli.Command{
-	Name:   "import",
-	Usage:  "Bulk get repositories from stdin",
-	Action: doImport,
-	Flags: append(cloneFlags,
-		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"},
-			Usage: "Import parallely"}),
 }
 
 var commandRoot = &cli.Command{
@@ -96,7 +84,6 @@ type commandDoc struct {
 var commandDocs = map[string]commandDoc{
 	"get":    {"", "[-u] [--vcs <vcs>] <repository URL> | [-u] [-p] <user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
-	"import": {"", "< file"},
 	"root":   {"", ""},
 	"create": {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
 }
