@@ -1,0 +1,23 @@
+name: integration
+on:
+  push:
+    branches:
+    - master
+    - author
+  pull_request: {}
+jobs:
+  test:
+    runs-on: macOS-latest
+    steps:
+    - name: setup go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.x
+    - name: checkout
+      uses: actions/checkout@v1
+    - name: install
+      run: |
+        make install
+        brew install mercurial fossil bazaar
+    - name: test
+      run: ./misc/author/integrate_test.sh
