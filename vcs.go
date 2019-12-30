@@ -90,6 +90,8 @@ var GitBackend = &VCSBackend{
 	Contents: []string{".git"},
 }
 
+const trunk = "/trunk"
+
 var svnReg = regexp.MustCompile(`/(?:tags|branches)/[^/]+$`)
 
 func replaceOnce(reg *regexp.Regexp, str, replace string) string {
@@ -103,17 +105,17 @@ func replaceOnce(reg *regexp.Regexp, str, replace string) string {
 	})
 }
 
-const trunk = "/trunk"
+func svnBase(p string) string {
+	if strings.HasSuffix(p, trunk) {
+		return strings.TrimSuffix(p, trunk)
+	}
+	return replaceOnce(svnReg, p, "")
+}
 
 // SubversionBackend is the VCSBackend for subversion
 var SubversionBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
-		if strings.HasSuffix(vg.dir, trunk) {
-			vg.dir = strings.TrimSuffix(vg.dir, trunk)
-		} else {
-			vg.dir = replaceOnce(svnReg, vg.dir, "")
-		}
-
+		vg.dir = svnBase(vg.dir)
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -128,9 +130,7 @@ var SubversionBackend = &VCSBackend{
 		if vg.branch != "" {
 			copied := *vg.url
 			remote = &copied
-			if strings.HasSuffix(remote.Path, trunk) {
-				remote.Path = strings.TrimSuffix(remote.Path, trunk)
-			}
+			remote.Path = svnBase(remote.Path)
 			remote.Path += "/branches/" + url.PathEscape(vg.branch)
 		} else if !strings.HasSuffix(remote.Path, trunk) {
 			copied := *vg.url
@@ -154,15 +154,9 @@ var svnLastRevReg = regexp.MustCompile(`(?m)^Last Changed Rev: (\d+)$`)
 // GitsvnBackend is the VCSBackend for git-svn
 var GitsvnBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
-		standard := true
-		if strings.HasSuffix(vg.dir, trunk) {
-			standard = false
-			vg.dir = strings.TrimSuffix(vg.dir, trunk)
-		} else {
-			orig := vg.dir
-			vg.dir = replaceOnce(svnReg, vg.dir, "")
-			standard = orig == vg.dir
-		}
+		orig := vg.dir
+		vg.dir = svnBase(vg.dir)
+		standard := orig == vg.dir
 
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
@@ -176,6 +170,7 @@ var GitsvnBackend = &VCSBackend{
 		if vg.branch != "" {
 			copied := *remote
 			remote = &copied
+			remote.Path = svnBase(remote.Path)
 			remote.Path += "/branches/" + url.PathEscape(vg.branch)
 			standard = false
 		} else if standard {
