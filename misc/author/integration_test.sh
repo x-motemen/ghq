@@ -1,4 +1,7 @@
 #!/bin/sh
+set -e
+
+tmpdir=$(mktemp -d)
 
 cleanup() {
     code=$?
@@ -7,9 +10,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-tmpdir=$(mktemp -d)
-
-set -ex
+set -x
 
 export GHQ_ROOT=$tmpdir
 
