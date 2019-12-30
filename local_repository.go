@@ -364,7 +364,7 @@ func localRepositoryRoots(all bool) ([]string, error) {
 				_localRepoErr = err
 				return
 			}
-			roots = []string{filepath.Join(homeDir, ".ghq")}
+			roots = []string{filepath.Join(homeDir, "ghq")}
 		}
 
 		if all && envRoot == "" {
