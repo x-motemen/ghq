@@ -101,7 +101,7 @@ For example, all following targets are checked-out into `$(ghq root)/svn.example
 
 Addition, when the svn target may be project root, "ghq" tries to checkout "/trunk".
 
-The checkout rule using "git-svn" also has the same behavior.
+This checkout rule is also applied when using "git-svn".
 */
 
 const trunk = "/trunk"
