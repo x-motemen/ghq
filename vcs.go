@@ -164,6 +164,14 @@ var GitsvnBackend = &VCSBackend{
 			return err
 		}
 
+		var getSvnInfo = func(u string) (string, error) {
+			buf := &bytes.Buffer{}
+			cmd := exec.Command("svn", "info", u)
+			cmd.Stdout = buf
+			cmd.Stderr = ioutil.Discard
+			err := cmdutil.RunCommand(cmd, true)
+			return buf.String(), err
+		}
 		var svnInfo string
 		args := []string{"svn", "clone"}
 		remote := vg.url
@@ -176,13 +184,10 @@ var GitsvnBackend = &VCSBackend{
 		} else if standard {
 			copied := *remote
 			copied.Path += trunk
-			buf := &bytes.Buffer{}
-			cmd := exec.Command("svn", "info", copied.String())
-			cmd.Stdout = buf
-			cmd.Stderr = ioutil.Discard
-			if err := cmdutil.RunCommand(cmd, true); err == nil {
+			info, err := getSvnInfo(copied.String())
+			if err == nil {
 				args = append(args, "-s")
-				svnInfo = buf.String()
+				svnInfo = info
 			} else {
 				standard = false
 			}
@@ -190,18 +195,11 @@ var GitsvnBackend = &VCSBackend{
 
 		if vg.shallow {
 			if svnInfo == "" {
-				copied := *remote
-				if standard {
-					copied.Path += trunk
-				}
-				buf := &bytes.Buffer{}
-				cmd := exec.Command("svn", "info", copied.String())
-				cmd.Stdout = buf
-				cmd.Stderr = ioutil.Discard
-				if err := cmdutil.RunCommand(cmd, true); err != nil {
+				info, err := getSvnInfo(remote.String())
+				if err != nil {
 					return err
 				}
-				svnInfo = buf.String()
+				svnInfo = info
 			}
 			m := svnLastRevReg.FindStringSubmatch(svnInfo)
 			if len(m) < 2 {
