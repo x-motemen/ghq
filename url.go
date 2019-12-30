@@ -120,6 +120,11 @@ func detectUserName() (string, error) {
 		return user, err
 	}
 
+	user, err = gitconfig.User()
+	if (err != nil && !gitconfig.IsNotFound(err)) || user != "" {
+		return user, err
+	}
+
 	switch runtime.GOOS {
 	case "windows":
 		user = os.Getenv("USERNAME")
