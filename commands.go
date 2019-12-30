@@ -69,7 +69,7 @@ var commandRoot = &cli.Command{
 
 var commandCreate = &cli.Command{
 	Name:   "create",
-	Usage:  "Create repository",
+	Usage:  "Create a new repository",
 	Action: doCreate,
 	Flags: []cli.Flag{
 		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend explicitly"},
@@ -82,10 +82,10 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] [--vcs <vcs>] <repository URL> | [-u] [-p] <user>/<project>"},
+	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--brach <branch>] [--no-recursive] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
-	"root":   {"", ""},
-	"create": {"", "<project> | <user>/<project> | <host>/<user>/<project>"},
+	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
+	"root":   {"", "[-all]"},
 }
 
 // Makes template conditionals to generate per-command documents.

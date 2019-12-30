@@ -29,11 +29,6 @@ function _ghq () {
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;
-                (look)
-                    _arguments -C \
-                        '1: :__ghq_repositories' \
-                        && ret=0
-                    ;;
                 (help|h)
                     __ghq_commands && ret=0
                     ;;
@@ -55,8 +50,7 @@ __ghq_commands () {
     _c=(
         'get:Clone/sync with a remote repository'
         'list:List local repositories'
-        'look:Look into a local repository'
-        'import:Bulk get repositories from stdin'
+        'create:Create a new repository'
         "root:Show repositories' root"
         'help:Show a list of commands or help for one command'
     )
