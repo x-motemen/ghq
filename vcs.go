@@ -90,6 +90,20 @@ var GitBackend = &VCSBackend{
 	Contents: []string{".git"},
 }
 
+/*
+If the svn target is under standard svn directory structure, "ghq" canonicalizes the checkout path.
+For example, all following targets are checked-out into `$(ghq root)/svn.example.com/proj/repo`.
+
+- svn.example.com/proj/repo
+- svn.example.com/proj/repo/trunk
+- svn.example.com/proj/repo/branches/featureN
+- svn.example.com/proj/repo/tags/v1.0.1
+
+Addition, when the svn target may be project root, "ghq" tries to checkout "/trunk".
+
+The checkout rule using "git-svn" also has the same behavior.
+*/
+
 const trunk = "/trunk"
 
 var svnReg = regexp.MustCompile(`/(?:tags|branches)/[^/]+$`)

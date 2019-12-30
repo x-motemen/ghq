@@ -127,6 +127,11 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		return backend, repo.URL()
 	}
 
+	mayBeSvn := strings.HasPrefix(repo.url.Host, "svn.")
+	if mayBeSvn && cmdutil.RunSilently("svn", "info", repo.url.String()) == nil {
+		return SubversionBackend, repo.URL()
+	}
+
 	// Detect VCS backend automatically
 	if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
 		return GitBackend, repo.URL()
@@ -142,7 +147,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		return MercurialBackend, repo.URL()
 	}
 
-	if cmdutil.RunSilently("svn", "info", repo.url.String()) == nil {
+	if !mayBeSvn && cmdutil.RunSilently("svn", "info", repo.url.String()) == nil {
 		return SubversionBackend, repo.URL()
 	}
 
