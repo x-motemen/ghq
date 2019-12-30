@@ -11,14 +11,13 @@ ghq - Manage remote repository clones
     $ ghq get https://github.com/motemen/ghq
     # Runs `git clone https://github.com/motemen/ghq ~/ghq/github.com/motemen/ghq`
 
-You can also list local repositories (+ghq list+), jump into local repositories (+ghq look+), and bulk get repositories by list of URLs (+ghq import+).
+You can also list local repositories (+ghq list+) and bulk get repositories by list of URLs (+ghq import+).
 
 == SYNOPSIS
 
 [verse]
 ghq get [-u] [-p] [--shallow] [--vcs] [--look] [--silent] [--branch] [--no-recursive] (<repository URL> | <host>/<user>/<project> | <user>/<project> | <project>)
 ghq list [-p] [-e] [<query>]
-ghq look (<project> | <path/to/project> | <host>/<user>/<project> | <repository URL>)
 ghq import [-u] [-p] [--shalow] [--vcs] [--silent] [--no-recursive] [--parallel] < FILE
 ghq root [--all]
 
@@ -50,9 +49,6 @@ list::
     _project_, _user_/_project_ or _host_/_user_/_project_)
     If '-p' ('--full-path') is given, the full paths to the repository root are
     printed instead of relative ones.
-
-look::
-    Look into a locally cloned repository with the shell.
 
 import::
     If no extra arguments given, reads repository URLs from stdin line by line
