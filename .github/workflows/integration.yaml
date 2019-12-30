@@ -16,6 +16,6 @@ jobs:
     - name: install
       run: |
         GOBIN=$HOME/bin make install
-        brew install mercurial fossil bazaar
+        brew install mercurial fossil bazaar darcs
     - name: test
       run: PATH=$HOME/bin:$PATH ./misc/author/integration_test.sh
