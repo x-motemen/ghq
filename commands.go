@@ -18,11 +18,10 @@ var commandGet = &cli.Command{
 	Name:  "get",
 	Usage: "Clone/sync with a remote repository",
 	Description: `
-    Clone a GitHub repository under ghq root directory. If the repository is
+    Clone a repository under ghq root directory. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
     flag is supplied, in which case 'git remote update' is executed.
-    When you use '-p' option, the repository is cloned via SSH.
-`,
+    When you use '-p' option, the repository is cloned via SSH.`,
 	Action: doGet,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "update", Aliases: []string{"u"},
@@ -30,11 +29,11 @@ var commandGet = &cli.Command{
 		&cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
 		&cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
 		&cli.BoolFlag{Name: "look", Aliases: []string{"l"}, Usage: "Look after get"},
-		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for cloning"},
+		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend for cloning"},
 		&cli.BoolFlag{Name: "silent", Aliases: []string{"s"}, Usage: "clone or update silently"},
 		&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
 		&cli.StringFlag{Name: "branch", Aliases: []string{"b"},
-			Usage: "Specify branch name. This flag implies --single-branch on Git"},
+			Usage: "Specify `branch` name. This flag implies --single-branch on Git"},
 		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallely"},
 	},
 }
@@ -44,15 +43,14 @@ var commandList = &cli.Command{
 	Usage: "List local repositories",
 	Description: `
     List locally cloned repositories. If a query argument is given, only
-    repositories whose names contain that query text are listed. '-e'
-    ('--exact') forces the match to be an exact one (i.e. the query equals to
-    _project_ or _user_/_project_) If '-p' ('--full-path') is given, the full paths
-    to the repository root are printed instead of relative ones.
-`,
+    repositories whose names contain that query text are listed.
+    '-e' ('--exact') forces the match to be an exact one (i.e. the query equals to
+    project or user/project) If '-p' ('--full-path') is given, the full paths
+    to the repository root are printed instead of relative ones.`,
 	Action: doList,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "exact", Aliases: []string{"e"}, Usage: "Perform an exact match"},
-		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend for matching"},
+		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend for matching"},
 		&cli.BoolFlag{Name: "full-path", Aliases: []string{"p"}, Usage: "Print full paths"},
 		&cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
 	},
@@ -72,7 +70,7 @@ var commandCreate = &cli.Command{
 	Usage:  "Create a new repository",
 	Action: doCreate,
 	Flags: []cli.Flag{
-		&cli.StringFlag{Name: "vcs", Usage: "Specify VCS backend explicitly"},
+		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend explicitly"},
 	},
 }
 
