@@ -85,7 +85,7 @@ var GitBackend = &VCSBackend{
 		return nil
 	},
 	Init: func(dir string) error {
-		return cmdutil.RunInDirStderr(dir, "git", "init")
+		return cmdutil.RunInDir(dir, "git", "init")
 	},
 	Contents: []string{".git"},
 }
@@ -251,7 +251,7 @@ var MercurialBackend = &VCSBackend{
 		return runInDir(vg.silent)(vg.dir, "hg", "pull", "--update")
 	},
 	Init: func(dir string) error {
-		return cmdutil.RunInDirStderr(dir, "hg", "init")
+		return cmdutil.RunInDir(dir, "hg", "init")
 	},
 	Contents: []string{".hg"},
 }
@@ -281,7 +281,7 @@ var DarcsBackend = &VCSBackend{
 		return runInDir(vg.silent)(vg.dir, "darcs", "pull")
 	},
 	Init: func(dir string) error {
-		return cmdutil.RunInDirStderr(dir, "darcs", "init")
+		return cmdutil.RunInDir(dir, "darcs", "init")
 	},
 	Contents: []string{"_darcs"},
 }
@@ -317,10 +317,10 @@ var FossilBackend = &VCSBackend{
 		return runInDir(vg.silent)(vg.dir, "fossil", "update")
 	},
 	Init: func(dir string) error {
-		if err := cmdutil.RunInDirStderr(dir, "fossil", "init", fossilRepoName); err != nil {
+		if err := cmdutil.RunInDir(dir, "fossil", "init", fossilRepoName); err != nil {
 			return err
 		}
-		return cmdutil.RunInDirStderr(dir, "fossil", "open", fossilRepoName)
+		return cmdutil.RunInDir(dir, "fossil", "open", fossilRepoName)
 	},
 	Contents: []string{".fslckout", "_FOSSIL_"},
 }
@@ -344,7 +344,7 @@ var BazaarBackend = &VCSBackend{
 		return runInDir(vg.silent)(vg.dir, "bzr", "pull", "--overwrite")
 	},
 	Init: func(dir string) error {
-		return cmdutil.RunInDirStderr(dir, "bzr", "init")
+		return cmdutil.RunInDir(dir, "bzr", "init")
 	},
 	Contents: []string{".bzr"},
 }
