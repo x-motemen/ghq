@@ -13,7 +13,7 @@ import (
 // Run the command
 func Run(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 
 	return RunCommand(cmd, false)
@@ -31,7 +31,7 @@ func RunSilently(command string, args ...string) error {
 // RunInDir runs the command in the specified directory
 func RunInDir(dir, command string, args ...string) error {
 	cmd := exec.Command(command, args...)
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	cmd.Dir = dir
 
@@ -43,16 +43,6 @@ func RunInDirSilently(dir, command string, args ...string) error {
 	cmd := exec.Command(command, args...)
 	cmd.Stdout = ioutil.Discard
 	cmd.Stderr = ioutil.Discard
-	cmd.Dir = dir
-
-	return RunCommand(cmd, true)
-}
-
-// RunInDirStderr run the command in the specified directory and prevent stdout output
-func RunInDirStderr(dir, command string, args ...string) error {
-	cmd := exec.Command(command, args...)
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
 	cmd.Dir = dir
 
 	return RunCommand(cmd, true)
