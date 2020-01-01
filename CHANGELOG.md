@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.99.0](https://github.com/motemen/ghq/compare/v0.17.4...v0.99.0) (2019-12-31)
+
+* fix help docs [#255](https://github.com/motemen/ghq/pull/255) ([Songmu](https://github.com/Songmu))
+* update documents [#252](https://github.com/motemen/ghq/pull/252) ([Songmu](https://github.com/Songmu))
+* update deps [#251](https://github.com/motemen/ghq/pull/251) ([Songmu](https://github.com/Songmu))
+* [incompatible] remove the "import" subcommand and merge this function into the "get" subcommand [#244](https://github.com/motemen/ghq/pull/244) ([Songmu](https://github.com/Songmu))
+* [incompatible] drop look subcommand [#243](https://github.com/motemen/ghq/pull/243) ([Songmu](https://github.com/Songmu))
+* [incompatible] make ~/ghq default root [#237](https://github.com/motemen/ghq/pull/237) ([Songmu](https://github.com/Songmu))
+* add integration test for darcs [#250](https://github.com/motemen/ghq/pull/250) ([Songmu](https://github.com/Songmu))
+* integration test on master [#249](https://github.com/motemen/ghq/pull/249) ([Songmu](https://github.com/Songmu))
+* enhance svn and git-svn support [#248](https://github.com/motemen/ghq/pull/248) ([Songmu](https://github.com/Songmu))
+
 ## [v0.17.4](https://github.com/motemen/ghq/compare/v0.17.3...v0.17.4) (2019-12-29)
 
 * [fix] uniq local roots [#246](https://github.com/motemen/ghq/pull/246) ([Songmu](https://github.com/Songmu))
