@@ -35,6 +35,10 @@ func TestNewRemoteRepository(t *testing.T) {
 		url:        "http://hub.darcs.net/foo/bar",
 		valid:      true,
 		vcsBackend: DarcsBackend,
+	}, {
+		url:        "svn+ssh://example.com/proj/repo",
+		valid:      true,
+		vcsBackend: SubversionBackend,
 	}}
 
 	for _, tc := range testCases {
