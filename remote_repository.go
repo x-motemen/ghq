@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/Songmu/gitconfig"
@@ -113,6 +114,15 @@ func (repo *OtherRepository) IsValid() bool {
 	return true
 }
 
+var (
+	vcsSchemeReg = regexp.MustCompile(`^(git|svn|bzr)(?:\+|$)`)
+	scheme2vcs   = map[string]*VCSBackend{
+		"git": GitBackend,
+		"svn": SubversionBackend,
+		"bzr": BazaarBackend,
+	}
+)
+
 // VCS detects VCSBackend of the OtherRepository
 func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 	// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
@@ -125,6 +135,10 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 	}
 	if backend, ok := vcsRegistry[vcs]; ok {
 		return backend, repo.URL()
+	}
+
+	if m := vcsSchemeReg.FindStringSubmatch(repo.url.Scheme); len(m) > 1 {
+		return scheme2vcs[m[1]], repo.URL()
 	}
 
 	mayBeSvn := strings.HasPrefix(repo.url.Host, "svn.")
