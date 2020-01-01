@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.99.1](https://github.com/motemen/ghq/compare/v0.99.0...v0.99.1) (2020-01-02)
+
+* detect VCS backend from URL scheme [#257](https://github.com/motemen/ghq/pull/257) ([Songmu](https://github.com/Songmu))
+* print command execution output to stderr [#256](https://github.com/motemen/ghq/pull/256) ([Songmu](https://github.com/Songmu))
+
 ## [v0.99.0](https://github.com/motemen/ghq/compare/v0.17.4...v0.99.0) (2019-12-31)
 
 * fix help docs [#255](https://github.com/motemen/ghq/pull/255) ([Songmu](https://github.com/Songmu))
