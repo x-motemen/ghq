@@ -59,8 +59,8 @@ func doGet(c *cli.Context) error {
 			firstArg = target
 		}
 		if parallel {
+			sem <- struct{}{}
 			eg.Go(func() error {
-				sem <- struct{}{}
 				defer func() { <-sem }()
 				if err := g.get(target); err != nil {
 					logger.Log("error", err.Error())
