@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.99.2](https://github.com/motemen/ghq/compare/v0.99.1...v0.99.2) (2020-01-04)
+
+* enhance logs on ghq get [#259](https://github.com/motemen/ghq/pull/259) ([Songmu](https://github.com/Songmu))
+* fix semaphore [#258](https://github.com/motemen/ghq/pull/258) ([Songmu](https://github.com/Songmu))
+
 ## [v0.99.1](https://github.com/motemen/ghq/compare/v0.99.0...v0.99.1) (2020-01-02)
 
 * detect VCS backend from URL scheme [#257](https://github.com/motemen/ghq/pull/257) ([Songmu](https://github.com/Songmu))
