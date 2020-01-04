@@ -70,7 +70,8 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 		}
 	}
 
-	if newPath {
+	switch {
+	case newPath:
 		logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, fpath))
 		var (
 			localRepoRoot = fpath
@@ -101,8 +102,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			})
 		}
 		return nil
-	}
-	if g.update {
+	case g.update:
 		logger.Log("update", fpath)
 		vcs, localRepoRoot := local.VCS()
 		if vcs == nil {
