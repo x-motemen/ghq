@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"io"
 	"os"
 
@@ -40,4 +41,9 @@ func SetOutput(w io.Writer) {
 // Log output
 func Log(prefix, message string) {
 	logger.Log(prefix, message)
+}
+
+// Logf output log with format
+func Logf(prefix, msg string, args ...interface{}) {
+	Log(prefix, fmt.Sprintf(msg, args...))
 }
