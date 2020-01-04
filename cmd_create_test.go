@@ -9,7 +9,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Songmu/gitconfig"
 	"github.com/motemen/ghq/cmdutil"
 )
 
@@ -25,7 +24,6 @@ func TestDoCreate(t *testing.T) {
 	defer func(orig string) { _home = orig }(_home)
 	_home = ""
 	homeOnce = &sync.Once{}
-	defer gitconfig.WithConfig(t, "")()
 	tmpd := newTempDir(t)
 	defer os.RemoveAll(tmpd)
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
