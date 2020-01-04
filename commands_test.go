@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
-
-	"github.com/Songmu/gitconfig"
 )
 
 type _cloneArgs struct {
@@ -54,7 +52,6 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 	defer func(orig string) { _home = orig }(_home)
 	_home = ""
 	homeOnce = &sync.Once{}
-	defer gitconfig.WithConfig(t, "")()
 
 	GitBackend = tmpBackend
 	vcsContentsMap[".git"] = tmpBackend

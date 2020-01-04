@@ -143,7 +143,6 @@ func TestFillUsernameToPath_err(t *testing.T) {
 		defer tmpEnv(envStr, "")()
 	}
 	defer tmpEnv("XDG_CONFIG_HOME", "/dummy/dummy")()
-	defer gitconfig.WithConfig(t, "")()
 
 	usr, err := fillUsernameToPath("peco", false)
 	t.Log(usr)
