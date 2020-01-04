@@ -63,18 +63,18 @@ func doGet(c *cli.Context) error {
 			eg.Go(func() error {
 				defer func() { <-sem }()
 				if err := g.get(target); err != nil {
-					logger.Log("error", err.Error())
+					logger.Logf("error", "faied to get %q: %s", target, err)
 				}
 				return nil
 			})
 		} else {
 			if err := g.get(target); err != nil {
-				return err
+				return fmt.Errorf("failed to get %q: %w", target, err)
 			}
 		}
 	}
 	if err := scr.Err(); err != nil {
-		return fmt.Errorf("While reading input: %s", err)
+		return fmt.Errorf("error occurred while reading input: %w", err)
 	}
 	if err := eg.Wait(); err != nil {
 		return err
