@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -32,12 +33,13 @@ func TestDoCreate(t *testing.T) {
 	localRepoOnce = &sync.Once{}
 
 	testCases := []struct {
-		name    string
-		input   []string
-		want    []string
-		wantDir string
-		errStr  string
-		setup   func() func()
+		name      string
+		input     []string
+		want      []string
+		wantDir   string
+		errStr    string
+		setup     func() func()
+		skipOnWin bool
 	}{{
 		name:    "simple",
 		input:   []string{"create", "motemen/ghqq"},
@@ -78,7 +80,7 @@ func TestDoCreate(t *testing.T) {
 		errStr: "unsupported VCS",
 	}, {
 		name:  "not permitted",
-		input: []string{"create", "--vcs=svn", "motemen/ghq-notpermitted"},
+		input: []string{"create", "motemen/ghq-notpermitted"},
 		setup: func() func() {
 			f := filepath.Join(tmpd, "github.com/motemen/ghq-notpermitted")
 			os.MkdirAll(f, 0)
@@ -86,10 +88,11 @@ func TestDoCreate(t *testing.T) {
 				os.Chmod(f, 0755)
 			}
 		},
-		errStr: "permission denied",
+		errStr:    "permission denied",
+		skipOnWin: true,
 	}, {
 		name:  "not empty",
-		input: []string{"create", "--vcs=svn", "motemen/ghq-notempty"},
+		input: []string{"create", "motemen/ghq-notempty"},
 		setup: func() func() {
 			f := filepath.Join(tmpd, "github.com/motemen/ghq-notempty", "dummy")
 			os.MkdirAll(f, 0755)
@@ -100,6 +103,9 @@ func TestDoCreate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.skipOnWin && runtime.GOOS == "windows" {
+				t.SkipNow()
+			}
 			lastCmd = nil
 			if tc.setup != nil {
 				teardown := tc.setup()
