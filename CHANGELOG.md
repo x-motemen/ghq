@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.0.1](https://github.com/motemen/ghq/compare/v1.0.0...v1.0.1) (2020-01-05)
+
+* Fix argument for look in get, to make `ghq get -look` work [#264](https://github.com/motemen/ghq/pull/264) ([astj](https://github.com/astj))
+
 ## [v1.0.0](https://github.com/motemen/ghq/compare/v0.99.2...v1.0.0) (2020-01-05)
 
 * Release v1 [#262](https://github.com/motemen/ghq/pull/262) ([Songmu](https://github.com/Songmu))
