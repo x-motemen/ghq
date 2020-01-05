@@ -11,7 +11,20 @@ import (
 	"github.com/motemen/ghq/cmdutil"
 )
 
-var remoteDummyURL = mustParseURL("https://example.com/git/repo")
+var (
+	remoteDummyURL = mustParseURL("https://example.com/git/repo")
+	dummySvnInfo   = []byte(`Path: trunk
+URL: https://svn.apache.org/repos/asf/subversion/trunk
+Relative URL: ^/subversion/trunk
+Repository Root: https://svn.apache.org/repos/asf
+Repository UUID: 13f79535-47bb-0310-9956-ffa450edef68
+Revision: 1872085
+Node Kind: directory
+Last Changed Author: julianfoad
+Last Changed Rev: 1872031
+Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
+`)
+)
 
 func TestVCSBackend(t *testing.T) {
 	tempDir := newTempDir(t)
@@ -85,6 +98,30 @@ func TestVCSBackend(t *testing.T) {
 		},
 		expect: []string{"git", "clone", "--recursive", remoteDummyURL.String(), localDir},
 	}, {
+		name: "[git] update recursive",
+		f: func() error {
+			return GitBackend.Update(&vcsGetOption{
+				dir:       localDir,
+				recursive: true,
+			})
+		},
+		expect: []string{"git", "submodule", "update", "--init", "--recursive"},
+		dir:    localDir,
+	}, {
+		name: "[git] switch git-svn on update",
+		f: func() error {
+			err := os.MkdirAll(filepath.Join(localDir, ".git", "svn"), 0755)
+			if err != nil {
+				return err
+			}
+			defer os.RemoveAll(filepath.Join(localDir, ".git"))
+			return GitBackend.Update(&vcsGetOption{
+				dir: localDir,
+			})
+		},
+		expect: []string{"git", "svn", "rebase"},
+		dir:    localDir,
+	}, {
 		name: "[svn] checkout",
 		f: func() error {
 			return SubversionBackend.Clone(&vcsGetOption{
@@ -113,6 +150,25 @@ func TestVCSBackend(t *testing.T) {
 			})
 		},
 		expect: []string{"svn", "checkout", remoteDummyURL.String() + "/branches/hello", localDir},
+	}, {
+		name: "[svn] checkout with filling trunk",
+		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(cmd.Args, []string{"svn", "info", "https://example.com/git/repo/trunk"}) {
+					cmd.Stdout.Write(dummySvnInfo)
+				}
+				return nil
+			}
+			return SubversionBackend.Clone(&vcsGetOption{
+				url: remoteDummyURL,
+				dir: localDir,
+			})
+		},
+		expect: []string{"svn", "checkout", remoteDummyURL.String() + "/trunk", localDir},
 	}, {
 		name: "[svn] update",
 		f: func() error {
@@ -150,17 +206,7 @@ func TestVCSBackend(t *testing.T) {
 			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 				_commands = append(_commands, cmd)
 				if reflect.DeepEqual(cmd.Args, []string{"svn", "info", "https://example.com/git/repo/trunk"}) {
-					cmd.Stdout.Write([]byte(`Path: trunk
-URL: https://svn.apache.org/repos/asf/subversion/trunk
-Relative URL: ^/subversion/trunk
-Repository Root: https://svn.apache.org/repos/asf
-Repository UUID: 13f79535-47bb-0310-9956-ffa450edef68
-Revision: 1872085
-Node Kind: directory
-Last Changed Author: julianfoad
-Last Changed Rev: 1872031
-Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
-`))
+					cmd.Stdout.Write(dummySvnInfo)
 				}
 				return nil
 			}
@@ -181,6 +227,32 @@ Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
 			})
 		},
 		expect: []string{"git", "svn", "clone", remoteDummyURL.String() + "/branches/hello", localDir},
+	}, {
+		name: "[git-svn] clone specific branch from tagged URL with shallow",
+		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(
+					cmd.Args, []string{"svn", "info", "https://example.com/git/repo/branches/develop"},
+				) {
+					cmd.Stdout.Write(dummySvnInfo)
+				}
+				return nil
+			}
+			copied := *remoteDummyURL
+			copied.Path += "/tags/v9.9.9"
+			return GitsvnBackend.Clone(&vcsGetOption{
+				url:     &copied,
+				dir:     localDir,
+				branch:  "develop",
+				shallow: true,
+			})
+		},
+		expect: []string{
+			"git", "svn", "clone", "-r1872031:HEAD", remoteDummyURL.String() + "/branches/develop", localDir},
 	}, {
 		name: "[hg] clone",
 		f: func() error {
@@ -303,7 +375,7 @@ Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
 			}
 			c := lastCommand()
 			if !reflect.DeepEqual(c.Args, tc.expect) {
-				t.Errorf("\ngot:  %+v\nexpect: %+v", c.Args, tc.expect)
+				t.Errorf("\ngot:    %+v\nexpect: %+v", c.Args, tc.expect)
 			}
 			if c.Dir != tc.dir {
 				t.Errorf("got: %s, expect: %s", c.Dir, tc.dir)
