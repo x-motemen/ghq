@@ -55,7 +55,7 @@ func doGet(c *cli.Context) error {
 	sem := make(chan struct{}, 6)
 	for scr.Scan() {
 		target := scr.Text()
-		if firstArg != "" {
+		if firstArg == "" {
 			firstArg = target
 		}
 		if parallel {
