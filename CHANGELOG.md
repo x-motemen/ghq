@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.0.0](https://github.com/motemen/ghq/compare/v0.99.2...v1.0.0) (2020-01-05)
+
+* Release v1 [#262](https://github.com/motemen/ghq/pull/262) ([Songmu](https://github.com/Songmu))
+* enhance testing around "ghq create" [#261](https://github.com/motemen/ghq/pull/261) ([Songmu](https://github.com/Songmu))
+* start tests with empty gitconfig [#260](https://github.com/motemen/ghq/pull/260) ([Songmu](https://github.com/Songmu))
+
 ## [v0.99.2](https://github.com/motemen/ghq/compare/v0.99.1...v0.99.2) (2020-01-04)
 
 * enhance logs on ghq get [#259](https://github.com/motemen/ghq/pull/259) ([Songmu](https://github.com/Songmu))
