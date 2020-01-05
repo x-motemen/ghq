@@ -206,7 +206,7 @@ func TestLook(t *testing.T) {
 		}
 		sh := detectShell()
 
-		err := look("https://github.com/motemen/ghq")
+		err := newApp().Run([]string{"", "get", "--look", "https://github.com/motemen/ghq"})
 		if err != nil {
 			t.Errorf("error should be nil, but: %s", err)
 		}
