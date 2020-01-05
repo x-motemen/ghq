@@ -95,6 +95,20 @@ func TestVCSBackend(t *testing.T) {
 		expect: []string{"git", "submodule", "update", "--init", "--recursive"},
 		dir:    localDir,
 	}, {
+		name: "[git] switch git-svn on update",
+		f: func() error {
+			err := os.MkdirAll(filepath.Join(localDir, ".git", "svn"), 0755)
+			if err != nil {
+				return err
+			}
+			defer os.RemoveAll(filepath.Join(localDir, ".git"))
+			return GitBackend.Update(&vcsGetOption{
+				dir: localDir,
+			})
+		},
+		expect: []string{"git", "svn", "rebase"},
+		dir:    localDir,
+	}, {
 		name: "[svn] checkout",
 		f: func() error {
 			return SubversionBackend.Clone(&vcsGetOption{
