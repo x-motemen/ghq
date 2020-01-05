@@ -85,6 +85,16 @@ func TestVCSBackend(t *testing.T) {
 		},
 		expect: []string{"git", "clone", "--recursive", remoteDummyURL.String(), localDir},
 	}, {
+		name: "[git] update recursive",
+		f: func() error {
+			return GitBackend.Update(&vcsGetOption{
+				dir:       localDir,
+				recursive: true,
+			})
+		},
+		expect: []string{"git", "submodule", "update", "--init", "--recursive"},
+		dir:    localDir,
+	}, {
 		name: "[svn] checkout",
 		f: func() error {
 			return SubversionBackend.Clone(&vcsGetOption{
