@@ -228,6 +228,32 @@ func TestVCSBackend(t *testing.T) {
 		},
 		expect: []string{"git", "svn", "clone", remoteDummyURL.String() + "/branches/hello", localDir},
 	}, {
+		name: "[git-svn] clone specific branch from tagged URL with shallow",
+		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(
+					cmd.Args, []string{"svn", "info", "https://example.com/git/repo/branches/develop"},
+				) {
+					cmd.Stdout.Write(dummySvnInfo)
+				}
+				return nil
+			}
+			copied := *remoteDummyURL
+			copied.Path += "/tags/v9.9.9"
+			return GitsvnBackend.Clone(&vcsGetOption{
+				url:     &copied,
+				dir:     localDir,
+				branch:  "develop",
+				shallow: true,
+			})
+		},
+		expect: []string{
+			"git", "svn", "clone", "-r1872031:HEAD", remoteDummyURL.String() + "/branches/develop", localDir},
+	}, {
 		name: "[hg] clone",
 		f: func() error {
 			return MercurialBackend.Clone(&vcsGetOption{
