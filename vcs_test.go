@@ -11,7 +11,20 @@ import (
 	"github.com/motemen/ghq/cmdutil"
 )
 
-var remoteDummyURL = mustParseURL("https://example.com/git/repo")
+var (
+	remoteDummyURL = mustParseURL("https://example.com/git/repo")
+	dummySvnInfo   = []byte(`Path: trunk
+URL: https://svn.apache.org/repos/asf/subversion/trunk
+Relative URL: ^/subversion/trunk
+Repository Root: https://svn.apache.org/repos/asf
+Repository UUID: 13f79535-47bb-0310-9956-ffa450edef68
+Revision: 1872085
+Node Kind: directory
+Last Changed Author: julianfoad
+Last Changed Rev: 1872031
+Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
+`)
+)
 
 func TestVCSBackend(t *testing.T) {
 	tempDir := newTempDir(t)
@@ -138,6 +151,25 @@ func TestVCSBackend(t *testing.T) {
 		},
 		expect: []string{"svn", "checkout", remoteDummyURL.String() + "/branches/hello", localDir},
 	}, {
+		name: "[svn] checkout with filling trunk",
+		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(cmd.Args, []string{"svn", "info", "https://example.com/git/repo/trunk"}) {
+					cmd.Stdout.Write(dummySvnInfo)
+				}
+				return nil
+			}
+			return SubversionBackend.Clone(&vcsGetOption{
+				url: remoteDummyURL,
+				dir: localDir,
+			})
+		},
+		expect: []string{"svn", "checkout", remoteDummyURL.String() + "/trunk", localDir},
+	}, {
 		name: "[svn] update",
 		f: func() error {
 			return SubversionBackend.Update(&vcsGetOption{
@@ -174,17 +206,7 @@ func TestVCSBackend(t *testing.T) {
 			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 				_commands = append(_commands, cmd)
 				if reflect.DeepEqual(cmd.Args, []string{"svn", "info", "https://example.com/git/repo/trunk"}) {
-					cmd.Stdout.Write([]byte(`Path: trunk
-URL: https://svn.apache.org/repos/asf/subversion/trunk
-Relative URL: ^/subversion/trunk
-Repository Root: https://svn.apache.org/repos/asf
-Repository UUID: 13f79535-47bb-0310-9956-ffa450edef68
-Revision: 1872085
-Node Kind: directory
-Last Changed Author: julianfoad
-Last Changed Rev: 1872031
-Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
-`))
+					cmd.Stdout.Write(dummySvnInfo)
 				}
 				return nil
 			}
@@ -327,7 +349,7 @@ Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
 			}
 			c := lastCommand()
 			if !reflect.DeepEqual(c.Args, tc.expect) {
-				t.Errorf("\ngot:  %+v\nexpect: %+v", c.Args, tc.expect)
+				t.Errorf("\ngot:    %+v\nexpect: %+v", c.Args, tc.expect)
 			}
 			if c.Dir != tc.dir {
 				t.Errorf("got: %s, expect: %s", c.Dir, tc.dir)
