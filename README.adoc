@@ -139,6 +139,19 @@ make install
 Built binaries are available from GitHub Releases.
 https://github.com/motemen/ghq/releases
 
+== HANDBOOK
+
+You can buy "ghq-handbook" from Leanpub for more detailed usage.
+
+https://leanpub.com/ghq-handbook (Currently Japanese Only)
+
+The source Markdown files of this book are also available for free from the following repository.
+
+https://github.com/Songmu/ghq-handbook
+
 == AUTHOR
 
-motemen <motemen@gmail.com>
+* motemen <motemen@gmail.com>
+    * https://github.com/sponsors/motemen
+* Songmu <y.songmu@gmail.com>
+    * https://github.com/sponsors/Songmu
