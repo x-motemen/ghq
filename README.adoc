@@ -152,6 +152,6 @@ https://github.com/Songmu/ghq-handbook
 == AUTHOR
 
 * motemen <motemen@gmail.com>
-    * https://github.com/sponsors/motemen
+** https://github.com/sponsors/motemen
 * Songmu <y.songmu@gmail.com>
-    * https://github.com/sponsors/Songmu
+** https://github.com/sponsors/Songmu
