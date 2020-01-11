@@ -30,10 +30,6 @@ test: deps
 lint: devel-deps
 	golint -set_exit_status ./...
 
-.PHONY: cover
-cover: devel-deps
-	goveralls
-
 .PHONY: build
 build: deps
 	go build $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS)
