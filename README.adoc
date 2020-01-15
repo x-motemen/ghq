@@ -64,7 +64,7 @@ Configuration uses 'git-config' variables.
 ghq.root::
     The path to directory under which cloned repositories are placed. See
     <<directory-structures,DIRECTORY STRUCTURES>> below. Defaults to +~/ghq+. +
-    This variable can have multiple values. If so, the first one becomes
+    This variable can have multiple values. If so, the last one becomes
     primary one i.e. new repository clones are always created under it. You may
     want to specify "$GOPATH/src" as a secondary root (environment variables
     should be expanded.)
