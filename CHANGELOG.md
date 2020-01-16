@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.0.2](https://github.com/motemen/ghq/compare/v1.0.1...v1.0.2) (2020-01-17)
+
+* static build [#271](https://github.com/motemen/ghq/pull/271) ([Songmu](https://github.com/Songmu))
+* Add options to zsh-completion [#270](https://github.com/motemen/ghq/pull/270) ([darklore](https://github.com/darklore))
+* update ghq.root description in README [#269](https://github.com/motemen/ghq/pull/269) ([ksoichiro](https://github.com/ksoichiro))
+* Enhance vcs_test.go [#266](https://github.com/motemen/ghq/pull/266) ([Songmu](https://github.com/Songmu))
+* fix testing for 'ghq get --look' [#265](https://github.com/motemen/ghq/pull/265) ([Songmu](https://github.com/Songmu))
+
 ## [v1.0.1](https://github.com/motemen/ghq/compare/v1.0.0...v1.0.1) (2020-01-05)
 
 * Fix argument for look in get, to make `ghq get -look` work [#264](https://github.com/motemen/ghq/pull/264) ([astj](https://github.com/astj))
