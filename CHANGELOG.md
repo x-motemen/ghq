@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.0.3](https://github.com/motemen/ghq/compare/v1.0.2...v1.0.3) (2020-01-22)
+
+* CGO_ENABLED=0 and drop -static flag [#273](https://github.com/motemen/ghq/pull/273) ([Songmu](https://github.com/Songmu))
+
 ## [v1.0.2](https://github.com/motemen/ghq/compare/v1.0.1...v1.0.2) (2020-01-17)
 
 * static build [#271](https://github.com/motemen/ghq/pull/271) ([Songmu](https://github.com/Songmu))
