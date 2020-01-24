@@ -12,8 +12,8 @@ import (
 	"sync"
 
 	"github.com/mattn/go-isatty"
-	"github.com/motemen/ghq/cmdutil"
-	"github.com/motemen/ghq/logger"
+	"github.com/x-motemen/ghq/cmdutil"
+	"github.com/x-motemen/ghq/logger"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 )

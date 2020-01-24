@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/motemen/ghq/logger"
+	"github.com/x-motemen/ghq/logger"
 )
 
 // Run the command

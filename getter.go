@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/motemen/ghq/logger"
+	"github.com/x-motemen/ghq/logger"
 )
 
 var (

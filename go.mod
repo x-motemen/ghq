@@ -1,4 +1,4 @@
-module github.com/motemen/ghq
+module github.com/x-motemen/ghq
 
 go 1.13
 

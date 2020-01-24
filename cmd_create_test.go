@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/motemen/ghq/cmdutil"
+	"github.com/x-motemen/ghq/cmdutil"
 )
 
 func TestDoCreate(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/motemen/ghq/cmdutil"
+	"github.com/x-motemen/ghq/cmdutil"
 )
 
 func run(silent bool) func(command string, args ...string) error {

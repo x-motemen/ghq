@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/Songmu/gitconfig"
-	"github.com/motemen/ghq/cmdutil"
-	"github.com/motemen/ghq/logger"
+	"github.com/x-motemen/ghq/cmdutil"
+	"github.com/x-motemen/ghq/logger"
 )
 
 func TestCommandGet(t *testing.T) {
@@ -240,7 +240,7 @@ func TestLook(t *testing.T) {
 
 func TestDoGet_bulk(t *testing.T) {
 	in := []string{
-		"github.com/motemen/ghq",
+		"github.com/x-motemen/ghq",
 		"github.com/motemen/gore",
 	}
 
