@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/motemen/ghq/logger"
+	"github.com/x-motemen/ghq/logger"
 	"github.com/urfave/cli/v2"
 )
 

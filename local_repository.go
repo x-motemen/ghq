@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/Songmu/gitconfig"
-	"github.com/motemen/ghq/logger"
+	"github.com/x-motemen/ghq/logger"
 	"github.com/saracen/walker"
 )
 
