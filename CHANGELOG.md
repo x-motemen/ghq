@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.1.0](https://github.com/x-motemen/ghq/compare/v1.0.3...v1.1.0) (2020-01-24)
+
+* update module name to github.com/x-motemen/ghq and fix import paths [#275](https://github.com/x-motemen/ghq/pull/275) ([Songmu](https://github.com/Songmu))
+
 ## [v1.0.3](https://github.com/motemen/ghq/compare/v1.0.2...v1.0.3) (2020-01-22)
 
 * CGO_ENABLED=0 and drop -static flag [#273](https://github.com/motemen/ghq/pull/273) ([Songmu](https://github.com/Songmu))
