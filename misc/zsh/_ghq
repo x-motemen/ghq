@@ -35,6 +35,7 @@ function _ghq () {
                         '--vcs[Specify vcs backend for matching]' \
                         '(-p --full-path)'{-p,--full-path}'[Print full paths]' \
                         '--unique[Print unique subpaths]' \
+                        '(-i --ignore-case)'{-i,--ignore-case}'[Perform case-insensitive match]' \
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;
