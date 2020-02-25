@@ -14,10 +14,15 @@ func doList(c *cli.Context) error {
 		w                = c.App.Writer
 		query            = c.Args().First()
 		exact            = c.Bool("exact")
+		ignoreCase       = c.Bool("ignore-case")
 		vcsBackend       = c.String("vcs")
 		printFullPaths   = c.Bool("full-path")
 		printUniquePaths = c.Bool("unique")
 	)
+
+	if exact && ignoreCase {
+		return fmt.Errorf("options -e(--exact) and -i(--ignore-case) are mutually exclusive")
+	}
 
 	filterByQuery := func(_ *LocalRepository) bool {
 		return true
@@ -43,7 +48,13 @@ func doList(c *cli.Context) error {
 				host = paths[0]
 			}
 			filterByQuery = func(repo *LocalRepository) bool {
-				return strings.Contains(repo.NonHostPath(), query) &&
+				p := repo.NonHostPath()
+				q := query
+				if ignoreCase {
+					p = strings.ToLower(p)
+					q = strings.ToLower(q)
+				}
+				return strings.Contains(p, q) &&
 					(host == "" || repo.PathParts[0] == host)
 			}
 		}

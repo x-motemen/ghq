@@ -46,13 +46,15 @@ var commandList = &cli.Command{
     repositories whose names contain that query text are listed.
     '-e' ('--exact') forces the match to be an exact one (i.e. the query equals to
     project or user/project) If '-p' ('--full-path') is given, the full paths
-    to the repository root are printed instead of relative ones.`,
+    to the repository root are printed instead of relative ones.
+    '-i' ('--ignore-case') performs case-insensitive matching.`,
 	Action: doList,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "exact", Aliases: []string{"e"}, Usage: "Perform an exact match"},
 		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend for matching"},
 		&cli.BoolFlag{Name: "full-path", Aliases: []string{"p"}, Usage: "Print full paths"},
 		&cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
+		&cli.BoolFlag{Name: "ignore-case", Aliases: []string{"i"}, Usage: "Perform case-insensitive matching"},
 	},
 }
 
@@ -81,7 +83,7 @@ type commandDoc struct {
 
 var commandDocs = map[string]commandDoc{
 	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--brach <branch>] [--no-recursive] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
-	"list":   {"", "[-p] [-e] [<query>]"},
+	"list":   {"", "[-p] [-e] [-i] [<query>]"},
 	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
 	"root":   {"", "[-all]"},
 }

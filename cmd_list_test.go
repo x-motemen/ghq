@@ -132,6 +132,10 @@ func TestDoList_query(t *testing.T) {
 		name:   "vcs",
 		args:   []string{"--vcs", "svn"},
 		expect: "github.com/msh5/svntest\n",
+	}, {
+		name:   "ignore case",
+		args:   []string{"-ignore-case", "songmu"},
+		expect: "github.com/Songmu/gobump\n",
 	}}
 
 	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {
