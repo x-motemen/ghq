@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,7 +19,7 @@ func TestDoCreate(t *testing.T) {
 		cmdutil.CommandRunner = orig
 	}(cmdutil.CommandRunner)
 	var lastCmd *exec.Cmd
-	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+	commandRunner := func(cmd *exec.Cmd) error {
 		lastCmd = cmd
 		return nil
 	}
@@ -39,6 +40,7 @@ func TestDoCreate(t *testing.T) {
 		wantDir   string
 		errStr    string
 		setup     func() func()
+		cmdRun    func(cmd *exec.Cmd) error
 		skipOnWin bool
 	}{{
 		name:    "simple",
@@ -55,9 +57,13 @@ func TestDoCreate(t *testing.T) {
 		},
 		wantDir: filepath.Join(tmpd, "github.com/motemen/ghqqq"),
 	}, {
-		name:   "invalid VCS",
-		input:  []string{"create", "git-hub-git-hub-unknown.com/motemen/ghqqq"},
-		errStr: "invalid VCS",
+		name:  "invalid VCS",
+		input: []string{"create", "example.com/goooo/gooo"},
+		cmdRun: func(cmd *exec.Cmd) error {
+			lastCmd = cmd
+			return errors.New("bad repository")
+		},
+		errStr: "unsupported VCS",
 	}, {
 		name:    "Mercurial",
 		input:   []string{"create", "--vcs=hg", "motemen/ghq-hg"},
@@ -116,6 +122,11 @@ func TestDoCreate(t *testing.T) {
 				defer teardown()
 			}
 
+			cmdutil.CommandRunner = commandRunner
+			if tc.cmdRun != nil {
+				cmdutil.CommandRunner = tc.cmdRun
+			}
+
 			var err error
 			out, _, _ := capture(func() {
 				err = newApp().Run(append([]string{""}, tc.input...))
@@ -125,6 +136,7 @@ func TestDoCreate(t *testing.T) {
 			if tc.errStr == "" {
 				if err != nil {
 					t.Errorf("error should be nil, but: %s", err)
+					return
 				}
 			} else {
 				if err == nil {
