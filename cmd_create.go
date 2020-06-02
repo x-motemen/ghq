@@ -46,14 +46,15 @@ func doCreate(c *cli.Context) error {
 		return fmt.Errorf("failed to init: unsupported VCS")
 	}
 
-	if err := os.MkdirAll(p, 0755); err != nil {
-		return err
-	}
-
 	initFunc := vcsBackend.Init
 	if initFunc == nil {
 		return fmt.Errorf("failed to init: unsupported VCS")
 	}
+
+	if err := os.MkdirAll(p, 0755); err != nil {
+		return err
+	}
+
 	if err := initFunc(p); err != nil {
 		return err
 	}
