@@ -15,7 +15,7 @@ set -x
 export GHQ_ROOT=$tmpdir
 
 : testing 'ghq get'
-    ghq get motemen/ghq
+    ghq get x-motemen/ghq
     ghq get www.mercurial-scm.org/repo/hello
     ghq get https://launchpad.net/terminator
     ghq get --vcs fossil https://www.sqlite.org/src
@@ -23,7 +23,7 @@ export GHQ_ROOT=$tmpdir
     ghq get https://svn.apache.org/repos/asf/subversion
     ghq get --shallow hub.darcs.net/byorgey/split
 
-    test -d $tmpdir/github.com/motemen/ghq/.git
+    test -d $tmpdir/github.com/x-motemen/ghq/.git
     test -d $tmpdir/www.mercurial-scm.org/repo/hello/.hg
     test -d $tmpdir/launchpad.net/terminator/.bzr
     test -f $tmpdir/www.sqlite.org/src/.fslckout
@@ -33,7 +33,7 @@ export GHQ_ROOT=$tmpdir
 
 : testing 'ghq list'
     cat <<EOF | sort > $tmpdir/expect
-github.com/motemen/ghq
+github.com/x-motemen/ghq
 www.mercurial-scm.org/repo/hello
 launchpad.net/terminator
 www.sqlite.org/src
