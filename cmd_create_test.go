@@ -55,6 +55,10 @@ func TestDoCreate(t *testing.T) {
 		},
 		wantDir: filepath.Join(tmpd, "github.com/motemen/ghqqq"),
 	}, {
+		name:   "invalid VCS",
+		input:  []string{"create", "git-hub-git-hub-unknown.com/motemen/ghqqq"},
+		errStr: "invalid VCS",
+	}, {
 		name:    "Mercurial",
 		input:   []string{"create", "--vcs=hg", "motemen/ghq-hg"},
 		want:    []string{"hg", "init"},
@@ -123,6 +127,10 @@ func TestDoCreate(t *testing.T) {
 					t.Errorf("error should be nil, but: %s", err)
 				}
 			} else {
+				if err == nil {
+					t.Errorf("err should not be nil")
+					return
+				}
 				if e, g := tc.errStr, err.Error(); !strings.Contains(g, e) {
 					t.Errorf("err.Error() should contains %q, but not: %q", e, g)
 				}
