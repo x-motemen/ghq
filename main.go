@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/x-motemen/ghq/logger"
 	"github.com/urfave/cli/v2"
+	"github.com/x-motemen/ghq/logger"
 )
 
 const version = "1.1.0"
