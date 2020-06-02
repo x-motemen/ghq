@@ -32,9 +32,6 @@ func doCreate(c *cli.Context) error {
 	if !ok {
 		return fmt.Errorf("directory %q already exists and not empty", p)
 	}
-	if err := os.MkdirAll(p, 0755); err != nil {
-		return err
-	}
 
 	remoteRepo, err := NewRemoteRepository(u)
 	if err != nil {
@@ -45,6 +42,14 @@ func doCreate(c *cli.Context) error {
 	if !ok {
 		vcsBackend, u = remoteRepo.VCS()
 	}
+	if vcsBackend == nil {
+		return fmt.Errorf("failed to init: unsupported VCS")
+	}
+
+	if err := os.MkdirAll(p, 0755); err != nil {
+		return err
+	}
+
 	initFunc := vcsBackend.Init
 	if initFunc == nil {
 		return fmt.Errorf("failed to init: unsupported VCS")
