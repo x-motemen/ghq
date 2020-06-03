@@ -1,6 +1,6 @@
 module github.com/x-motemen/ghq
 
-go 1.13
+go 1.14
 
 require (
 	github.com/Songmu/gitconfig v0.0.3
