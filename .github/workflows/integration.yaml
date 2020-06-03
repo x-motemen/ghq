@@ -17,5 +17,8 @@ jobs:
       run: |
         GOBIN=$HOME/bin make install
         brew install mercurial fossil bazaar darcs git
+        curl -fsSL --compressed https://git.io/cpm > cpm
+        chmod +x cpm
+        ./cpm install SVN::Core
     - name: test
       run: PATH=$HOME/bin:$PATH ./misc/author/integration_test.sh
