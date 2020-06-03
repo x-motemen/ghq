@@ -165,7 +165,7 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL, error) {
 		return SubversionBackend, repo.URL(), nil
 	}
 
-	return nil, nil, fmt.Errorf("cannont detect vcs, url=%s: %w", repo.URL(), err)
+	return nil, nil, fmt.Errorf("unsupported VCS, url=%s: %w", repo.URL(), err)
 }
 
 // NewRemoteRepository returns new RemoteRepository object from URL
