@@ -3,6 +3,7 @@ on:
   push:
     branches:
     - master
+    - integration-testing
 jobs:
   test:
     runs-on: macOS-latest
@@ -16,9 +17,9 @@ jobs:
     - name: install
       run: |
         GOBIN=$HOME/bin make install
-        brew install mercurial fossil bazaar darcs git
+        brew install mercurial fossil bazaar darcs
         curl -fsSL --compressed https://git.io/cpm > cpm
         chmod +x cpm
-        ./cpm install SVN::Core
+        /usr/bin/perl ./cpm install -L /usr/local/Cellar/git/2.26.2/share/perl5 SVN::Core
     - name: test
       run: PATH=$HOME/bin:$PATH ./misc/author/integration_test.sh
