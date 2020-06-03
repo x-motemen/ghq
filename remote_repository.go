@@ -21,7 +21,7 @@ type RemoteRepository interface {
 	VCS() (*VCSBackend, *url.URL, error)
 }
 
-// A GitHubRepository represents a GitHub repository. Impliments RemoteRepository.
+// A GitHubRepository represents a GitHub repository. Implements RemoteRepository.
 type GitHubRepository struct {
 	url *url.URL
 }
@@ -69,7 +69,7 @@ func (repo *GitHubGistRepository) URL() *url.URL {
 	return repo.url
 }
 
-// IsValid determin if the gist rpository is valid or not
+// IsValid determine if the gist rpository is valid or not
 func (repo *GitHubGistRepository) IsValid() bool {
 	return true
 }
@@ -89,7 +89,7 @@ func (repo *DarksHubRepository) URL() *url.URL {
 	return repo.url
 }
 
-// IsValid determine if the darcshub repositroy is valid or not
+// IsValid determine if the darcshub repository is valid or not
 func (repo *DarksHubRepository) IsValid() bool {
 	return strings.Count(repo.url.Path, "/") == 2
 }
@@ -183,7 +183,7 @@ func NewRemoteRepository(u *url.URL) (RemoteRepository, error) {
 		}
 	}()
 	if !repo.IsValid() {
-		return nil, fmt.Errorf("Not a valid repository: %s", u)
+		return nil, fmt.Errorf("not a valid repository: %s", u)
 	}
 	return repo, nil
 }
