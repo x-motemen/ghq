@@ -34,6 +34,7 @@ func (repo *GitHubRepository) URL() *url.URL {
 // IsValid determine if the repository is valid or not
 func (repo *GitHubRepository) IsValid() bool {
 	if strings.HasPrefix(repo.url.Path, "/blog/") {
+		logger.Log("github", `the user or organization named "blog" is invalid on github, "https://github.com/blog" is redirected to "https://github.blog".`)
 		return false
 	}
 	pathComponents := strings.Split(strings.Trim(repo.url.Path, "/"), "/")
