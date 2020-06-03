@@ -18,7 +18,7 @@ type RemoteRepository interface {
 	// Checks if the URL is valid.
 	IsValid() bool
 	// The VCS backend that hosts the repository.
-	VCS() (*VCSBackend, *url.URL)
+	VCS() (*VCSBackend, *url.URL, error)
 }
 
 // A GitHubRepository represents a GitHub repository. Impliments RemoteRepository.
@@ -41,7 +41,7 @@ func (repo *GitHubRepository) IsValid() bool {
 }
 
 // VCS returns VCSBackend of the repository
-func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL) {
+func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL, error) {
 	origU := repo.URL()
 	u := &url.URL{ // clone
 		Scheme:   origU.Scheme,
@@ -56,7 +56,7 @@ func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL) {
 		path += ".git"
 	}
 	u.Path = path
-	return GitBackend, u
+	return GitBackend, u, nil
 }
 
 // A GitHubGistRepository represents a GitHub Gist repository.
@@ -75,8 +75,8 @@ func (repo *GitHubGistRepository) IsValid() bool {
 }
 
 // VCS returns VCSBackend of the gist
-func (repo *GitHubGistRepository) VCS() (*VCSBackend, *url.URL) {
-	return GitBackend, repo.URL()
+func (repo *GitHubGistRepository) VCS() (*VCSBackend, *url.URL, error) {
+	return GitBackend, repo.URL(), nil
 }
 
 // DarksHubRepository represents DarcsHub Repository
@@ -95,8 +95,8 @@ func (repo *DarksHubRepository) IsValid() bool {
 }
 
 // VCS returns VCSBackend of the DarcsHub repository
-func (repo *DarksHubRepository) VCS() (*VCSBackend, *url.URL) {
-	return DarcsBackend, repo.URL()
+func (repo *DarksHubRepository) VCS() (*VCSBackend, *url.URL, error) {
+	return DarcsBackend, repo.URL(), nil
 }
 
 // OtherRepository represents other repository
@@ -124,7 +124,7 @@ var (
 )
 
 // VCS detects VCSBackend of the OtherRepository
-func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
+func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL, error) {
 	// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
 	// (in gitconfig:)
 	//     [ghq "https://ghe.example.com/"]
@@ -134,38 +134,38 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL) {
 		logger.Log("error", err.Error())
 	}
 	if backend, ok := vcsRegistry[vcs]; ok {
-		return backend, repo.URL()
+		return backend, repo.URL(), nil
 	}
 
 	if m := vcsSchemeReg.FindStringSubmatch(repo.url.Scheme); len(m) > 1 {
-		return scheme2vcs[m[1]], repo.URL()
+		return scheme2vcs[m[1]], repo.URL(), nil
 	}
 
 	mayBeSvn := strings.HasPrefix(repo.url.Host, "svn.")
 	if mayBeSvn && cmdutil.RunSilently("svn", "info", repo.url.String()) == nil {
-		return SubversionBackend, repo.URL()
+		return SubversionBackend, repo.URL(), nil
 	}
 
 	// Detect VCS backend automatically
 	if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
-		return GitBackend, repo.URL()
+		return GitBackend, repo.URL(), nil
 	}
 
 	vcs, repoURL, err := detectGoImport(repo.url)
 	if err == nil {
 		// vcs == "mod" (modproxy) not supported yet
-		return vcsRegistry[vcs], repoURL
+		return vcsRegistry[vcs], repoURL, nil
 	}
 
 	if cmdutil.RunSilently("hg", "identify", repo.url.String()) == nil {
-		return MercurialBackend, repo.URL()
+		return MercurialBackend, repo.URL(), nil
 	}
 
 	if !mayBeSvn && cmdutil.RunSilently("svn", "info", repo.url.String()) == nil {
-		return SubversionBackend, repo.URL()
+		return SubversionBackend, repo.URL(), nil
 	}
 
-	return nil, nil
+	return nil, nil, fmt.Errorf("cannont detect vcs, url=%s: %w", repo.URL(), err)
 }
 
 // NewRemoteRepository returns new RemoteRepository object from URL
