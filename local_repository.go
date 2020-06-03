@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	"github.com/Songmu/gitconfig"
-	"github.com/x-motemen/ghq/logger"
 	"github.com/saracen/walker"
+	"github.com/x-motemen/ghq/logger"
 )
 
 const envGhqRoot = "GHQ_ROOT"
