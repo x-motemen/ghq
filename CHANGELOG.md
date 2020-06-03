@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.1.1](https://github.com/x-motemen/ghq/compare/v1.1.0...v1.1.1) (2020-06-03)
+
+* update deps [#284](https://github.com/x-motemen/ghq/pull/284) ([Songmu](https://github.com/Songmu))
+* fix integration testing [#283](https://github.com/x-motemen/ghq/pull/283) ([Songmu](https://github.com/Songmu))
+* Check vcsBackend is nil [#282](https://github.com/x-motemen/ghq/pull/282) ([mattn](https://github.com/mattn))
+* Add installation note for Void Linux [#280](https://github.com/x-motemen/ghq/pull/280) ([imbsky](https://github.com/imbsky))
+* Add bash completion to release archives [#279](https://github.com/x-motemen/ghq/pull/279) ([tottoto](https://github.com/tottoto))
+
 ## [v1.1.0](https://github.com/x-motemen/ghq/compare/v1.0.3...v1.1.0) (2020-01-24)
 
 * update module name to github.com/x-motemen/ghq and fix import paths [#275](https://github.com/x-motemen/ghq/pull/275) ([Songmu](https://github.com/Songmu))
