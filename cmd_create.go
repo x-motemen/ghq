@@ -35,12 +35,15 @@ func doCreate(c *cli.Context) error {
 
 	remoteRepo, err := NewRemoteRepository(u)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	vcsBackend, ok := vcsRegistry[vcs]
 	if !ok {
-		vcsBackend, u = remoteRepo.VCS()
+		vcsBackend, _, err = remoteRepo.VCS()
+		if err != nil {
+			return err
+		}
 	}
 	if vcsBackend == nil {
 		return fmt.Errorf("failed to init: unsupported VCS")

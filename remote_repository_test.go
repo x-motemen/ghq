@@ -50,7 +50,7 @@ func TestNewRemoteRepository(t *testing.T) {
 			if repo.IsValid() != tc.valid {
 				t.Errorf("repo.IsValid() should be %v, but %v", tc.valid, repo.IsValid())
 			}
-			vcs, u := repo.VCS()
+			vcs, u, err := repo.VCS()
 			if vcs != tc.vcsBackend {
 				t.Errorf("got: %+v, expect: %+v", vcs, tc.vcsBackend)
 			}
@@ -58,6 +58,61 @@ func TestNewRemoteRepository(t *testing.T) {
 				if u.String() != tc.repoURL {
 					t.Errorf("repoURL: got: %s, expect: %s", u.String(), tc.repoURL)
 				}
+			}
+		})
+	}
+}
+
+func TestNewRemoteRepository_vcs_error(t *testing.T) {
+	testCases := []struct {
+		url        string
+		valid      bool
+		vcsBackend *VCSBackend
+		repoURL    string
+	}{{
+		url:        "https://example.com/motemen/pusheen-explorer/",
+		valid:      true,
+		vcsBackend: nil,
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.url, func(t *testing.T) {
+			repo, err := NewRemoteRepository(mustParseURL(tc.url))
+			if err != nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			if repo.IsValid() != tc.valid {
+				t.Errorf("repo.IsValid() should be %v, but %v", tc.valid, repo.IsValid())
+			}
+			vcs, u, err := repo.VCS()
+			if err == nil {
+				t.Fatalf("error should be nil but: %s", err)
+			}
+			if vcs != tc.vcsBackend {
+				t.Errorf("got: %+v, expect: %+v", vcs, tc.vcsBackend)
+			}
+			if u != nil {
+				t.Errorf("u should be nil: %s", u.String())
+			}
+		})
+	}
+}
+
+func TestNewRemoteRepository_error(t *testing.T) {
+	testCases := []struct {
+		url string
+	}{{
+		url: "https://github.com/blog/github",
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.url, func(t *testing.T) {
+			repo, err := NewRemoteRepository(mustParseURL(tc.url))
+			if err == nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			if repo != nil {
+				t.Errorf("repo should be nil: %v", repo)
 			}
 		})
 	}

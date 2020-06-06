@@ -79,9 +79,9 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 		)
 		vcs, ok := vcsRegistry[g.vcs]
 		if !ok {
-			vcs, repoURL = remote.VCS()
-			if vcs == nil {
-				return fmt.Errorf("Could not find version control system: %s", remoteURL)
+			vcs, repoURL, err = remote.VCS()
+			if err != nil {
+				return err
 			}
 		}
 		l := detectLocalRepoRoot(
