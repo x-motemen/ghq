@@ -75,33 +75,20 @@ var GitBackend = &VCSBackend{
 		if _, err := os.Stat(filepath.Join(vg.dir, ".git/svn")); err == nil {
 			return GitsvnBackend.Update(vg)
 		}
-		var isTracking = func() (bool, error) {
-			buf := &bytes.Buffer{}
-			cmd := exec.Command("git", "status", "-b", "--porcelain")
-			cmd.Stdout = buf
-			cmd.Stderr = ioutil.Discard
-			cmd.Dir = vg.dir
-			err := cmdutil.RunCommand(cmd, true)
-			branch := strings.Split(buf.String(), "\n")[0]
-			return strings.Contains(branch, "..."), err
-		}
-		pull, err := isTracking()
+		err := runInDir(true)(vg.dir, "git", "rev-parse", "@{upstream}")
 		if err != nil {
-			return err
-		}
-		if pull {
-			err := runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
-			if err != nil {
-				return err
-			}
-			if vg.recursive {
-				return runInDir(vg.silent)(vg.dir, "git", "submodule", "update", "--init", "--recursive")
-			}
-		} else {
 			err := runInDir(vg.silent)(vg.dir, "git", "fetch")
 			if err != nil {
 				return err
 			}
+			return nil
+		}
+		err = runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
+		if err != nil {
+			return err
+		}
+		if vg.recursive {
+			return runInDir(vg.silent)(vg.dir, "git", "submodule", "update", "--init", "--recursive")
 		}
 		return nil
 	},

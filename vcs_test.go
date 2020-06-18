@@ -12,12 +12,8 @@ import (
 )
 
 var (
-	remoteDummyURL           = mustParseURL("https://example.com/git/repo")
-	dummyGitStatusWithRemote = []byte(`## master...origin/master
-`)
-	dummyGitStatus = []byte(`## master
-`)
-	dummySvnInfo = []byte(`Path: trunk
+	remoteDummyURL = mustParseURL("https://example.com/git/repo")
+	dummySvnInfo   = []byte(`Path: trunk
 URL: https://svn.apache.org/repos/asf/subversion/trunk
 Relative URL: ^/subversion/trunk
 Repository Root: https://svn.apache.org/repos/asf
@@ -90,9 +86,6 @@ func TestVCSBackend(t *testing.T) {
 			}(cmdutil.CommandRunner)
 			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 				_commands = append(_commands, cmd)
-				if reflect.DeepEqual(cmd.Args, []string{"git", "status", "-b", "--porcelain"}) {
-					cmd.Stdout.Write(dummyGitStatusWithRemote)
-				}
 				return nil
 			}
 			return GitBackend.Update(&vcsGetOption{
@@ -109,8 +102,8 @@ func TestVCSBackend(t *testing.T) {
 			}(cmdutil.CommandRunner)
 			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 				_commands = append(_commands, cmd)
-				if reflect.DeepEqual(cmd.Args, []string{"git", "status", "-b", "--porcelain"}) {
-					cmd.Stdout.Write(dummyGitStatus)
+				if reflect.DeepEqual(cmd.Args, []string{"git", "rev-parse", "@{upstream}"}) {
+					return fmt.Errorf("[test] failed to git rev-parse @{upstream}")
 				}
 				return nil
 			}
@@ -138,9 +131,6 @@ func TestVCSBackend(t *testing.T) {
 			}(cmdutil.CommandRunner)
 			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
 				_commands = append(_commands, cmd)
-				if reflect.DeepEqual(cmd.Args, []string{"git", "status", "-b", "--porcelain"}) {
-					cmd.Stdout.Write(dummyGitStatusWithRemote)
-				}
 				return nil
 			}
 			return GitBackend.Update(&vcsGetOption{
