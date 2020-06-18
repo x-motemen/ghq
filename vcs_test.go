@@ -12,8 +12,12 @@ import (
 )
 
 var (
-	remoteDummyURL = mustParseURL("https://example.com/git/repo")
-	dummySvnInfo   = []byte(`Path: trunk
+	remoteDummyURL           = mustParseURL("https://example.com/git/repo")
+	dummyGitStatusWithRemote = []byte(`## master...origin/master
+`)
+	dummyGitStatus = []byte(`## master
+`)
+	dummySvnInfo = []byte(`Path: trunk
 URL: https://svn.apache.org/repos/asf/subversion/trunk
 Relative URL: ^/subversion/trunk
 Repository Root: https://svn.apache.org/repos/asf
@@ -81,11 +85,40 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[git] update",
 		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(cmd.Args, []string{"git", "status", "-b", "--porcelain"}) {
+					cmd.Stdout.Write(dummyGitStatusWithRemote)
+				}
+				return nil
+			}
 			return GitBackend.Update(&vcsGetOption{
 				dir: localDir,
 			})
 		},
 		expect: []string{"git", "pull", "--ff-only"},
+		dir:    localDir,
+	}, {
+		name: "[git] fetch",
+		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(cmd.Args, []string{"git", "status", "-b", "--porcelain"}) {
+					cmd.Stdout.Write(dummyGitStatus)
+				}
+				return nil
+			}
+			return GitBackend.Update(&vcsGetOption{
+				dir: localDir,
+			})
+		},
+		expect: []string{"git", "fetch"},
 		dir:    localDir,
 	}, {
 		name: "[git] recursive",
@@ -100,6 +133,16 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[git] update recursive",
 		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(cmd.Args, []string{"git", "status", "-b", "--porcelain"}) {
+					cmd.Stdout.Write(dummyGitStatusWithRemote)
+				}
+				return nil
+			}
 			return GitBackend.Update(&vcsGetOption{
 				dir:       localDir,
 				recursive: true,
