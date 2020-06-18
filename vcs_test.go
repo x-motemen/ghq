@@ -81,13 +81,6 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[git] update",
 		f: func() error {
-			defer func(orig func(cmd *exec.Cmd) error) {
-				cmdutil.CommandRunner = orig
-			}(cmdutil.CommandRunner)
-			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
-				_commands = append(_commands, cmd)
-				return nil
-			}
 			return GitBackend.Update(&vcsGetOption{
 				dir: localDir,
 			})
@@ -126,13 +119,6 @@ func TestVCSBackend(t *testing.T) {
 	}, {
 		name: "[git] update recursive",
 		f: func() error {
-			defer func(orig func(cmd *exec.Cmd) error) {
-				cmdutil.CommandRunner = orig
-			}(cmdutil.CommandRunner)
-			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
-				_commands = append(_commands, cmd)
-				return nil
-			}
 			return GitBackend.Update(&vcsGetOption{
 				dir:       localDir,
 				recursive: true,
