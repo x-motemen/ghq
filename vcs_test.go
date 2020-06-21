@@ -88,6 +88,25 @@ func TestVCSBackend(t *testing.T) {
 		expect: []string{"git", "pull", "--ff-only"},
 		dir:    localDir,
 	}, {
+		name: "[git] fetch",
+		f: func() error {
+			defer func(orig func(cmd *exec.Cmd) error) {
+				cmdutil.CommandRunner = orig
+			}(cmdutil.CommandRunner)
+			cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+				_commands = append(_commands, cmd)
+				if reflect.DeepEqual(cmd.Args, []string{"git", "rev-parse", "@{upstream}"}) {
+					return fmt.Errorf("[test] failed to git rev-parse @{upstream}")
+				}
+				return nil
+			}
+			return GitBackend.Update(&vcsGetOption{
+				dir: localDir,
+			})
+		},
+		expect: []string{"git", "fetch"},
+		dir:    localDir,
+	}, {
 		name: "[git] recursive",
 		f: func() error {
 			return GitBackend.Clone(&vcsGetOption{

@@ -75,7 +75,15 @@ var GitBackend = &VCSBackend{
 		if _, err := os.Stat(filepath.Join(vg.dir, ".git/svn")); err == nil {
 			return GitsvnBackend.Update(vg)
 		}
-		err := runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
+		err := runInDir(true)(vg.dir, "git", "rev-parse", "@{upstream}")
+		if err != nil {
+			err := runInDir(vg.silent)(vg.dir, "git", "fetch")
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		err = runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
 		if err != nil {
 			return err
 		}
