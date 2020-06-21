@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.1.2](https://github.com/x-motemen/ghq/compare/v1.1.1...v1.1.2) (2020-06-21)
+
+* update deps [#287](https://github.com/x-motemen/ghq/pull/287) ([Songmu](https://github.com/Songmu))
+* Fetch instead of pull if the working tree isn't tracking remote. [#286](https://github.com/x-motemen/ghq/pull/286) ([yoichi](https://github.com/yoichi))
+* Refactor so that RemoteRepository#VCS can return an error [#285](https://github.com/x-motemen/ghq/pull/285) ([johejo](https://github.com/johejo))
+
 ## [v1.1.1](https://github.com/x-motemen/ghq/compare/v1.1.0...v1.1.1) (2020-06-03)
 
 * update deps [#284](https://github.com/x-motemen/ghq/pull/284) ([Songmu](https://github.com/Songmu))
