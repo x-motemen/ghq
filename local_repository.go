@@ -368,12 +368,12 @@ func localRepositoryRoots(all bool) ([]string, error) {
 		}
 
 		if all && envRoot == "" {
-			roots, err := urlMatchLocalRepositoryRoots()
+			localRoots, err := urlMatchLocalRepositoryRoots()
 			if err != nil {
 				_localRepoErr = err
 				return
 			}
-			roots = append(roots, roots...)
+			roots = append(roots, localRoots...)
 		}
 
 		seen := make(map[string]bool, len(roots))
