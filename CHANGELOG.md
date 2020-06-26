@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.1.3](https://github.com/x-motemen/ghq/compare/v1.1.2...v1.1.3) (2020-06-26)
+
+* Fix ghq root --all not showing all root directories [#289](https://github.com/x-motemen/ghq/pull/289) ([shihanng](https://github.com/shihanng))
+
 ## [v1.1.2](https://github.com/x-motemen/ghq/compare/v1.1.1...v1.1.2) (2020-06-21)
 
 * update deps [#287](https://github.com/x-motemen/ghq/pull/287) ([Songmu](https://github.com/Songmu))
