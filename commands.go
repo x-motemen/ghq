@@ -80,7 +80,7 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--brach <branch>] [--no-recursive] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
+	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
 	"root":   {"", "[-all]"},
