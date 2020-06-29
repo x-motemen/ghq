@@ -85,8 +85,8 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			}
 		}
 		l := detectLocalRepoRoot(
-			remoteURL.Path,
-			strings.TrimSuffix(strings.TrimSuffix(repoURL.Path, "/"), ".git"))
+			strings.TrimSuffix(remoteURL.Path, ".git"),
+			strings.TrimSuffix(repoURL.Path, ".git"))
 		if l != "" {
 			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
 		}
