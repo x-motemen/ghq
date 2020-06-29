@@ -122,8 +122,8 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 }
 
 func detectLocalRepoRoot(remotePath, repoPath string) string {
-	remotePath = strings.TrimSuffix(remotePath, ".git")
-	repoPath = strings.TrimSuffix(repoPath, ".git")
+	remotePath = strings.TrimSuffix(strings.TrimSuffix(remotePath, "/"), ".git")
+	repoPath = strings.TrimSuffix(strings.TrimSuffix(repoPath, "/"), ".git")
 	pathParts := strings.Split(repoPath, "/")
 	pathParts = pathParts[1:]
 	for i := 0; i < len(pathParts); i++ {

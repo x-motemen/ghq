@@ -45,6 +45,16 @@ func TestDetectLocalRepoRoot(t *testing.T) {
 		remotePath: "/path/to/repo.git",
 		repoPath:   "/path/to/repo.git",
 		expect:     "/path/to/repo",
+	}, {
+		name:       "trailing slash",
+		remotePath: "/path/to/repo/",
+		repoPath:   "/path/to/repo/",
+		expect:     "/path/to/repo",
+	}, {
+		name:       ".git/ at the end",
+		remotePath: "/path/to/repo.git/",
+		repoPath:   "/path/to/repo.git/",
+		expect:     "/path/to/repo",
 	}}
 
 	for _, tc := range testCases {
