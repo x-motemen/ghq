@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.1.4](https://github.com/x-motemen/ghq/compare/v1.1.3...v1.1.4) (2020-06-30)
+
+* Care the some repository URL ended with '.git/' [#291](https://github.com/x-motemen/ghq/pull/291) ([yoichi](https://github.com/yoichi))
+* Fix typo in `ghq get --help` [#290](https://github.com/x-motemen/ghq/pull/290) ([yoichi](https://github.com/yoichi))
+
 ## [v1.1.3](https://github.com/x-motemen/ghq/compare/v1.1.2...v1.1.3) (2020-06-26)
 
 * Fix ghq root --all not showing all root directories [#289](https://github.com/x-motemen/ghq/pull/289) ([shihanng](https://github.com/shihanng))
