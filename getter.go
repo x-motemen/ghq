@@ -84,10 +84,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 				return err
 			}
 		}
-		l := detectLocalRepoRoot(
-			remoteURL.Path,
-			repoURL.Path)
-		if l != "" {
+		if l := detectLocalRepoRoot(remoteURL.Path, repoURL.Path); l != "" {
 			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
 		}
 
