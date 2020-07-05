@@ -137,9 +137,9 @@ go get github.com/x-motemen/ghq
 
 === conda
 
----
+----
 conda install -c conda-forge go-ghq
----
+----
 
 === build
 
