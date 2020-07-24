@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.1.5](https://github.com/x-motemen/ghq/compare/v1.1.4...v1.1.5) (2020-07-24)
+
+* update Songmu/gitconfig [#295](https://github.com/x-motemen/ghq/pull/295) ([Songmu](https://github.com/Songmu))
+* fix typo in readme [#293](https://github.com/x-motemen/ghq/pull/293) ([capytan](https://github.com/capytan))
+* Add conda install instructions [#292](https://github.com/x-motemen/ghq/pull/292) ([sodre](https://github.com/sodre))
+
 ## [v1.1.4](https://github.com/x-motemen/ghq/compare/v1.1.3...v1.1.4) (2020-06-30)
 
 * Care the some repository URL ended with '.git/' [#291](https://github.com/x-motemen/ghq/pull/291) ([yoichi](https://github.com/yoichi))
