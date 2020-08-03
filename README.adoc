@@ -129,6 +129,13 @@ brew install ghq
 xbps-install -S ghq
 ----
 
+=== Windows + scoop
+
+----
+scoop install ghq
+----
+
+
 === go get
 
 ----
