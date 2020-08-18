@@ -76,13 +76,15 @@ ghq.<url>.vcs::
     Accepted values are "git", "github" (an alias for "git"), "subversion",
     "svn" (an alias for "subversion"), "git-svn", "mercurial", "hg" (an alias for "mercurial"),
     "darcs", "fossil", "bazaar", and "bzr" (an alias for "bazaar"). +
-    To get this configuration variable effective, you will need Git 1.8.5 or higher. +
-    For example in .gitconfig:
+    To get this configuration variable effective, you will need Git 1.8.5 or higher.
 
 ghq.<url>.root::
     The "ghq" tries to detect the remote repository-specific root directory. With this option,
     you can specify a repository-specific root directory instead of the common ghq root directory. +
     The URL is matched against '<url>' using 'git config --get-urlmatch'.
+
+
+=== Example configuration (.gitconfig):
 
 ....
 [ghq "https://git.example.com/repos/"]
