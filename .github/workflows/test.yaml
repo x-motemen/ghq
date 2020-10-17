@@ -13,35 +13,14 @@ jobs:
         os:
         - ubuntu-latest
         - macOS-latest
-        - windows-latest
+        parallelism: [3]
+        index: [0,1,2]
     steps:
     - name: setup go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.x
+      uses: actions/setup-go@v2
     - name: checkout
-      uses: actions/checkout@v1
-    - name: lint
-      run: |
-        GO111MODULE=off GOBIN=$(pwd)/bin go get golang.org/x/lint/golint
-        bin/golint -set_exit_status ./...
-      if: "matrix.os == 'ubuntu-latest' || matrix.os == 'macOS-latest'"
+      uses: actions/checkout@v2
     - name: test
-      run: go test -coverprofile coverage.out -covermode atomic ./...
-    - name: Send coverage
-      uses: shogo82148/actions-goveralls@v1
-      with:
-        github-token: ${{ secrets.github_token }}
-        path-to-profile: coverage.out
-        parallel: true
-        job-number: ${{ strategy.job-index }}
-
-  finish:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-    - name: finish coverage report
-      uses: shogo82148/actions-goveralls@v1
-      with:
-        github-token: ${{ secrets.github_token }}
-        parallel-finished: true
+      run: |
+        curl -sfL https://raw.githubusercontent.com/Songmu/gotesplit/master/install.sh | sh -s
+        bin/gotesplit -total ${{ matrix.parallelism }} -index ${{ matrix.index }} ./...
