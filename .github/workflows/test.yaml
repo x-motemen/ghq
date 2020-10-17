@@ -23,5 +23,5 @@ jobs:
       uses: actions/checkout@v2
     - name: test
       run: |
-        curl -sfL https://raw.githubusercontent.com/Songmu/gotesplit/master/install.sh | sh -s
+        curl -sfL https://raw.githubusercontent.com/Songmu/gotesplit/main/install.sh | sh -s
         bin/gotesplit -total ${{ matrix.parallelism }} -index ${{ matrix.index }} ./...
