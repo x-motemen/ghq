@@ -63,7 +63,7 @@ func doGet(c *cli.Context) error {
 			eg.Go(func() error {
 				defer func() { <-sem }()
 				if err := g.get(target); err != nil {
-					logger.Logf("error", "faied to get %q: %s", target, err)
+					logger.Logf("error", "failed to get %q: %s", target, err)
 				}
 				return nil
 			})
