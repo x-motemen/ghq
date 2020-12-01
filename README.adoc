@@ -150,6 +150,13 @@ go get github.com/x-motemen/ghq
 conda install -c conda-forge go-ghq
 ----
 
+=== https://github.com/asdf-vm/asdf[asdf-vm]
+
+----
+asdf plugin add ghq
+asdf install ghq latest
+----
+
 === build
 
 ----
