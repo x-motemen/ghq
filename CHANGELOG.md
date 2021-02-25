@@ -1,5 +1,16 @@
 # Changelog
 
+## [v1.1.6](https://github.com/x-motemen/ghq/compare/v1.1.5...v1.1.6) (2021-02-25)
+
+* update deps [#313](https://github.com/x-motemen/ghq/pull/313) ([Songmu](https://github.com/Songmu))
+* Add installation instructions for GNU Guix [#310](https://github.com/x-motemen/ghq/pull/310) ([lafrenierejm](https://github.com/lafrenierejm))
+* bump saracen/walker v0.1.2 [#312](https://github.com/x-motemen/ghq/pull/312) ([shogo82148](https://github.com/shogo82148))
+* Add installation using asdf-vm [#305](https://github.com/x-motemen/ghq/pull/305) ([kajisha](https://github.com/kajisha))
+* Clone URLs by copying `net.URL` struct [#302](https://github.com/x-motemen/ghq/pull/302) ([vladimyr](https://github.com/vladimyr))
+* Fix typo in `get` command log output [#301](https://github.com/x-motemen/ghq/pull/301) ([vladimyr](https://github.com/vladimyr))
+* nit: Fix the pointer to example configuration [#298](https://github.com/x-motemen/ghq/pull/298) ([aereal](https://github.com/aereal))
+* Add scoop at installation [#297](https://github.com/x-motemen/ghq/pull/297) ([hotchpotch](https://github.com/hotchpotch))
+
 ## [v1.1.5](https://github.com/x-motemen/ghq/compare/v1.1.4...v1.1.5) (2020-07-24)
 
 * update Songmu/gitconfig [#295](https://github.com/x-motemen/ghq/pull/295) ([Songmu](https://github.com/Songmu))
