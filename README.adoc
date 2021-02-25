@@ -131,6 +131,12 @@ brew install ghq
 xbps-install -S ghq
 ----
 
+=== GNU Guix
+
+----
+guix install ghq
+----
+
 === Windows + scoop
 
 ----
