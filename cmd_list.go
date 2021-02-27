@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -64,6 +65,7 @@ func doList(c *cli.Context) error {
 		return fmt.Errorf("failed to filter repos while walkLocalRepositories(repo): %w", err)
 	}
 
+	repoList := make([]string, 0, len(repos))
 	if printUniquePaths {
 		subpathCount := map[string]int{} // Count duplicated subpaths (ex. foo/dotfiles and bar/dotfiles)
 		reposCount := map[string]int{}   // Check duplicated repositories among roots
@@ -86,7 +88,7 @@ func doList(c *cli.Context) error {
 
 			for _, p := range repo.Subpaths() {
 				if subpathCount[p] == 1 {
-					fmt.Fprintln(w, p)
+					repoList = append(repoList, p)
 					break
 				}
 			}
@@ -94,11 +96,15 @@ func doList(c *cli.Context) error {
 	} else {
 		for _, repo := range repos {
 			if printFullPaths {
-				fmt.Fprintln(w, repo.FullPath)
+				repoList = append(repoList, repo.FullPath)
 			} else {
-				fmt.Fprintln(w, repo.RelPath)
+				repoList = append(repoList, repo.RelPath)
 			}
 		}
+	}
+	sort.Strings(repoList)
+	for _, r := range repoList {
+		fmt.Fprintln(w, r)
 	}
 	return nil
 }
