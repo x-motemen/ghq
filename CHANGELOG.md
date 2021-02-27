@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.1.7](https://github.com/x-motemen/ghq/compare/v1.1.6...v1.1.7) (2021-02-27)
+
+* sort list by default [#314](https://github.com/x-motemen/ghq/pull/314) ([Songmu](https://github.com/Songmu))
+
 ## [v1.1.6](https://github.com/x-motemen/ghq/compare/v1.1.5...v1.1.6) (2021-02-25)
 
 * update deps [#313](https://github.com/x-motemen/ghq/pull/313) ([Songmu](https://github.com/Songmu))
