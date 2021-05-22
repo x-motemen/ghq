@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.2.0](https://github.com/x-motemen/ghq/compare/v1.1.7...v1.2.0) (2021-05-23)
+
+* Support AWS CodeCommit HTTP (GRC) [#321](https://github.com/x-motemen/ghq/pull/321) ([xeres](https://github.com/xeres))
+* Smartcasing [#317](https://github.com/x-motemen/ghq/pull/317) ([bmendric](https://github.com/bmendric))
+
 ## [v1.1.7](https://github.com/x-motemen/ghq/compare/v1.1.6...v1.1.7) (2021-02-27)
 
 * sort list by default [#314](https://github.com/x-motemen/ghq/pull/314) ([Songmu](https://github.com/Songmu))
