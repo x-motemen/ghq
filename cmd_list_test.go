@@ -82,6 +82,7 @@ func TestDoList_query(t *testing.T) {
 		"github.com/motemen/gobump",
 		"github.com/motemen/gore",
 		"github.com/Songmu/gobump",
+		"github.com/test/Awesome",
 		"golang.org/x/crypt",
 		"golang.org/x/image",
 	}
@@ -132,6 +133,18 @@ func TestDoList_query(t *testing.T) {
 		name:   "vcs",
 		args:   []string{"--vcs", "svn"},
 		expect: "github.com/msh5/svntest\n",
+	}, {
+		name:   "smartcasing fuzzy",
+		args:   []string{"awesome"},
+		expect: "github.com/test/Awesome\n",
+	}, {
+		name:   "smartcasing exact",
+		args:   []string{"Awesome"},
+		expect: "github.com/test/Awesome\n",
+	}, {
+		name:   "smartcasing exact fail",
+		args:   []string{"aWesome"},
+		expect: "",
 	}}
 
 	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {

@@ -43,9 +43,17 @@ func doList(c *cli.Context) error {
 				query = strings.Join(paths[1:], "/")
 				host = paths[0]
 			}
-			filterByQuery = func(repo *LocalRepository) bool {
-				return strings.Contains(repo.NonHostPath(), query) &&
-					(host == "" || repo.PathParts[0] == host)
+			// Using smartcase searching
+			if strings.ToLower(query) == query {
+				filterByQuery = func(repo *LocalRepository) bool {
+					return strings.Contains(strings.ToLower(repo.NonHostPath()), query) &&
+						(host == "" || repo.PathParts[0] == host)
+				}
+			} else {
+				filterByQuery = func(repo *LocalRepository) bool {
+					return strings.Contains(repo.NonHostPath(), query) &&
+						(host == "" || repo.PathParts[0] == host)
+				}
 			}
 		}
 	}
