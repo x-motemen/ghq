@@ -360,6 +360,7 @@ var BazaarBackend = &VCSBackend{
 var vcsRegistry = map[string]*VCSBackend{
 	"git":        GitBackend,
 	"github":     GitBackend,
+	"codecommit": GitBackend,
 	"svn":        SubversionBackend,
 	"subversion": SubversionBackend,
 	"git-svn":    GitsvnBackend,

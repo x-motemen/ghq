@@ -97,8 +97,11 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 	if localRepository != nil {
 		return localRepository, nil
 	}
-
-	prim, err := getRoot(remoteURL.String())
+	var remoteURLStr = remoteURL.String()
+	if remoteURL.Scheme == "codecommit" {
+		remoteURLStr = remoteURL.Opaque
+	}
+	prim, err := getRoot(remoteURLStr)
 	if err != nil {
 		return nil, err
 	}

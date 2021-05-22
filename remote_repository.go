@@ -93,6 +93,27 @@ func (repo *DarksHubRepository) VCS() (*VCSBackend, *url.URL, error) {
 	return DarcsBackend, repo.URL(), nil
 }
 
+// A CodeCommitRepository represents a CodeCommit repository. Implements RemoteRepository.
+type CodeCommitRepository struct {
+	url *url.URL
+}
+
+// URL reutrns URL of the repository
+func (repo *CodeCommitRepository) URL() *url.URL {
+	return repo.url
+}
+
+// IsValid determine if the repository is valid or not
+func (repo *CodeCommitRepository) IsValid() bool {
+	return true
+}
+
+// VCS returns VCSBackend of the repository
+func (repo *CodeCommitRepository) VCS() (*VCSBackend, *url.URL, error) {
+	u := *repo.url
+	return GitBackend, &u, nil
+}
+
 // OtherRepository represents other repository
 type OtherRepository struct {
 	url *url.URL
@@ -109,11 +130,12 @@ func (repo *OtherRepository) IsValid() bool {
 }
 
 var (
-	vcsSchemeReg = regexp.MustCompile(`^(git|svn|bzr)(?:\+|$)`)
+	vcsSchemeReg = regexp.MustCompile(`^(git|svn|bzr|codecommit)(?:\+|$)`)
 	scheme2vcs   = map[string]*VCSBackend{
-		"git": GitBackend,
-		"svn": SubversionBackend,
-		"bzr": BazaarBackend,
+		"git":        GitBackend,
+		"codecommit": GitBackend,
+		"svn":        SubversionBackend,
+		"bzr":        BazaarBackend,
 	}
 )
 
@@ -165,6 +187,9 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL, error) {
 // NewRemoteRepository returns new RemoteRepository object from URL
 func NewRemoteRepository(u *url.URL) (RemoteRepository, error) {
 	repo := func() RemoteRepository {
+		if u.Scheme == "codecommit" {
+			return &CodeCommitRepository{u}
+		}
 		switch u.Host {
 		case "github.com":
 			return &GitHubRepository{u}

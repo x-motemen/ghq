@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -72,7 +73,11 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 
 	switch {
 	case newPath:
-		logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, fpath))
+		if remoteURL.Scheme == "codecommit" {
+			logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL.Opaque, fpath))
+		} else {
+			logger.Log("clone", fmt.Sprintf("%s -> %s", remoteURL, fpath))
+		}
 		var (
 			localRepoRoot = fpath
 			repoURL       = remoteURL
@@ -88,6 +93,9 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
 		}
 
+		if remoteURL.Scheme == "codecommit" {
+			repoURL, _ = url.Parse(remoteURL.Opaque)
+		}
 		if getRepoLock(localRepoRoot) {
 			return vcs.Clone(&vcsGetOption{
 				url:       repoURL,

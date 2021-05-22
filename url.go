@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -20,6 +22,7 @@ var (
 	hasSchemePattern          = regexp.MustCompile("^[^:]+://")
 	scpLikeURLPattern         = regexp.MustCompile("^([^@]+@)?([^:]+):(/?.+)$")
 	looksLikeAuthorityPattern = regexp.MustCompile(`[A-Za-z0-9]\.[A-Za-z]+(?::\d{1,5})?$`)
+	codecommitLikeURLPattern  = regexp.MustCompile(`^(codecommit):(?::([a-z][a-z0-9-]+):)?//(?:([^]]+)@)?([\w\.-]+)$`)
 )
 
 func newURL(ref string, ssh, forceMe bool) (*url.URL, error) {
@@ -49,6 +52,58 @@ func newURL(ref string, ssh, forceMe bool) (*url.URL, error) {
 				ref = "https://" + localRepoRoot
 			}
 		}
+	}
+
+	if codecommitLikeURLPattern.MatchString(ref) {
+		// SEE ALSO:
+		// https://github.com/aws/git-remote-codecommit/blob/master/git_remote_codecommit/__init__.py#L68
+		matched := codecommitLikeURLPattern.FindStringSubmatch(ref)
+		region := matched[2]
+
+		if matched[2] == "" {
+			// Region detection priority:
+			// 1. Explicit specification (codecommit::region://...)
+			// 2. Environment variables
+			//     a. AWS_REGION (implicit priority)
+			//     b. AWS_DEFAULT_REGION
+			// 3. AWS CLI profiles
+			// SEE ALSO:
+			// https://docs.aws.amazon.com/ja_jp/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-precedence
+			var exists bool
+			region, exists = os.LookupEnv("AWS_REGION")
+			if !exists {
+				region, exists = os.LookupEnv("AWS_DEFAULT_REGION")
+			}
+
+			if !exists {
+				var stdout bytes.Buffer
+				var stderr bytes.Buffer
+
+				cmd := exec.Command("aws", "configure", "get", "region")
+				cmd.Stdout = &stdout
+				cmd.Stderr = &stderr
+
+				err := cmd.Run()
+				if err != nil {
+					if stderr.String() == "" {
+						fmt.Fprintln(os.Stderr, "You must specify a region. You can also configure your region by running \"aws configure\".")
+					} else {
+						fmt.Fprint(os.Stderr, stderr.String())
+					}
+					os.Exit(1)
+				}
+
+				region = strings.TrimSpace(stdout.String())
+			}
+		}
+
+		return &url.URL{
+			Scheme: matched[1],
+			Host:   region,
+			User:   url.User(matched[3]),
+			Path:   matched[4],
+			Opaque: ref,
+		}, nil
 	}
 
 	if !hasSchemePattern.MatchString(ref) {
