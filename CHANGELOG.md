@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.2.1](https://github.com/x-motemen/ghq/compare/v1.2.0...v1.2.1) (2021-05-24)
+
+* ~/.gitconfig incompatible with AWS CodeCommit region specific URL [#322](https://github.com/x-motemen/ghq/pull/322) ([xeres](https://github.com/xeres))
+
 ## [v1.2.0](https://github.com/x-motemen/ghq/compare/v1.1.7...v1.2.0) (2021-05-23)
 
 * Support AWS CodeCommit HTTP (GRC) [#321](https://github.com/x-motemen/ghq/pull/321) ([xeres](https://github.com/xeres))
