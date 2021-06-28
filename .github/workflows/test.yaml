@@ -23,11 +23,22 @@ jobs:
       uses: actions/checkout@v1
     - name: lint
       run: |
-        GO111MODULE=off GOBIN=$(pwd)/bin go get golang.org/x/lint/golint
+        GOBIN=$(pwd)/bin go install golang.org/x/lint/golint@latest
         bin/golint -set_exit_status ./...
       if: "matrix.os == 'ubuntu-latest' || matrix.os == 'macOS-latest'"
     - name: test
       run: go test -coverprofile coverage.out -covermode atomic ./...
+      if: "matrix.os == 'macOS-latest' || matrix.os == 'windows-latest'"
+    - name: launchable
+      run: |
+        pip3 install --user --upgrade more_itertools launchable~=1.0
+        launchable record build --name $GITHUB_RUN_ID --source .
+        GOBIN=$(pwd)/bin go install github.com/jstemmer/go-junit-report@latest
+        go test -v -coverprofile coverage.out -covermode atomic ./... | bin/go-junit-report > report.xml
+        launchable record tests --build $GITHUB_RUN_ID go-test .
+      env:
+        LAUNCHABLE_TOKEN: ${{ secrets.LAUNCHABLE_TOKEN }}
+      if: "matrix.os == 'ubuntu-latest'"
     - name: Send coverage
       uses: shogo82148/actions-goveralls@v1
       with:
