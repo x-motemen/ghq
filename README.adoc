@@ -177,11 +177,14 @@ https://github.com/x-motemen/ghq/releases
 
 You can buy "ghq-handbook" from Leanpub for more detailed usage.
 
-https://leanpub.com/ghq-handbook (Currently Japanese Only)
+https://leanpub.com/ghq-handbook
 
 The source Markdown files of this book are also available for free from the following repository.
 
 https://github.com/Songmu/ghq-handbook
+
+Currently, only Japanese version available.
+Your translations are welcome!
 
 == AUTHOR
 
