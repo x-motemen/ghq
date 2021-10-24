@@ -147,7 +147,7 @@ scoop install ghq
 === go get
 
 ----
-go get github.com/x-motemen/ghq
+go install github.com/x-motemen/ghq@latest
 ----
 
 === conda
