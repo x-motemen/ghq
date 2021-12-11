@@ -127,6 +127,17 @@ func TestVCSBackend(t *testing.T) {
 		expect: []string{"git", "submodule", "update", "--init", "--recursive"},
 		dir:    localDir,
 	}, {
+		name: "[git] bare clone",
+		f: func() error {
+			return GitBackend.Clone(&vcsGetOption{
+				url:    remoteDummyURL,
+				dir:    localDir,
+				bare:   true,
+				silent: true,
+			})
+		},
+		expect: []string{"git", "clone", "--bare", remoteDummyURL.String(), localDir},
+	}, {
 		name: "[git] switch git-svn on update",
 		f: func() error {
 			err := os.MkdirAll(filepath.Join(localDir, ".git", "svn"), 0755)

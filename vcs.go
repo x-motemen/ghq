@@ -41,10 +41,10 @@ type VCSBackend struct {
 }
 
 type vcsGetOption struct {
-	url                        *url.URL
-	dir                        string
-	recursive, shallow, silent bool
-	branch                     string
+	url                              *url.URL
+	dir                              string
+	recursive, shallow, silent, bare bool
+	branch                           string
 }
 
 // GitBackend is the VCSBackend of git
@@ -66,6 +66,9 @@ var GitBackend = &VCSBackend{
 		}
 		if vg.recursive {
 			args = append(args, "--recursive")
+		}
+		if vg.bare {
+			args = append(args, "--bare")
 		}
 		args = append(args, vg.url.String(), vg.dir)
 
