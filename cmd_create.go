@@ -14,6 +14,11 @@ func doCreate(c *cli.Context) error {
 		vcs  = c.String("vcs")
 		w    = c.App.Writer
 	)
+
+	if name == "" {
+		return fmt.Errorf("repository name is required")
+	}
+
 	u, err := newURL(name, false, true)
 	if err != nil {
 		return err
