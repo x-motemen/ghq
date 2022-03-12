@@ -12,6 +12,7 @@ var commands = []*cli.Command{
 	commandList,
 	commandRoot,
 	commandCreate,
+	commandInit,
 }
 
 var commandGet = &cli.Command{
@@ -74,6 +75,16 @@ var commandCreate = &cli.Command{
 	},
 }
 
+var commandInit = &cli.Command{
+	Name:   "init",
+	Usage:  "Alias to the create command",
+	Action: doCreate,
+	Flags: []cli.Flag{
+		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend explicitly"},
+	},
+}
+
+
 type commandDoc struct {
 	Parent    string
 	Arguments string
@@ -83,6 +94,7 @@ var commandDocs = map[string]commandDoc{
 	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
+	"init": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
 	"root":   {"", "[-all]"},
 }
 
