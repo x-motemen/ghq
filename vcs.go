@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -190,7 +190,7 @@ var GitsvnBackend = &VCSBackend{
 			buf := &bytes.Buffer{}
 			cmd := exec.Command("svn", "info", u)
 			cmd.Stdout = buf
-			cmd.Stderr = ioutil.Discard
+			cmd.Stderr = io.Discard
 			err := cmdutil.RunCommand(cmd, true)
 			return buf.String(), err
 		}
