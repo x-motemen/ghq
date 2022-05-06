@@ -12,18 +12,11 @@ import (
 	"github.com/x-motemen/ghq/logger"
 )
 
-var (
-	seen = make(map[string]bool)
-	mu   = &sync.Mutex{}
-)
+var seen sync.Map
 
 func getRepoLock(localRepoRoot string) bool {
-	mu.Lock()
-	defer func() {
-		seen[localRepoRoot] = true
-		mu.Unlock()
-	}()
-	return !seen[localRepoRoot]
+	_, loaded := seen.LoadOrStore(localRepoRoot, struct{}{})
+	return !loaded
 }
 
 type getter struct {
