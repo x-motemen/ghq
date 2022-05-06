@@ -44,6 +44,9 @@ func TestCommandGet(t *testing.T) {
 			if !cloneArgs.recursive {
 				t.Errorf("cloneArgs.recursive should be true")
 			}
+			if cloneArgs.bare {
+				t.Errorf("cloneArgs.bare should be false")
+			}
 		},
 	}, {
 		name: "-p option",
@@ -180,6 +183,24 @@ func TestCommandGet(t *testing.T) {
 			localDir := filepath.Join(tmpd, "github.com", "motemen", "ghq-test-repo")
 			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
 				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+		},
+	}, {
+		name: "bare",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+
+			app.Run([]string{"", "get", "--bare", "motemen/ghq-test-repo"})
+
+			expect := "https://github.com/motemen/ghq-test-repo"
+			if cloneArgs.remote.String() != expect {
+				t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+			}
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+			if !cloneArgs.bare {
+				t.Errorf("cloneArgs.bare should be true")
 			}
 		},
 	}}

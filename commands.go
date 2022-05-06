@@ -35,6 +35,7 @@ var commandGet = &cli.Command{
 		&cli.StringFlag{Name: "branch", Aliases: []string{"b"},
 			Usage: "Specify `branch` name. This flag implies --single-branch on Git"},
 		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallely"},
+		&cli.BoolFlag{Name: "bare", Usage: "Do a bare clone"},
 	},
 }
 
@@ -80,7 +81,7 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
+	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
 	"root":   {"", "[-all]"},
