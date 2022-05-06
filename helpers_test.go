@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"testing"
@@ -55,12 +55,12 @@ func capture(block func()) (string, string, error) {
 	defer rOut.Close()
 	defer rErr.Close()
 
-	bufOut, err := ioutil.ReadAll(rOut)
+	bufOut, err := io.ReadAll(rOut)
 	if err != nil {
 		return "", "", err
 	}
 
-	bufErr, err := ioutil.ReadAll(rErr)
+	bufErr, err := io.ReadAll(rErr)
 	if err != nil {
 		return "", "", err
 	}
@@ -85,7 +85,7 @@ func captureWithInput(in []string, block func()) (string, string, error) {
 }
 
 func newTempDir(t *testing.T) string {
-	tmpdir, err := ioutil.TempDir("", "ghq-test")
+	tmpdir, err := os.MkdirTemp("", "ghq-test")
 	if err != nil {
 		t.Fatal(err)
 	}
