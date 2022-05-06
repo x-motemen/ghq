@@ -13,7 +13,7 @@ deps:
 devel-deps: deps
 	go install github.com/Songmu/godzil/cmd/godzil@latest
 	go install github.com/tcnksm/ghr@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 .PHONY: test
 test: deps
