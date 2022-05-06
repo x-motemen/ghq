@@ -4,8 +4,6 @@ BUILD_LDFLAGS = "-s -w -X main.revision=$(CURRENT_REVISION)"
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
 u := $(if $(update),-u)
 
-export GO111MODULE=on
-
 .PHONY: deps
 deps:
 	go get ${u} -d $(VERBOSE_FLAG)
