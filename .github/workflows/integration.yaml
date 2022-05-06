@@ -15,6 +15,7 @@ jobs:
       uses: actions/checkout@v3
     - name: install
       run: |
+        make install
         brew reinstall git || true
         brew link --overwrite git
         brew install git-svn mercurial fossil bazaar darcs
