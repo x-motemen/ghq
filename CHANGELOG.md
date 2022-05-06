@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.3.0](https://github.com/x-motemen/ghq/compare/v1.2.1...v1.3.0) (2022-05-06)
+
+* update deps [#342](https://github.com/x-motemen/ghq/pull/342) ([Songmu](https://github.com/Songmu))
+* use go install instead of go get [#337](https://github.com/x-motemen/ghq/pull/337) ([shogo82148](https://github.com/shogo82148))
+* Simplify repository lock using sync.Map [#339](https://github.com/x-motemen/ghq/pull/339) ([itchyny](https://github.com/itchyny))
+* bump Go 1.18 [#338](https://github.com/x-motemen/ghq/pull/338) ([shogo82148](https://github.com/shogo82148))
+* bump the actions that run on Node.js 16 runtime [#336](https://github.com/x-motemen/ghq/pull/336) ([shogo82148](https://github.com/shogo82148))
+* fix: [trivial] fix the error message if nothing is passed to `ghq create` [#334](https://github.com/x-motemen/ghq/pull/334) ([gfx](https://github.com/gfx))
+* feat: do a bare clone [#328](https://github.com/x-motemen/ghq/pull/328) ([helmecke](https://github.com/helmecke))
+* update installation go [#327](https://github.com/x-motemen/ghq/pull/327) ([isanasan](https://github.com/isanasan))
+* avoid using "Japanese Only" [#325](https://github.com/x-motemen/ghq/pull/325) ([shogo82148](https://github.com/shogo82148))
+
 ## [v1.2.1](https://github.com/x-motemen/ghq/compare/v1.2.0...v1.2.1) (2021-05-24)
 
 * ~/.gitconfig incompatible with AWS CodeCommit region specific URL [#322](https://github.com/x-motemen/ghq/pull/322) ([xeres](https://github.com/xeres))
