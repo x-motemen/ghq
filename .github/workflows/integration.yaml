@@ -15,7 +15,6 @@ jobs:
       uses: actions/checkout@v3
     - name: install
       run: |
-        GOBIN=$HOME/bin make install
         brew install mercurial fossil bazaar darcs git
         curl -fsSL --compressed https://git.io/cpm > cpm
         chmod +x cpm
