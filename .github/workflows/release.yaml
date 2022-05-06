@@ -17,5 +17,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.github_token }}
       run: |
-        export GOBIN=$PWD/bin
-        PATH=$GOBIN:$PATH make crossbuild upload
+        make crossbuild upload

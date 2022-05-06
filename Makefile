@@ -21,7 +21,7 @@ test: deps
 
 .PHONY: lint
 lint: devel-deps
-	golangci-lint run
+	staticcheck ./...
 
 .PHONY: build
 build: deps
