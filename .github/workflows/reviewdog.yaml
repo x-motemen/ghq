@@ -1,0 +1,42 @@
+name: reviewdog
+on: [pull_request]
+
+jobs:
+  staticcheck:
+    name: staticcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - name: staticcheck
+        uses: reviewdog/action-staticcheck@v1
+        with:
+          reporter: github-pr-review
+          level: warning
+
+  misspell:
+    name: misspell
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - name: misspell
+        uses: reviewdog/action-misspell@v1
+        with:
+          reporter: github-pr-review
+          level: warning
+          locale: "US"
+
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - uses: reviewdog/action-actionlint@v1
+        with:
+          reporter: github-pr-review

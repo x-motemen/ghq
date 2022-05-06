@@ -4,8 +4,6 @@ BUILD_LDFLAGS = "-s -w -X main.revision=$(CURRENT_REVISION)"
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
 u := $(if $(update),-u)
 
-export GO111MODULE=on
-
 .PHONY: deps
 deps:
 	go get ${u} -d $(VERBOSE_FLAG)
@@ -13,14 +11,9 @@ deps:
 
 .PHONY: devel-deps
 devel-deps: deps
-	sh -c '\
-	tmpdir=$$(mktemp -d); \
-	cd $$tmpdir; \
-	go get ${u} \
-	  golang.org/x/lint/golint            \
-	  github.com/Songmu/godzil/cmd/godzil \
-	  github.com/tcnksm/ghr; \
-	rm -rf $$tmpdir'
+	go install github.com/Songmu/godzil/cmd/godzil@latest
+	go install github.com/tcnksm/ghr@latest
+	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 .PHONY: test
 test: deps
@@ -28,7 +21,7 @@ test: deps
 
 .PHONY: lint
 lint: devel-deps
-	golint -set_exit_status ./...
+	golangci-lint run
 
 .PHONY: build
 build: deps
