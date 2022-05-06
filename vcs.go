@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -41,10 +41,10 @@ type VCSBackend struct {
 }
 
 type vcsGetOption struct {
-	url                        *url.URL
-	dir                        string
-	recursive, shallow, silent bool
-	branch                     string
+	url                              *url.URL
+	dir                              string
+	recursive, shallow, silent, bare bool
+	branch                           string
 }
 
 // GitBackend is the VCSBackend of git
@@ -66,6 +66,9 @@ var GitBackend = &VCSBackend{
 		}
 		if vg.recursive {
 			args = append(args, "--recursive")
+		}
+		if vg.bare {
+			args = append(args, "--bare")
 		}
 		args = append(args, vg.url.String(), vg.dir)
 
@@ -190,7 +193,7 @@ var GitsvnBackend = &VCSBackend{
 			buf := &bytes.Buffer{}
 			cmd := exec.Command("svn", "info", u)
 			cmd.Stdout = buf
-			cmd.Stderr = ioutil.Discard
+			cmd.Stderr = io.Discard
 			err := cmdutil.RunCommand(cmd, true)
 			return buf.String(), err
 		}

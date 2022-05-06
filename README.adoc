@@ -16,7 +16,7 @@ You can also list local repositories (+ghq list+).
 == SYNOPSIS
 
 [verse]
-ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
+ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] [--bare] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq list [-p] [-e] [<query>]
 ghq create [--vcs <vcs>] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq root [--all]
@@ -41,6 +41,8 @@ get::
     Subversion and git-svn. +
     The 'ghq' gets the git repository recursively by default. +
     We can prevent it with '--no-recursive' option.
+    With '--bare' option, a "bare clone" will be performed (for Git
+    repositories only, 'git clone --bare ...' eg.).
 
 list::
     List locally cloned repositories. If a query argument is given, only

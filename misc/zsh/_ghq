@@ -24,6 +24,7 @@ function _ghq () {
                         '--vcs[Specify vcs backend for cloning]' \
                         '(-s --silent)'{-s,--silent}'[Clone or update silently]' \
                         '--no-recursive[Prevent recursive fetching]' \
+                        '--bare[Do a bare clone]' \
                         '(-b --branch)'{-b,--branch}'[Specify branch name]' \
                         '(-P --parallel)'{-P,--parallel}'[Import parallely]' \
                         '(-)*:: :->null_state' \

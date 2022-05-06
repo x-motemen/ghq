@@ -22,6 +22,7 @@ export GHQ_ROOT=$tmpdir
     ghq get --shallow --vcs=git-svn https://svn.apache.org/repos/asf/httpd/httpd
     ghq get https://svn.apache.org/repos/asf/subversion
     ghq get --shallow hub.darcs.net/byorgey/split
+    ghq get --bare x-motemen/gore
 
     test -d $tmpdir/github.com/x-motemen/ghq/.git
     test -d $tmpdir/www.mercurial-scm.org/repo/hello/.hg
@@ -30,6 +31,7 @@ export GHQ_ROOT=$tmpdir
     test -d $tmpdir/svn.apache.org/repos/asf/httpd/httpd/.git/svn
     test -d $tmpdir/svn.apache.org/repos/asf/subversion/.svn
     test -d $tmpdir/hub.darcs.net/byorgey/split/_darcs
+    test -d $tmpdir/github.com/x-motemen/gore/refs
 
 : testing 'ghq list'
     cat <<EOF | sort > $tmpdir/expect

@@ -2,7 +2,7 @@ package cmdutil
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -22,8 +22,8 @@ func Run(command string, args ...string) error {
 // RunSilently runs the command silently
 func RunSilently(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
-	cmd.Stdout = ioutil.Discard
-	cmd.Stderr = ioutil.Discard
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
 
 	return RunCommand(cmd, true)
 }
@@ -41,8 +41,8 @@ func RunInDir(dir, command string, args ...string) error {
 // RunInDirSilently run the command in the specified directory silently
 func RunInDirSilently(dir, command string, args ...string) error {
 	cmd := exec.Command(command, args...)
-	cmd.Stdout = ioutil.Discard
-	cmd.Stderr = ioutil.Discard
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
 	cmd.Dir = dir
 
 	return RunCommand(cmd, true)
