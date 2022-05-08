@@ -125,7 +125,7 @@ func TestNewURL_err(t *testing.T) {
 	if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
 		t.Errorf("newURL(%q, false, false) error = %q; want substring %q", invalidURL, got, wantSub)
 	}
-	defer gitconfig.WithConfig(t, `[[[`)()
+	t.Cleanup(gitconfig.WithConfig(t, `[[[`))
 
 	var exitError *exec.ExitError
 	_, err = newURL("peco", false, false)

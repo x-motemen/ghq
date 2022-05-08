@@ -334,7 +334,7 @@ func TestLocalRepositoryRoots_URLMatchLocalRepositoryRoots(t *testing.T) {
 
 	_home = ""
 	homeOnce = &sync.Once{}
-	defer gitconfig.WithConfig(t, `
+	t.Cleanup(gitconfig.WithConfig(t, `
 [ghq]
   root = /hoge
 [ghq "https://github.com/hatena"]
@@ -342,7 +342,7 @@ func TestLocalRepositoryRoots_URLMatchLocalRepositoryRoots(t *testing.T) {
   root = /backups/hatena
 [ghq "https://github.com/natureglobal"]
   root = ~/proj/natureglobal
-`)()
+`))
 
 	want := []string{"/hoge", "/home/tmp/proj/hatena", "/backups/hatena", "/home/tmp/proj/natureglobal"}
 

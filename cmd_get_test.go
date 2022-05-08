@@ -173,10 +173,10 @@ func TestCommandGet(t *testing.T) {
 		name: "ghq.<url>.root",
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			tmpd := newTempDir(t)
-			defer gitconfig.WithConfig(t, fmt.Sprintf(`
+			t.Cleanup(gitconfig.WithConfig(t, fmt.Sprintf(`
 [ghq "https://github.com/motemen"]
   root = "%s"
-`, filepath.ToSlash(tmpd)))()
+`, filepath.ToSlash(tmpd))))
 			app.Run([]string{"", "get", "motemen/ghq-test-repo"})
 
 			localDir := filepath.Join(tmpd, "github.com", "motemen", "ghq-test-repo")
