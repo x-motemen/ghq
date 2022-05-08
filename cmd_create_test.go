@@ -27,9 +27,8 @@ func TestDoCreate(t *testing.T) {
 	_home = ""
 	homeOnce = &sync.Once{}
 	tmpd := newTempDir(t)
-	defer os.RemoveAll(tmpd)
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	defer tmpEnv(envGhqRoot, tmpd)()
+	setEnv(t, envGhqRoot, tmpd)
 	_localRepositoryRoots = nil
 	localRepoOnce = &sync.Once{}
 
@@ -39,7 +38,7 @@ func TestDoCreate(t *testing.T) {
 		want      []string
 		wantDir   string
 		errStr    string
-		setup     func() func()
+		setup     func(t *testing.T)
 		cmdRun    func(cmd *exec.Cmd) error
 		skipOnWin bool
 	}{{
@@ -51,9 +50,8 @@ func TestDoCreate(t *testing.T) {
 		name:  "empty directory exists",
 		input: []string{"create", "motemen/ghqqq"},
 		want:  []string{"git", "init"},
-		setup: func() func() {
+		setup: func(t *testing.T) {
 			os.MkdirAll(filepath.Join(tmpd, "github.com/motemen/ghqqq"), 0755)
-			return func() {}
 		},
 		wantDir: filepath.Join(tmpd, "github.com/motemen/ghqqq"),
 	}, {
@@ -91,22 +89,19 @@ func TestDoCreate(t *testing.T) {
 	}, {
 		name:  "not permitted",
 		input: []string{"create", "motemen/ghq-notpermitted"},
-		setup: func() func() {
+		setup: func(t *testing.T) {
 			f := filepath.Join(tmpd, "github.com/motemen/ghq-notpermitted")
 			os.MkdirAll(f, 0)
-			return func() {
-				os.Chmod(f, 0755)
-			}
+			t.Cleanup(func() { os.Chmod(f, 0755) })
 		},
 		errStr:    "permission denied",
 		skipOnWin: true,
 	}, {
 		name:  "not empty",
 		input: []string{"create", "motemen/ghq-notempty"},
-		setup: func() func() {
+		setup: func(t *testing.T) {
 			f := filepath.Join(tmpd, "github.com/motemen/ghq-notempty", "dummy")
 			os.MkdirAll(f, 0755)
-			return func() {}
 		},
 		errStr: "already exists and not empty",
 	}}
@@ -118,8 +113,7 @@ func TestDoCreate(t *testing.T) {
 			}
 			lastCmd = nil
 			if tc.setup != nil {
-				teardown := tc.setup()
-				defer teardown()
+				tc.setup(t)
 			}
 
 			cmdutil.CommandRunner = commandRunner

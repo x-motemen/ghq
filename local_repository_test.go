@@ -26,7 +26,6 @@ func samePathSlice(lhss, rhss []string) bool {
 func TestLocalRepositoryFromFullPath(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmproot := newTempDir(t)
-	defer os.RemoveAll(tmproot)
 	_localRepositoryRoots = []string{tmproot}
 
 	testCases := []struct {
@@ -63,7 +62,6 @@ func TestLocalRepositoryFromFullPath(t *testing.T) {
 func TestNewLocalRepository(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmproot := newTempDir(t)
-	defer os.RemoveAll(tmproot)
 	_localRepositoryRoots = []string{tmproot}
 
 	testCases := []struct {
@@ -124,7 +122,6 @@ func TestNewLocalRepository(t *testing.T) {
 
 func TestLocalRepositoryRoots(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	defer func(orig string) { os.Setenv(envGhqRoot, orig) }(os.Getenv(envGhqRoot))
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -149,7 +146,7 @@ func TestLocalRepositoryRoots(t *testing.T) {
 		t.Run(tc.root, func(t *testing.T) {
 			_localRepositoryRoots = nil
 			localRepoOnce = &sync.Once{}
-			os.Setenv(envGhqRoot, tc.root)
+			setEnv(t, envGhqRoot, tc.root)
 			got, err := localRepositoryRoots(true)
 			if err != nil {
 				t.Errorf("error should be nil, but: %s", err)
@@ -167,10 +164,7 @@ func TestList_Symlink(t *testing.T) {
 		t.SkipNow()
 	}
 	root := newTempDir(t)
-	defer os.RemoveAll(root)
-
 	symDir := newTempDir(t)
-	defer os.RemoveAll(symDir)
 
 	origLocalRepositryRoots := _localRepositoryRoots
 	_localRepositoryRoots = []string{root}
@@ -203,10 +197,7 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 		t.SkipNow()
 	}
 	root := newTempDir(t)
-	defer os.RemoveAll(root)
-
 	symDir := newTempDir(t)
-	defer os.RemoveAll(symDir)
 
 	origLocalRepositryRoots := _localRepositoryRoots
 	_localRepositoryRoots = []string{root}
@@ -241,54 +232,45 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 func TestFindVCSBackend(t *testing.T) {
 	testCases := []struct {
 		name   string
-		setup  func(t *testing.T) (string, string, func())
+		setup  func(t *testing.T) (string, string)
 		expect *VCSBackend
 	}{{
 		name: "git",
-		setup: func(t *testing.T) (string, string, func()) {
+		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "", func() {
-				os.RemoveAll(dir)
-			}
+			return dir, ""
 		},
 		expect: GitBackend,
 	}, {
 		name: "git svn",
-		setup: func(t *testing.T) (string, string, func()) {
+		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git", "svn"), 0755)
-			return dir, "", func() {
-				os.RemoveAll(dir)
-			}
+			return dir, ""
 		},
 		expect: GitBackend,
 	}, {
 		name: "git with matched vcs",
-		setup: func(t *testing.T) (string, string, func()) {
+		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "git", func() {
-				os.RemoveAll(dir)
-			}
+			return dir, "git"
 		},
 		expect: GitBackend,
 	}, {
 		name: "git with not matched vcs",
-		setup: func(t *testing.T) (string, string, func()) {
+		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "mercurial", func() {
-				os.RemoveAll(dir)
-			}
+			return dir, "mercurial"
 		},
 		expect: nil,
 	}}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			fpath, vcs, teardown := tc.setup(t)
-			defer teardown()
+			fpath, vcs := tc.setup(t)
 			backend := findVCSBackend(fpath, vcs)
 			if backend != tc.expect {
 				t.Errorf("got: %v, expect: %v", backend, tc.expect)
@@ -299,12 +281,11 @@ func TestFindVCSBackend(t *testing.T) {
 
 func TestLocalRepository_VCS(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	defer func(orig string) { os.Setenv(envGhqRoot, orig) }(os.Getenv(envGhqRoot))
 
 	_localRepositoryRoots = nil
 	localRepoOnce = &sync.Once{}
 	tmpdir := newTempDir(t)
-	os.Setenv(envGhqRoot, tmpdir)
+	setEnv(t, envGhqRoot, tmpdir)
 
 	pkg := filepath.Join(tmpdir, "github.com", "motemen", "ghq")
 	subpkg := filepath.Join(pkg, "logger")
@@ -348,12 +329,12 @@ func TestLocalRepositoryRoots_URLMatchLocalRepositoryRoots(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.SkipNow()
 	}
-	defer tmpEnv("HOME", "/home/tmp")()
+	setEnv(t, "HOME", "/home/tmp")
 	defer func(orig string) { _home = orig }(_home)
 
 	_home = ""
 	homeOnce = &sync.Once{}
-	defer gitconfig.WithConfig(t, `
+	t.Cleanup(gitconfig.WithConfig(t, `
 [ghq]
   root = /hoge
 [ghq "https://github.com/hatena"]
@@ -361,7 +342,7 @@ func TestLocalRepositoryRoots_URLMatchLocalRepositoryRoots(t *testing.T) {
   root = /backups/hatena
 [ghq "https://github.com/natureglobal"]
   root = ~/proj/natureglobal
-`)()
+`))
 
 	want := []string{"/hoge", "/home/tmp/proj/hatena", "/backups/hatena", "/home/tmp/proj/natureglobal"}
 
