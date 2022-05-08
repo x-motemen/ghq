@@ -28,7 +28,7 @@ func TestDoCreate(t *testing.T) {
 	homeOnce = &sync.Once{}
 	tmpd := newTempDir(t)
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	defer tmpEnv(envGhqRoot, tmpd)()
+	setEnv(t, envGhqRoot, tmpd)
 	_localRepositoryRoots = nil
 	localRepoOnce = &sync.Once{}
 

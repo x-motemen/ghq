@@ -122,7 +122,6 @@ func TestNewLocalRepository(t *testing.T) {
 
 func TestLocalRepositoryRoots(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	defer func(orig string) { os.Setenv(envGhqRoot, orig) }(os.Getenv(envGhqRoot))
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -147,7 +146,7 @@ func TestLocalRepositoryRoots(t *testing.T) {
 		t.Run(tc.root, func(t *testing.T) {
 			_localRepositoryRoots = nil
 			localRepoOnce = &sync.Once{}
-			os.Setenv(envGhqRoot, tc.root)
+			setEnv(t, envGhqRoot, tc.root)
 			got, err := localRepositoryRoots(true)
 			if err != nil {
 				t.Errorf("error should be nil, but: %s", err)
@@ -282,12 +281,11 @@ func TestFindVCSBackend(t *testing.T) {
 
 func TestLocalRepository_VCS(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
-	defer func(orig string) { os.Setenv(envGhqRoot, orig) }(os.Getenv(envGhqRoot))
 
 	_localRepositoryRoots = nil
 	localRepoOnce = &sync.Once{}
 	tmpdir := newTempDir(t)
-	os.Setenv(envGhqRoot, tmpdir)
+	setEnv(t, envGhqRoot, tmpdir)
 
 	pkg := filepath.Join(tmpdir, "github.com", "motemen", "ghq")
 	subpkg := filepath.Join(pkg, "logger")
@@ -331,7 +329,7 @@ func TestLocalRepositoryRoots_URLMatchLocalRepositoryRoots(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.SkipNow()
 	}
-	defer tmpEnv("HOME", "/home/tmp")()
+	setEnv(t, "HOME", "/home/tmp")
 	defer func(orig string) { _home = orig }(_home)
 
 	_home = ""

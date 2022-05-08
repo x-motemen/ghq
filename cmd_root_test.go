@@ -43,24 +43,20 @@ func TestDoRoot(t *testing.T) {
 	}{{
 		name: "env",
 		setup: func(t *testing.T) {
-			orig := os.Getenv(envGhqRoot)
-			os.Setenv(envGhqRoot, "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
-			t.Cleanup(func() { os.Setenv(envGhqRoot, orig) })
+			setEnv(t, envGhqRoot, "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
 		},
 		expect:    "/path/to/ghqroot1\n",
 		allExpect: "/path/to/ghqroot1\n/path/to/ghqroot2\n",
 	}, {
 		name: "gitconfig",
 		setup: func(t *testing.T) {
-			orig := os.Getenv(envGhqRoot)
-			os.Setenv(envGhqRoot, "")
+			setEnv(t, envGhqRoot, "")
 			t.Cleanup(gitconfig.WithConfig(t, `
 [ghq]
   root = /path/to/ghqroot12
   root = /path/to/ghqroot12
   root = /path/to/ghqroot11
 `))
-			t.Cleanup(func() { os.Setenv(envGhqRoot, orig) })
 		},
 		expect:    "/path/to/ghqroot11\n",
 		allExpect: "/path/to/ghqroot11\n/path/to/ghqroot12\n",
@@ -75,9 +71,9 @@ func TestDoRoot(t *testing.T) {
 			}
 			f.Close()
 
-			t.Cleanup(tmpEnv(envGhqRoot, ""))
-			t.Cleanup(tmpEnv("GIT_CONFIG", fpath))
-			t.Cleanup(tmpEnv("HOME", "/path/to/ghqhome"))
+			setEnv(t, envGhqRoot, "")
+			setEnv(t, "GIT_CONFIG", fpath)
+			setEnv(t, "HOME", "/path/to/ghqhome")
 		},
 		expect:    "/path/to/ghqhome/ghq\n",
 		allExpect: "/path/to/ghqhome/ghq\n",

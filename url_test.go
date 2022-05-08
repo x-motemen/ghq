@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -53,10 +52,7 @@ func TestNewURL(t *testing.T) {
 	}, {
 		name: "fill username",
 		setup: func(t *testing.T) {
-			key := "GITHUB_USER"
-			orig := os.Getenv(key)
-			os.Setenv(key, "ghq-test")
-			t.Cleanup(func() { os.Setenv(key, orig) })
+			setEnv(t, "GITHUB_USER", "ghq-test")
 		},
 		url:    "same-name-ghq",
 		expect: "https://github.com/ghq-test/same-name-ghq",
@@ -140,9 +136,9 @@ func TestNewURL_err(t *testing.T) {
 
 func TestFillUsernameToPath_err(t *testing.T) {
 	for _, envStr := range []string{"GITHUB_USER", "GITHUB_TOKEN", "USER", "USERNAME"} {
-		defer tmpEnv(envStr, "")()
+		setEnv(t, envStr, "")
 	}
-	defer tmpEnv("XDG_CONFIG_HOME", "/dummy/dummy")()
+	setEnv(t, "XDG_CONFIG_HOME", "/dummy/dummy")
 
 	usr, err := fillUsernameToPath("peco", false)
 	t.Log(usr)
