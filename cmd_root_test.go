@@ -38,38 +38,35 @@ func samePaths(lhs, rhs string) bool {
 func TestDoRoot(t *testing.T) {
 	testCases := []struct {
 		name              string
-		setup             func() func()
+		setup             func(t *testing.T)
 		expect, allExpect string
 	}{{
 		name: "env",
-		setup: func() func() {
+		setup: func(t *testing.T) {
 			orig := os.Getenv(envGhqRoot)
 			os.Setenv(envGhqRoot, "/path/to/ghqroot1"+string(os.PathListSeparator)+"/path/to/ghqroot2")
-			return func() { os.Setenv(envGhqRoot, orig) }
+			t.Cleanup(func() { os.Setenv(envGhqRoot, orig) })
 		},
 		expect:    "/path/to/ghqroot1\n",
 		allExpect: "/path/to/ghqroot1\n/path/to/ghqroot2\n",
 	}, {
 		name: "gitconfig",
-		setup: func() func() {
+		setup: func(t *testing.T) {
 			orig := os.Getenv(envGhqRoot)
 			os.Setenv(envGhqRoot, "")
-			teardown := gitconfig.WithConfig(t, `
+			t.Cleanup(gitconfig.WithConfig(t, `
 [ghq]
   root = /path/to/ghqroot12
   root = /path/to/ghqroot12
   root = /path/to/ghqroot11
-`)
-			return func() {
-				os.Setenv(envGhqRoot, orig)
-				teardown()
-			}
+`))
+			t.Cleanup(func() { os.Setenv(envGhqRoot, orig) })
 		},
 		expect:    "/path/to/ghqroot11\n",
 		allExpect: "/path/to/ghqroot11\n/path/to/ghqroot12\n",
 	}, {
 		name: "default home",
-		setup: func() func() {
+		setup: func(t *testing.T) {
 			tmpd := newTempDir(t)
 			fpath := filepath.Join(tmpd, "unknown-ghq-dummy")
 			f, err := os.Create(fpath)
@@ -78,15 +75,9 @@ func TestDoRoot(t *testing.T) {
 			}
 			f.Close()
 
-			restore1 := tmpEnv(envGhqRoot, "")
-			restore2 := tmpEnv("GIT_CONFIG", fpath)
-			restore3 := tmpEnv("HOME", "/path/to/ghqhome")
-
-			return func() {
-				restore1()
-				restore2()
-				restore3()
-			}
+			t.Cleanup(tmpEnv(envGhqRoot, ""))
+			t.Cleanup(tmpEnv("GIT_CONFIG", fpath))
+			t.Cleanup(tmpEnv("HOME", "/path/to/ghqhome"))
 		},
 		expect:    "/path/to/ghqhome/ghq\n",
 		allExpect: "/path/to/ghqhome/ghq\n",
@@ -100,7 +91,7 @@ func TestDoRoot(t *testing.T) {
 			defer func(orig string) { _home = orig }(_home)
 			_home = ""
 			homeOnce = &sync.Once{}
-			defer tc.setup()()
+			tc.setup(t)
 			out, _, _ := capture(func() {
 				newApp().Run([]string{"", "root"})
 			})

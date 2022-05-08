@@ -233,46 +233,45 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 func TestFindVCSBackend(t *testing.T) {
 	testCases := []struct {
 		name   string
-		setup  func(t *testing.T) (string, string, func())
+		setup  func(t *testing.T) (string, string)
 		expect *VCSBackend
 	}{{
 		name: "git",
-		setup: func(t *testing.T) (string, string, func()) {
+		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "", func() {}
+			return dir, ""
 		},
 		expect: GitBackend,
 	}, {
 		name: "git svn",
-		setup: func(t *testing.T) (string, string, func()) {
+		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git", "svn"), 0755)
-			return dir, "", func() {}
+			return dir, ""
 		},
 		expect: GitBackend,
 	}, {
 		name: "git with matched vcs",
-		setup: func(t *testing.T) (string, string, func()) {
+		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "git", func() {}
+			return dir, "git"
 		},
 		expect: GitBackend,
 	}, {
 		name: "git with not matched vcs",
-		setup: func(t *testing.T) (string, string, func()) {
+		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "mercurial", func() {}
+			return dir, "mercurial"
 		},
 		expect: nil,
 	}}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			fpath, vcs, teardown := tc.setup(t)
-			defer teardown()
+			fpath, vcs := tc.setup(t)
 			backend := findVCSBackend(fpath, vcs)
 			if backend != tc.expect {
 				t.Errorf("got: %v, expect: %v", backend, tc.expect)

@@ -14,7 +14,7 @@ import (
 func TestNewURL(t *testing.T) {
 	testCases := []struct {
 		name, url, expect, host string
-		setup                   func() func()
+		setup                   func(t *testing.T)
 	}{{
 		name:   "https", // Does nothing when the URL has scheme part
 		url:    "https://github.com/motemen/pusheen-explorer",
@@ -52,20 +52,20 @@ func TestNewURL(t *testing.T) {
 		host:   "golang.org",
 	}, {
 		name: "fill username",
-		setup: func() func() {
+		setup: func(t *testing.T) {
 			key := "GITHUB_USER"
 			orig := os.Getenv(key)
 			os.Setenv(key, "ghq-test")
-			return func() { os.Setenv(key, orig) }
+			t.Cleanup(func() { os.Setenv(key, orig) })
 		},
 		url:    "same-name-ghq",
 		expect: "https://github.com/ghq-test/same-name-ghq",
 		host:   "github.com",
 	}, {
 		name: "same name repository",
-		setup: func() func() {
-			return gitconfig.WithConfig(t, `[ghq]
-completeUser = false`)
+		setup: func(t *testing.T) {
+			t.Cleanup(gitconfig.WithConfig(t, `[ghq]
+completeUser = false`))
 		},
 		url:    "peco",
 		expect: "https://github.com/peco/peco",
@@ -75,7 +75,7 @@ completeUser = false`)
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.setup != nil {
-				defer tc.setup()()
+				tc.setup(t)
 			}
 			repo, err := newURL(tc.url, false, false)
 			if err != nil {
