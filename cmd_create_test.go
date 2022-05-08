@@ -27,7 +27,6 @@ func TestDoCreate(t *testing.T) {
 	_home = ""
 	homeOnce = &sync.Once{}
 	tmpd := newTempDir(t)
-	defer os.RemoveAll(tmpd)
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	defer tmpEnv(envGhqRoot, tmpd)()
 	_localRepositoryRoots = nil

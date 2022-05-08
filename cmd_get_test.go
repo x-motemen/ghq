@@ -173,7 +173,6 @@ func TestCommandGet(t *testing.T) {
 		name: "ghq.<url>.root",
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			tmpd := newTempDir(t)
-			defer os.RemoveAll(tmpd)
 			defer gitconfig.WithConfig(t, fmt.Sprintf(`
 [ghq "https://github.com/motemen"]
   root = "%s"

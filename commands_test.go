@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/url"
-	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -23,7 +22,6 @@ type _updateArgs struct {
 
 func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs, *_updateArgs)) {
 	tmpRoot := newTempDir(t)
-	defer os.RemoveAll(tmpRoot)
 
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	_localRepositoryRoots = []string{tmpRoot}

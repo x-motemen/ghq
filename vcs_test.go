@@ -28,7 +28,6 @@ Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
 
 func TestVCSBackend(t *testing.T) {
 	tempDir := newTempDir(t)
-	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
 	_commands := []*exec.Cmd{}
 	lastCommand := func() *exec.Cmd { return _commands[len(_commands)-1] }
@@ -416,7 +415,6 @@ func TestVCSBackend(t *testing.T) {
 
 func TestCvsDummyBackend(t *testing.T) {
 	tempDir := newTempDir(t)
-	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
 
 	if err := cvsDummyBackend.Clone(&vcsGetOption{
@@ -443,7 +441,6 @@ func TestCvsDummyBackend(t *testing.T) {
 
 func TestBranchOptionIgnoredErrors(t *testing.T) {
 	tempDir := newTempDir(t)
-	defer os.RemoveAll(tempDir)
 	localDir := filepath.Join(tempDir, "repo")
 
 	if err := DarcsBackend.Clone(&vcsGetOption{

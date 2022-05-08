@@ -89,6 +89,8 @@ func newTempDir(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { os.RemoveAll(tmpdir) })
+
 	// Resolve /var/folders/.../T/... to /private/var/... in OSX
 	wd, err := os.Getwd()
 	if err != nil {

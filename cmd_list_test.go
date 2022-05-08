@@ -192,9 +192,7 @@ func TestDoList_unique(t *testing.T) {
 	defer func(orig string) { os.Setenv(envGhqRoot, orig) }(os.Getenv(envGhqRoot))
 
 	tmp1 := newTempDir(t)
-	defer os.RemoveAll(tmp1)
 	tmp2 := newTempDir(t)
-	defer os.RemoveAll(tmp2)
 
 	_localRepositoryRoots = nil
 	localRepoOnce = &sync.Once{}
@@ -229,10 +227,7 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 	}
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmpdir := newTempDir(t)
-	defer func(dir string) {
-		os.Chmod(dir, 0755)
-		os.RemoveAll(dir)
-	}(tmpdir)
+	defer os.Chmod(tmpdir, 0755)
 	defer tmpEnv(envGhqRoot, tmpdir)()
 
 	_localRepositoryRoots = nil
@@ -253,10 +248,7 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 	tmpdir := newTempDir(t)
 	systemHidden := filepath.Join(tmpdir, ".system")
 	os.MkdirAll(systemHidden, 0000)
-	defer func(dir string) {
-		os.Chmod(systemHidden, 0755)
-		os.RemoveAll(dir)
-	}(tmpdir)
+	defer os.Chmod(systemHidden, 0755)
 	defer tmpEnv(envGhqRoot, tmpdir)()
 
 	_localRepositoryRoots = nil

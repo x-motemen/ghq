@@ -83,7 +83,6 @@ func TestDoRoot(t *testing.T) {
 			restore3 := tmpEnv("HOME", "/path/to/ghqhome")
 
 			return func() {
-				os.RemoveAll(tmpd)
 				restore1()
 				restore2()
 				restore3()

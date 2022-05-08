@@ -26,7 +26,6 @@ func samePathSlice(lhss, rhss []string) bool {
 func TestLocalRepositoryFromFullPath(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmproot := newTempDir(t)
-	defer os.RemoveAll(tmproot)
 	_localRepositoryRoots = []string{tmproot}
 
 	testCases := []struct {
@@ -63,7 +62,6 @@ func TestLocalRepositoryFromFullPath(t *testing.T) {
 func TestNewLocalRepository(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	tmproot := newTempDir(t)
-	defer os.RemoveAll(tmproot)
 	_localRepositoryRoots = []string{tmproot}
 
 	testCases := []struct {
@@ -167,10 +165,7 @@ func TestList_Symlink(t *testing.T) {
 		t.SkipNow()
 	}
 	root := newTempDir(t)
-	defer os.RemoveAll(root)
-
 	symDir := newTempDir(t)
-	defer os.RemoveAll(symDir)
 
 	origLocalRepositryRoots := _localRepositoryRoots
 	_localRepositoryRoots = []string{root}
@@ -203,10 +198,7 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 		t.SkipNow()
 	}
 	root := newTempDir(t)
-	defer os.RemoveAll(root)
-
 	symDir := newTempDir(t)
-	defer os.RemoveAll(symDir)
 
 	origLocalRepositryRoots := _localRepositoryRoots
 	_localRepositoryRoots = []string{root}
@@ -248,9 +240,7 @@ func TestFindVCSBackend(t *testing.T) {
 		setup: func(t *testing.T) (string, string, func()) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "", func() {
-				os.RemoveAll(dir)
-			}
+			return dir, "", func() {}
 		},
 		expect: GitBackend,
 	}, {
@@ -258,9 +248,7 @@ func TestFindVCSBackend(t *testing.T) {
 		setup: func(t *testing.T) (string, string, func()) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git", "svn"), 0755)
-			return dir, "", func() {
-				os.RemoveAll(dir)
-			}
+			return dir, "", func() {}
 		},
 		expect: GitBackend,
 	}, {
@@ -268,9 +256,7 @@ func TestFindVCSBackend(t *testing.T) {
 		setup: func(t *testing.T) (string, string, func()) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "git", func() {
-				os.RemoveAll(dir)
-			}
+			return dir, "git", func() {}
 		},
 		expect: GitBackend,
 	}, {
@@ -278,9 +264,7 @@ func TestFindVCSBackend(t *testing.T) {
 		setup: func(t *testing.T) (string, string, func()) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			return dir, "mercurial", func() {
-				os.RemoveAll(dir)
-			}
+			return dir, "mercurial", func() {}
 		},
 		expect: nil,
 	}}
