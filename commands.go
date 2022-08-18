@@ -98,7 +98,7 @@ func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
 
 func init() {
 	argsTemplate := mkCommandsTemplate(func(doc commandDoc) string { return doc.Arguments })
-	parentTemplate := mkCommandsTemplate(func(doc commandDoc) string { return string(strings.TrimLeft(doc.Parent+" ", " ")) })
+	parentTemplate := mkCommandsTemplate(func(doc commandDoc) string { return strings.TrimLeft(doc.Parent+" ", " ") })
 
 	cli.CommandHelpTemplate = `NAME:
     {{.Name}} - {{.Usage}}
