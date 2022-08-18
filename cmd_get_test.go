@@ -157,6 +157,25 @@ func TestCommandGet(t *testing.T) {
 			}
 		},
 	}, {
+		name: "specific branch using @ syntax",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+
+			expectBranch := "hello"
+			app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo@" + expectBranch})
+
+			expect := "https://github.com/motemen/ghq-test-repo"
+			if cloneArgs.remote.String() != expect {
+				t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+			}
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+			if cloneArgs.branch != expectBranch {
+				t.Errorf("got: %q, expect: %q", cloneArgs.branch, expectBranch)
+			}
+		},
+	}, {
 		name: "with --no-recursive option",
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			app.Run([]string{"", "get", "--no-recursive", "motemen/ghq-test-repo"})

@@ -21,10 +21,10 @@ func getRepoLock(localRepoRoot string) bool {
 
 type getter struct {
 	update, shallow, silent, ssh, recursive, bare bool
-	vcs, branch                                   string
+	vcs                                           string
 }
 
-func (g *getter) get(argURL string) error {
+func (g *getter) get(argURL, branch string) error {
 	u, err := newURL(argURL, g.ssh, false)
 	if err != nil {
 		return fmt.Errorf("Could not parse URL %q: %w", argURL, err)
@@ -35,13 +35,13 @@ func (g *getter) get(argURL string) error {
 		return err
 	}
 
-	return g.getRemoteRepository(remote)
+	return g.getRemoteRepository(remote, branch)
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func (g *getter) getRemoteRepository(remote RemoteRepository) error {
+func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) error {
 	remoteURL := remote.URL()
 	local, err := LocalRepositoryFromURL(remoteURL)
 	if err != nil {
@@ -95,7 +95,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository) error {
 				dir:       localRepoRoot,
 				shallow:   g.shallow,
 				silent:    g.silent,
-				branch:    g.branch,
+				branch:    branch,
 				recursive: g.recursive,
 				bare:      g.bare,
 			})
