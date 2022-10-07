@@ -68,6 +68,12 @@ func gitDetectInsideWorktree(vg *vcsGetOption, dir string) bool {
 	return err == nil
 }
 
+type GitSubmoduleOptionError struct {}
+
+func (e *GitSubmoduleOptionError) Error() string {
+	return fmt.Sprintf("Cloning as submodule, option '--bare' is not supported")
+}
+
 // GitBackend is the VCSBackend of git
 var GitBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
@@ -80,6 +86,9 @@ var GitBackend = &VCSBackend{
 		args := []string{}
 		if gitDetectInsideWorktree(vg, dir) {
 			// use git-submodule
+			if vg.bare {
+				return &GitSubmoduleOptionError{}
+			}
 			err := gitAddTarget(vg, dir)
 			if err != nil {
 				return err
