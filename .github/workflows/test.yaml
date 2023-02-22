@@ -14,10 +14,6 @@ jobs:
         - macOS-latest
         - windows-latest
     steps:
-    - name: setup go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.x
     - name: Set git to use LF
       run: |
         git config --global core.autocrlf false
@@ -25,6 +21,10 @@ jobs:
       if: "matrix.os == 'windows-latest'"
     - name: checkout
       uses: actions/checkout@v3
+    - name: setup go
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: go.mod
     - name: test
       run: go test -coverprofile coverage.out -covermode atomic ./...
     - name: Send coverage
