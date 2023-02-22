@@ -2,6 +2,13 @@ name: reviewdog
 on: [pull_request]
 
 jobs:
+  typos:
+    name: Spell Check with Typos
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: crate-ci/typos@v1.13.10
+
   staticcheck:
     name: staticcheck
     runs-on: ubuntu-latest

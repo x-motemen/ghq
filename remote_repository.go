@@ -13,11 +13,11 @@ import (
 
 // A RemoteRepository represents a remote repository.
 type RemoteRepository interface {
-	// The repository URL.
+	// URL returns the repository URL.
 	URL() *url.URL
-	// Checks if the URL is valid.
+	// IsValid checks if the URL is valid.
 	IsValid() bool
-	// The VCS backend that hosts the repository.
+	// VCS returns the VCS backend that hosts the repository.
 	VCS() (*VCSBackend, *url.URL, error)
 }
 
@@ -83,7 +83,7 @@ func (repo *DarksHubRepository) URL() *url.URL {
 	return repo.url
 }
 
-// IsValid determine if the darcshub repository is valid or not
+// IsValid determine if the DarcsHub repository is valid or not
 func (repo *DarksHubRepository) IsValid() bool {
 	return strings.Count(repo.url.Path, "/") == 2
 }
@@ -98,7 +98,7 @@ type CodeCommitRepository struct {
 	url *url.URL
 }
 
-// URL reutrns URL of the repository
+// URL returns URL of the repository
 func (repo *CodeCommitRepository) URL() *url.URL {
 	return repo.url
 }

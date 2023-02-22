@@ -26,7 +26,7 @@ function _ghq () {
                         '--no-recursive[Prevent recursive fetching]' \
                         '--bare[Do a bare clone]' \
                         '(-b --branch)'{-b,--branch}'[Specify branch name]' \
-                        '(-P --parallel)'{-P,--parallel}'[Import parallely]' \
+                        '(-P --parallel)'{-P,--parallel}'[Import parallelly]' \
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;

@@ -34,7 +34,7 @@ var commandGet = &cli.Command{
 		&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
 		&cli.StringFlag{Name: "branch", Aliases: []string{"b"},
 			Usage: "Specify `branch` name. This flag implies --single-branch on Git"},
-		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallely"},
+		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallelly"},
 		&cli.BoolFlag{Name: "bare", Usage: "Do a bare clone"},
 	},
 }
