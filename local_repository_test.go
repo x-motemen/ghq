@@ -166,9 +166,9 @@ func TestList_Symlink(t *testing.T) {
 	root := newTempDir(t)
 	symDir := newTempDir(t)
 
-	origLocalRepositryRoots := _localRepositoryRoots
+	origLocalRepositoryRoots := _localRepositoryRoots
 	_localRepositoryRoots = []string{root}
-	defer func() { _localRepositoryRoots = origLocalRepositryRoots }()
+	defer func() { _localRepositoryRoots = origLocalRepositoryRoots }()
 
 	if err := os.MkdirAll(filepath.Join(root, "github.com", "atom", "atom", ".git"), 0777); err != nil {
 		t.Fatal(err)
@@ -199,9 +199,9 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 	root := newTempDir(t)
 	symDir := newTempDir(t)
 
-	origLocalRepositryRoots := _localRepositoryRoots
+	origLocalRepositoryRoots := _localRepositoryRoots
 	_localRepositoryRoots = []string{root}
-	defer func() { _localRepositoryRoots = origLocalRepositryRoots }()
+	defer func() { _localRepositoryRoots = origLocalRepositoryRoots }()
 
 	if err := os.MkdirAll(filepath.Join(root, "github.com", "root-user", "a-repository", ".git"), 0777); err != nil {
 		t.Fatal(err)
