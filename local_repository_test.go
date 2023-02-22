@@ -30,7 +30,7 @@ func samePathSlice(lhss, rhss []string) bool {
 	sort.Strings(lhssAbs)
 	sort.Strings(rhssAbs)
 	for i := range lhssAbs {
-		if !samePath(lhssAbs[i], rhssAbs[i]) {
+		if lhssAbs[i] != rhssAbs[i] {
 			return false
 		}
 	}
