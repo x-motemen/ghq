@@ -74,6 +74,7 @@ func TestDoRoot(t *testing.T) {
 			setEnv(t, envGhqRoot, "")
 			setEnv(t, "GIT_CONFIG", fpath)
 			setEnv(t, "HOME", "/path/to/ghqhome")
+			setEnv(t, "USERPROFILE", "/path/to/ghqhome")
 		},
 		expect:    "/path/to/ghqhome/ghq\n",
 		allExpect: "/path/to/ghqhome/ghq\n",
