@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.4.1](https://github.com/x-motemen/ghq/compare/v1.4.0...v1.4.1) - 2023-02-22
+- Add spell check workflow by @hezhizhen in https://github.com/x-motemen/ghq/pull/356
+- Fix `samePath` by @hezhizhen in https://github.com/x-motemen/ghq/pull/357
+- fix test on windows by @Songmu in https://github.com/x-motemen/ghq/pull/358
+- update deps by @Songmu in https://github.com/x-motemen/ghq/pull/360
+- Fixed a problem with SSH URLs, etc. by @Songmu in https://github.com/x-motemen/ghq/pull/361
+- go-version-file: go.mod by @Songmu in https://github.com/x-motemen/ghq/pull/362
+
 ## [v1.4.0](https://github.com/x-motemen/ghq/compare/v1.3.0...v1.4.0) - 2023-02-22
 - Use t.Cleanup to remove temporally directories and set environment variables by @itchyny in https://github.com/x-motemen/ghq/pull/343
 - Support branch/tag via @ syntax by @NathanBaulch in https://github.com/x-motemen/ghq/pull/347
