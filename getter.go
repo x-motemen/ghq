@@ -21,15 +21,18 @@ func getRepoLock(localRepoRoot string) bool {
 
 type getter struct {
 	update, shallow, silent, ssh, recursive, bare bool
-	vcs                                           string
+	vcs, branch                                   string
 }
 
-func (g *getter) get(argURL, branch string) error {
+func (g *getter) get(argURL string) error {
 	u, err := newURL(argURL, g.ssh, false)
 	if err != nil {
 		return fmt.Errorf("Could not parse URL %q: %w", argURL, err)
 	}
-
+	branch := g.branch
+	if pos := strings.LastIndexByte(u.Path, '@'); pos >= 0 {
+		u.Path, branch = u.Path[:pos], u.Path[pos+1:]
+	}
 	remote, err := NewRemoteRepository(u)
 	if err != nil {
 		return err
