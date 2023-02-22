@@ -23,6 +23,7 @@ func doGet(c *cli.Context) error {
 		args     = c.Args().Slice()
 		andLook  = c.Bool("look")
 		parallel = c.Bool("parallel")
+		branch   = c.String("branch")
 	)
 	g := &getter{
 		update:    c.Bool("update"),
@@ -30,7 +31,6 @@ func doGet(c *cli.Context) error {
 		ssh:       c.Bool("p"),
 		vcs:       c.String("vcs"),
 		silent:    c.Bool("silent"),
-		branch:    c.String("branch"),
 		recursive: !c.Bool("no-recursive"),
 		bare:      c.Bool("bare"),
 	}
@@ -59,17 +59,24 @@ func doGet(c *cli.Context) error {
 		if firstArg == "" {
 			firstArg = target
 		}
+		b := branch
+		if branch == "" {
+			pos := strings.LastIndexByte(target, '@')
+			if pos >= 0 {
+				target, b = target[:pos], target[pos+1:]
+			}
+		}
 		if parallel {
 			sem <- struct{}{}
 			eg.Go(func() error {
 				defer func() { <-sem }()
-				if err := g.get(target); err != nil {
+				if err := g.get(target, b); err != nil {
 					logger.Logf("error", "failed to get %q: %s", target, err)
 				}
 				return nil
 			})
 		} else {
-			if err := g.get(target); err != nil {
+			if err := g.get(target, b); err != nil {
 				return fmt.Errorf("failed to get %q: %w", target, err)
 			}
 		}

@@ -26,7 +26,7 @@ type GitHubRepository struct {
 	url *url.URL
 }
 
-// URL reutrns URL of the repository
+// URL returns URL of the repository
 func (repo *GitHubRepository) URL() *url.URL {
 	return repo.url
 }
@@ -58,12 +58,12 @@ type GitHubGistRepository struct {
 	url *url.URL
 }
 
-// URL returns URL of the GistRepositroy
+// URL returns URL of the GistRepository
 func (repo *GitHubGistRepository) URL() *url.URL {
 	return repo.url
 }
 
-// IsValid determine if the gist rpository is valid or not
+// IsValid determine if the gist repository is valid or not
 func (repo *GitHubGistRepository) IsValid() bool {
 	return true
 }

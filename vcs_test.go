@@ -29,7 +29,7 @@ Last Changed Date: 2019-08-16 15:16:45 +0900 (Fri, 16 Aug 2019)
 func TestVCSBackend(t *testing.T) {
 	tempDir := newTempDir(t)
 	localDir := filepath.Join(tempDir, "repo")
-	_commands := []*exec.Cmd{}
+	var _commands []*exec.Cmd
 	lastCommand := func() *exec.Cmd { return _commands[len(_commands)-1] }
 	defer func(orig func(cmd *exec.Cmd) error) {
 		cmdutil.CommandRunner = orig

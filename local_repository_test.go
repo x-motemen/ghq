@@ -182,7 +182,7 @@ func TestList_Symlink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	paths := []string{}
+	var paths []string
 	walkAllLocalRepositories(func(repo *LocalRepository) {
 		paths = append(paths, repo.RelPath)
 	})
@@ -219,7 +219,7 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	paths := []string{}
+	var paths []string
 	walkAllLocalRepositories(func(repo *LocalRepository) {
 		paths = append(paths, repo.RelPath)
 	})
