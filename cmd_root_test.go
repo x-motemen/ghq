@@ -18,7 +18,7 @@ func samePath(lhs, rhs string) bool {
 
 	lhs, _ = filepath.Abs(filepath.Clean(lhs))
 	rhs, _ = filepath.Abs(filepath.Clean(rhs))
-	return strings.ToLower(lhs) == strings.ToLower(lhs)
+	return strings.ToLower(lhs) == strings.ToLower(rhs)
 }
 
 func samePaths(lhs, rhs string) bool {
