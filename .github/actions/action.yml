@@ -1,0 +1,22 @@
+name: release
+description: release ghq
+inputs:
+  tag:
+    description: tag name to be released
+    default: ''
+  token:
+    description: GitHub token
+    required: true
+runs:
+  using: composite
+  steps:
+  - name: setup go
+    uses: actions/setup-go@v3
+    with:
+      go-version: 1.x
+  - name: release
+    run: |
+      make crossbuild upload
+    shell: bash
+    env:
+      GITHUB_TOKEN: ${{ inputs.token }}
