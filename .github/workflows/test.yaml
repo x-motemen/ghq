@@ -19,6 +19,11 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: 1.x
+    - name: Set git to use LF
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+      if: "matrix.os == 'windows-latest'"
     - name: checkout
       uses: actions/checkout@v3
     - name: test
