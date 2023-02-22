@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.4.0](https://github.com/x-motemen/ghq/compare/v1.3.0...v1.4.0) - 2023-02-22
+- Use t.Cleanup to remove temporally directories and set environment variables by @itchyny in https://github.com/x-motemen/ghq/pull/343
+- Support branch/tag via @ syntax by @NathanBaulch in https://github.com/x-motemen/ghq/pull/347
+- introduce tagpr by @Songmu in https://github.com/x-motemen/ghq/pull/353
+
 ## [v1.3.0](https://github.com/x-motemen/ghq/compare/v1.2.1...v1.3.0) (2022-05-06)
 
 * update deps [#342](https://github.com/x-motemen/ghq/pull/342) ([Songmu](https://github.com/Songmu))
