@@ -12,13 +12,7 @@ import (
 )
 
 func samePath(lhs, rhs string) bool {
-	if runtime.GOOS != "windows" {
-		return lhs == rhs
-	}
-
-	lhs, _ = filepath.Abs(filepath.Clean(lhs))
-	rhs, _ = filepath.Abs(filepath.Clean(rhs))
-	return strings.EqualFold(lhs, rhs)
+	return lhs == rhs
 }
 
 func samePaths(lhs, rhs string) bool {
@@ -27,12 +21,7 @@ func samePaths(lhs, rhs string) bool {
 	}
 	lhss := strings.Split(lhs, "\n")
 	rhss := strings.Split(rhs, "\n")
-	for i := range lhss {
-		if !samePath(lhss[i], rhss[i]) {
-			return false
-		}
-	}
-	return true
+	return samePathSlice(lhss, rhss)
 }
 
 func TestDoRoot(t *testing.T) {

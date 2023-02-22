@@ -3,7 +3,6 @@ on:
   push:
     branches:
     - "**"
-  pull_request: {}
 jobs:
   test:
     runs-on: ${{ matrix.os }}
