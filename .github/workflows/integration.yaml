@@ -18,6 +18,6 @@ jobs:
         make install
         brew reinstall git || true
         brew link --overwrite git
-        brew install git-svn mercurial fossil bazaar darcs
+        brew install git-svn mercurial fossil breezy darcs
     - name: test
       run: PATH=$HOME/bin:$PATH ./misc/author/integration_test.sh
