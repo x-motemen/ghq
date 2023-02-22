@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 
@@ -13,10 +14,23 @@ import (
 )
 
 func samePathSlice(lhss, rhss []string) bool {
-	sort.Strings(lhss)
-	sort.Strings(rhss)
-	for i := range lhss {
-		if !samePath(lhss[i], rhss[i]) {
+	if len(lhss) != len(rhss) {
+		return false
+	}
+	lhssAbs := make([]string, len(lhss))
+	rhssAbs := make([]string, len(rhss))
+
+	for i, p := range lhss {
+		lhsAbs, _ := filepath.Abs(filepath.Clean(p))
+		lhssAbs[i] = strings.ToLower(lhsAbs)
+
+		rhsAbs, _ := filepath.Abs(filepath.Clean(rhss[i]))
+		rhssAbs[i] = strings.ToLower(rhsAbs)
+	}
+	sort.Strings(lhssAbs)
+	sort.Strings(rhssAbs)
+	for i := range lhssAbs {
+		if lhssAbs[i] != rhssAbs[i] {
 			return false
 		}
 	}
