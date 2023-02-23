@@ -27,7 +27,7 @@ type getter struct {
 func (g *getter) get(argURL string) error {
 	u, err := newURL(argURL, g.ssh, false)
 	if err != nil {
-		return fmt.Errorf("Could not parse URL %q: %w", argURL, err)
+		return fmt.Errorf("could not parse URL %q: %w", argURL, err)
 	}
 	branch := g.branch
 	if pos := strings.LastIndexByte(u.Path, '@'); pos >= 0 {

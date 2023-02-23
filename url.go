@@ -148,7 +148,7 @@ func newURL(ref string, ssh, forceMe bool) (*url.URL, error) {
 	if ssh {
 		// Assume Git repository if `-p` is given.
 		if u, err = convertGitURLHTTPToSSH(u); err != nil {
-			return nil, fmt.Errorf("Could not convert URL %q: %w", u, err)
+			return nil, fmt.Errorf("could not convert URL %q: %w", u, err)
 		}
 	}
 

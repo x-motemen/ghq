@@ -90,7 +90,7 @@ var commandDocs = map[string]commandDoc{
 // Makes template conditionals to generate per-command documents.
 func mkCommandsTemplate(genTemplate func(commandDoc) string) string {
 	template := "{{if false}}"
-	for _, command := range append(commands) {
+	for _, command := range commands {
 		template = template + fmt.Sprintf("{{else if (eq .Name %q)}}%s", command.Name, genTemplate(commandDocs[command.Name]))
 	}
 	return template + "{{end}}"

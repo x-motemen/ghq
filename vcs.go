@@ -271,7 +271,7 @@ var MercurialBackend = &VCSBackend{
 var DarcsBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
 		if vg.branch != "" {
-			return errors.New("Darcs does not support branch")
+			return errors.New("darcs does not support branch")
 		}
 
 		dir, _ := filepath.Split(vg.dir)
@@ -313,7 +313,7 @@ const fossilRepoName = ".fossil" // same as Go
 var FossilBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
 		if vg.branch != "" {
-			return errors.New("Fossil does not support cloning specific branch")
+			return errors.New("fossil does not support cloning specific branch")
 		}
 		if err := os.MkdirAll(vg.dir, 0755); err != nil {
 			return err

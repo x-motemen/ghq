@@ -153,7 +153,7 @@ func look(name string) error {
 
 	switch len(reposFound) {
 	case 0:
-		return fmt.Errorf("No repository found")
+		return fmt.Errorf("no repository found")
 	case 1:
 		repo := reposFound[0]
 		cmd := exec.Command(detectShell())
