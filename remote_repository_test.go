@@ -50,7 +50,7 @@ func TestNewRemoteRepository(t *testing.T) {
 			if repo.IsValid() != tc.valid {
 				t.Errorf("repo.IsValid() should be %v, but %v", tc.valid, repo.IsValid())
 			}
-			vcs, u, err := repo.VCS()
+			vcs, u, _ := repo.VCS()
 			if vcs != tc.vcsBackend {
 				t.Errorf("got: %+v, expect: %+v", vcs, tc.vcsBackend)
 			}

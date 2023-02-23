@@ -21,13 +21,12 @@ func captureReader(block func()) (*os.File, *os.File, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	defer wOut.Close()
 
 	rErr, wErr, err := os.Pipe()
 	if err != nil {
 		return nil, nil, err
 	}
-
-	defer wOut.Close()
 	defer wErr.Close()
 
 	var stdout, stderr *os.File
@@ -74,9 +73,12 @@ func captureWithInput(in []string, block func()) (string, string, error) {
 		return "", "", err
 	}
 	defer rIn.Close()
+
 	var stdin *os.File
 	os.Stdin, stdin = rIn, os.Stdin
+
 	defer func() { os.Stdin = stdin }()
+	
 	for _, line := range in {
 		fmt.Fprintln(wIn, line)
 	}

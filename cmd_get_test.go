@@ -264,7 +264,7 @@ func TestLook(t *testing.T) {
 		}
 
 		err = look("github.com/motemen/_unknown")
-		expect := "No repository found"
+		expect := "no repository found"
 		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
 			t.Errorf("error should has prefix %q, but: %s", expect, err)
 		}
