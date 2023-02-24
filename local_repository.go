@@ -117,10 +117,10 @@ func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
 
 func getRoot(u string) (string, error) {
 	prim := os.Getenv(envGhqRoot)
-	var err error
 	if prim != "" {
 		return prim, nil
 	}
+	var err error
 	if !codecommitLikeURLPattern.MatchString(u) {
 		prim, err = gitconfig.Do("--path", "--get-urlmatch", "ghq.root", u)
 		if err != nil && !gitconfig.IsNotFound(err) {

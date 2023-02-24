@@ -7,24 +7,20 @@ import (
 )
 
 func doRoot(c *cli.Context) error {
-	var (
-		w   = c.App.Writer
-		all = c.Bool("all")
-	)
-	if all {
-		roots, err := localRepositoryRoots(true)
-		if err != nil {
-			return err
-		}
-		for _, root := range roots {
-			fmt.Fprintln(w, root)
-		}
-		return nil
-	}
-	root, err := primaryLocalRepositoryRoot()
+	roots, err := localRepositoryRoots(true)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(w, root)
+	if !c.Bool("all") {
+		roots = roots[:1] // only the first root is needed
+	}
+
+	for _, root := range roots {
+		_, err := fmt.Fprintln(c.App.Writer, root)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
