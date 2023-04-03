@@ -81,7 +81,7 @@ func doGet(c *cli.Context) error {
 		return err
 	}
 	if andLook && firstArg != "" {
-		return look(firstArg)
+		return look(firstArg, g.bare)
 	}
 	return nil
 }
@@ -121,7 +121,7 @@ func detectShell() string {
 	return "/bin/sh"
 }
 
-func look(name string) error {
+func look(name string, bare bool) error {
 	var (
 		reposFound []*LocalRepository
 		mu         sync.Mutex
@@ -138,7 +138,7 @@ func look(name string) error {
 
 	if len(reposFound) == 0 {
 		if url, err := newURL(name, false, false); err == nil {
-			repo, err := LocalRepositoryFromURL(url)
+			repo, err := LocalRepositoryFromURL(url, bare)
 			if err != nil {
 				return err
 			}

@@ -46,7 +46,7 @@ func (g *getter) get(argURL string) error {
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
 func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) error {
 	remoteURL := remote.URL()
-	local, err := LocalRepositoryFromURL(remoteURL)
+	local, err := LocalRepositoryFromURL(remoteURL, g.bare)
 	if err != nil {
 		return err
 	}
@@ -89,6 +89,10 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) err
 			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
 		}
 
+		if g.bare {
+			localRepoRoot = localRepoRoot + ".git"
+		}
+
 		if remoteURL.Scheme == "codecommit" {
 			repoURL, _ = url.Parse(remoteURL.Opaque)
 		}
@@ -110,11 +114,17 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) err
 		if vcs == nil {
 			return fmt.Errorf("failed to detect VCS for %q", fpath)
 		}
+		repoURL := remoteURL
+		if remoteURL.Scheme == "codecommit" {
+			repoURL, _ = url.Parse(remoteURL.Opaque)
+		}
 		if getRepoLock(localRepoRoot) {
 			return vcs.Update(&vcsGetOption{
+				url:       repoURL,
 				dir:       localRepoRoot,
 				silent:    g.silent,
 				recursive: g.recursive,
+				bare:      g.bare,
 			})
 		}
 		return nil
