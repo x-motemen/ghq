@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.4.2](https://github.com/x-motemen/ghq/compare/v1.4.1...v1.4.2) - 2023-04-16
+- release as draft by tagpr to hide it before uploading assets by @Songmu in https://github.com/x-motemen/ghq/pull/363
+- de-capitalize errors to make staticcheck happy by @hezhizhen in https://github.com/x-motemen/ghq/pull/365
+- adjustment by @hezhizhen in https://github.com/x-motemen/ghq/pull/366
+- introduce codecov by @Songmu in https://github.com/x-motemen/ghq/pull/359
+- update deps by @Songmu in https://github.com/x-motemen/ghq/pull/369
+
 ## [v1.4.1](https://github.com/x-motemen/ghq/compare/v1.4.0...v1.4.1) - 2023-02-22
 - Add spell check workflow by @hezhizhen in https://github.com/x-motemen/ghq/pull/356
 - Fix `samePath` by @hezhizhen in https://github.com/x-motemen/ghq/pull/357
