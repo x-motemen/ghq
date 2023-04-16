@@ -1,4 +1,4 @@
-= ghq(1) image:https://github.com/x-motemen/ghq/workflows/test/badge.svg?branch=master["Build Status", link="https://github.com/x-motemen/ghq/actions?workflow=test"] image:https://coveralls.io/repos/motemen/ghq/badge.svg?branch=master["Coverage", link="https://coveralls.io/r/motemen/ghq?branch=master"]
+= ghq(1) image:https://github.com/x-motemen/ghq/workflows/test/badge.svg?branch=master["Build Status", link="https://github.com/x-motemen/ghq/actions?workflow=test"] image:https://codecov.io/gh/x-motemen/ghq/branch/master/graph/badge.svg["Coverage", link="https://codecov.io/gh/x-motemen/ghq"]
 
 == NAME
 
