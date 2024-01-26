@@ -19,6 +19,7 @@ You can also list local repositories (+ghq list+).
 ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] [--bare] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq list [-p] [-e] [<query>]
 ghq create [--vcs <vcs>] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
+ghq rm [--dry-run] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq root [--all]
 
 == COMMANDS
@@ -55,6 +56,9 @@ list::
 root::
     Prints repositories' root (i.e. `ghq.root`). Without '--all' option, the
     primary one is shown.
+
+rm::
+    Remove local repository. If '--dry-run' option is given, the repository is not actually removed but the path to it is printed.
 
 create::
     Creates new repository.
