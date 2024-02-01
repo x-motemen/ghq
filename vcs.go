@@ -300,10 +300,6 @@ var DarcsBackend = &VCSBackend{
 // PijulBackend is the VCSBackend for pijul
 var PijulBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
-		if vg.branch != "" {
-			return errors.New("pijul does not support branch")
-		}
-
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -311,6 +307,9 @@ var PijulBackend = &VCSBackend{
 		}
 
 		args := []string{"clone"}
+		if vg.branch != "" {
+			args = append(args, "--channel", vg.branch)
+		}
 		args = append(args, vg.url.String(), vg.dir)
 
 		return run(vg.silent)("pijul", args...)
