@@ -349,6 +349,24 @@ func TestVCSBackend(t *testing.T) {
 		expect: []string{"darcs", "pull"},
 		dir:    localDir,
 	}, {
+		name: "[pijul] clone",
+		f: func() error {
+			return PijulBackend.Clone(&vcsGetOption{
+				url: remoteDummyURL,
+				dir: localDir,
+			})
+		},
+		expect: []string{"pijul", "clone", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[pijul] update",
+		f: func() error {
+			return PijulBackend.Update(&vcsGetOption{
+				dir: localDir,
+			})
+		},
+		expect: []string{"pijul", "pull"},
+		dir:    localDir,
+	}, {
 		name: "[bzr] clone",
 		f: func() error {
 			return BazaarBackend.Clone(&vcsGetOption{

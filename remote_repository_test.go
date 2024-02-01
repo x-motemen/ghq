@@ -36,6 +36,10 @@ func TestNewRemoteRepository(t *testing.T) {
 		valid:      true,
 		vcsBackend: DarcsBackend,
 	}, {
+		url:        "http://nest.pijul.com/foo/bar",
+		valid:      true,
+		vcsBackend: PijulBackend,
+	}, {
 		url:        "svn+ssh://example.com/proj/repo",
 		valid:      true,
 		vcsBackend: SubversionBackend,

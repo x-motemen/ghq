@@ -208,6 +208,7 @@ var vcsContentsMap = map[string]*VCSBackend{
 	".hg":            MercurialBackend,
 	".svn":           SubversionBackend,
 	"_darcs":         DarcsBackend,
+	".pijul":         PijulBackend,
 	".bzr":           BazaarBackend,
 	".fslckout":      FossilBackend, // file
 	"_FOSSIL_":       FossilBackend, // file
@@ -219,6 +220,7 @@ var vcsContents = [...]string{
 	".hg",
 	".svn",
 	"_darcs",
+	".pijul",
 	".bzr",
 	".fslckout",
 	"._FOSSIL_",

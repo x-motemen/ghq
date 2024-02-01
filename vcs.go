@@ -297,6 +297,33 @@ var DarcsBackend = &VCSBackend{
 	Contents: []string{"_darcs"},
 }
 
+// PijulBackend is the VCSBackend for pijul
+var PijulBackend = &VCSBackend{
+	Clone: func(vg *vcsGetOption) error {
+		if vg.branch != "" {
+			return errors.New("pijul does not support branch")
+		}
+
+		dir, _ := filepath.Split(vg.dir)
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+
+		args := []string{"clone"}
+		args = append(args, vg.url.String(), vg.dir)
+
+		return run(vg.silent)("pijul", args...)
+	},
+	Update: func(vg *vcsGetOption) error {
+		return runInDir(vg.silent)(vg.dir, "pijul", "pull")
+	},
+	Init: func(dir string) error {
+		return cmdutil.RunInDir(dir, "pijul", "init")
+	},
+	Contents: []string{".pijul"},
+}
+
 var cvsDummyBackend = &VCSBackend{
 	Clone: func(vg *vcsGetOption) error {
 		return errors.New("CVS clone is not supported")
@@ -370,6 +397,7 @@ var vcsRegistry = map[string]*VCSBackend{
 	"hg":         MercurialBackend,
 	"mercurial":  MercurialBackend,
 	"darcs":      DarcsBackend,
+	"pijul":      PijulBackend,
 	"fossil":     FossilBackend,
 	"bzr":        BazaarBackend,
 	"bazaar":     BazaarBackend,
