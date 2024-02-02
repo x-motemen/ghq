@@ -93,6 +93,26 @@ func (repo *DarksHubRepository) VCS() (*VCSBackend, *url.URL, error) {
 	return DarcsBackend, repo.URL(), nil
 }
 
+// NestPijulRepository represents the Nest repository
+type NestPijulRepository struct {
+	url *url.URL
+}
+
+// URL returns URL of the Nest repository
+func (repo *NestPijulRepository) URL() *url.URL {
+	return repo.url
+}
+
+// IsValid determine if the Nest repository is valid or not
+func (repo *NestPijulRepository) IsValid() bool {
+	return strings.Count(repo.url.Path, "/") == 2
+}
+
+// VCS returns VCSBackend of the Nest repository
+func (repo *NestPijulRepository) VCS() (*VCSBackend, *url.URL, error) {
+	return PijulBackend, repo.URL(), nil
+}
+
 // A CodeCommitRepository represents a CodeCommit repository. Implements RemoteRepository.
 type CodeCommitRepository struct {
 	url *url.URL
@@ -197,6 +217,8 @@ func NewRemoteRepository(u *url.URL) (RemoteRepository, error) {
 			return &GitHubGistRepository{u}
 		case "hub.darcs.net":
 			return &DarksHubRepository{u}
+		case "nest.pijul.com":
+			return &NestPijulRepository{u}
 		default:
 			return &OtherRepository{u}
 		}

@@ -14,6 +14,7 @@ var logger = colorine.NewLogger(
 		"hg":       colorine.Verbose,
 		"svn":      colorine.Verbose,
 		"darcs":    colorine.Verbose,
+		"pijul":    colorine.Verbose,
 		"bzr":      colorine.Verbose,
 		"fossil":   colorine.Verbose,
 		"skip":     colorine.Verbose,

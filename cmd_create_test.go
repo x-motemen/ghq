@@ -73,6 +73,11 @@ func TestDoCreate(t *testing.T) {
 		want:    []string{"darcs", "init"},
 		wantDir: filepath.Join(tmpd, "github.com/motemen/ghq-darcs"),
 	}, {
+		name:    "Pijul",
+		input:   []string{"create", "--vcs=pijul", "motemen/ghq-pijul"},
+		want:    []string{"pijul", "init"},
+		wantDir: filepath.Join(tmpd, "github.com/motemen/ghq-pijul"),
+	}, {
 		name:    "Bazzar",
 		input:   []string{"create", "--vcs=bzr", "motemen/ghq-bzr"},
 		want:    []string{"bzr", "init"},
