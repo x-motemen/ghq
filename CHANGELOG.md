@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.5.0](https://github.com/x-motemen/ghq/compare/v1.4.2...v1.5.0) - 2024-02-02
+- Support pijul by @yoichi in https://github.com/x-motemen/ghq/pull/372
+- feat: implement `ghq rm` command by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/371
+
 ## [v1.4.2](https://github.com/x-motemen/ghq/compare/v1.4.1...v1.4.2) - 2023-04-16
 - release as draft by tagpr to hide it before uploading assets by @Songmu in https://github.com/x-motemen/ghq/pull/363
 - de-capitalize errors to make staticcheck happy by @hezhizhen in https://github.com/x-motemen/ghq/pull/365
