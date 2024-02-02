@@ -10,6 +10,7 @@ import (
 var commands = []*cli.Command{
 	commandGet,
 	commandList,
+	commandRm,
 	commandRoot,
 	commandCreate,
 }
@@ -57,6 +58,15 @@ var commandList = &cli.Command{
 	},
 }
 
+var commandRm = &cli.Command{
+	Name:   "rm",
+	Usage:  "Remove local repository",
+	Action: doRm,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{Name: "dry-run", Usage: "Do not remove actually"},
+	},
+}
+
 var commandRoot = &cli.Command{
 	Name:   "root",
 	Usage:  "Show repositories' root",
@@ -84,6 +94,7 @@ var commandDocs = map[string]commandDoc{
 	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
+	"rm":     {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
 	"root":   {"", "[-all]"},
 }
 
