@@ -18,6 +18,7 @@ func doList(c *cli.Context) error {
 		vcsBackend       = c.String("vcs")
 		printFullPaths   = c.Bool("full-path")
 		printUniquePaths = c.Bool("unique")
+		bare             = c.Bool("bare")
 	)
 
 	filterByQuery := func(_ *LocalRepository) bool {
@@ -26,7 +27,7 @@ func doList(c *cli.Context) error {
 	if query != "" {
 		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
 			if url, err := newURL(query, false, false); err == nil {
-				if repo, err := LocalRepositoryFromURL(url); err == nil {
+				if repo, err := LocalRepositoryFromURL(url, bare); err == nil {
 					query = filepath.ToSlash(repo.RelPath)
 				}
 			}

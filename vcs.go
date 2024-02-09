@@ -78,6 +78,9 @@ var GitBackend = &VCSBackend{
 		if _, err := os.Stat(filepath.Join(vg.dir, ".git/svn")); err == nil {
 			return GitsvnBackend.Update(vg)
 		}
+		if vg.bare {
+			return runInDir(true)(vg.dir, "git", "fetch", vg.url.String(), "*:*")
+		}
 		err := runInDir(true)(vg.dir, "git", "rev-parse", "@{upstream}")
 		if err != nil {
 			err := runInDir(vg.silent)(vg.dir, "git", "fetch")
@@ -96,7 +99,11 @@ var GitBackend = &VCSBackend{
 		return nil
 	},
 	Init: func(dir string) error {
-		return cmdutil.RunInDir(dir, "git", "init")
+		args := []string{"init"}
+		if strings.HasSuffix(dir, ".git") {
+			args = append(args, "--bare")
+		}
+		return cmdutil.RunInDir(dir, "git", args...)
 	},
 	Contents: []string{".git"},
 }

@@ -123,7 +123,7 @@ func TestNewLocalRepository(t *testing.T) {
 			defer func(orig string) { _home = orig }(_home)
 			_home = ""
 			homeOnce = &sync.Once{}
-			r, err := LocalRepositoryFromURL(mustParseURL(tc.url))
+			r, err := LocalRepositoryFromURL(mustParseURL(tc.url), false)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
@@ -249,6 +249,15 @@ func TestFindVCSBackend(t *testing.T) {
 		setup  func(t *testing.T) (string, string)
 		expect *VCSBackend
 	}{{
+		name: "git-bare",
+		setup: func(t *testing.T) (string, string) {
+			dir := newTempDir(t)
+			dir = dir + ".git"
+			os.MkdirAll(dir, 0o755)
+			return dir, ""
+		},
+		expect: GitBackend,
+	}, {
 		name: "git",
 		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)

@@ -206,7 +206,7 @@ func TestCommandGet(t *testing.T) {
 	}, {
 		name: "bare",
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo.git")
 
 			app.Run([]string{"", "get", "--bare", "motemen/ghq-test-repo"})
 
@@ -263,14 +263,60 @@ func TestLook(t *testing.T) {
 			t.Errorf("lastCmd.Env[len(lastCmd.Env)-1]: got: %s, expect: %s", gotEnv, expectEnv)
 		}
 
-		err = look("github.com/motemen/_unknown")
+		err = look("github.com/motemen/_unknown", false)
 		expect := "no repository found"
 		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
 			t.Errorf("error should has prefix %q, but: %s", expect, err)
 		}
 
-		err = look("gobump")
+		err = look("gobump", false)
 		expect = "More than one repositories are found; Try more precise name"
+		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
+			t.Errorf("error should has prefix %q, but: %s", expect, err)
+		}
+	})
+}
+
+func TestBareLook(t *testing.T) {
+	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {
+		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "ghq.git"), 0o755)
+		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "gobump", ".git"), 0o755)
+		defer func(orig func(cmd *exec.Cmd) error) {
+			cmdutil.CommandRunner = orig
+		}(cmdutil.CommandRunner)
+		var lastCmd *exec.Cmd
+		cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+			lastCmd = cmd
+			return nil
+		}
+		sh := detectShell()
+
+		err := newApp().Run([]string{"", "get", "--bare", "--look", "https://github.com/motemen/ghq.git"})
+		if err != nil {
+			t.Errorf("error should be nil, but: %s", err)
+		}
+
+		if !reflect.DeepEqual(lastCmd.Args, []string{sh}) {
+			t.Errorf("lastCmd.Args: got: %v, expect: %v", lastCmd.Args, []string{sh})
+		}
+		dir := filepath.Join(tmproot, "github.com", "motemen", "ghq.git")
+		if filepath.Clean(lastCmd.Dir) != dir {
+			t.Errorf("lastCmd.Dir: got: %s, expect: %s", lastCmd.Dir, dir)
+		}
+		gotEnv := lastCmd.Env[len(lastCmd.Env)-1]
+		expectEnv := "GHQ_LOOK=github.com/motemen/ghq.git"
+		if gotEnv != expectEnv {
+			t.Errorf("lastCmd.Env[len(lastCmd.Env)-1]: got: %s, expect: %s", gotEnv, expectEnv)
+		}
+
+		err = look("github.com/motemen/ghq", false)
+		expect := "no repository found"
+		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
+			t.Errorf("error should has prefix %q, but: %s", expect, err)
+		}
+
+		err = look("github.com/motemen/gobump.git", true)
+		expect = "no repository found"
 		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
 			t.Errorf("error should has prefix %q, but: %s", expect, err)
 		}
