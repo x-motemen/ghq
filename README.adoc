@@ -169,6 +169,13 @@ asdf plugin add ghq
 asdf install ghq latest
 ----
 
+=== https://github.com/jdx/mise[mise-en-place]
+
+----
+mise install ghq
+mise use ghq
+----
+
 === build
 
 ----
