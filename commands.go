@@ -16,8 +16,9 @@ var commands = []*cli.Command{
 }
 
 var commandGet = &cli.Command{
-	Name:  "get",
-	Usage: "Clone/sync with a remote repository",
+	Name:    "get",
+	Aliases: []string{"clone"},
+	Usage:   "Clone/sync with a remote repository",
 	Description: `
     Clone a repository under ghq root directory. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
