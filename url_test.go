@@ -20,20 +20,35 @@ func TestNewURL(t *testing.T) {
 		expect: "https://github.com/motemen/pusheen-explorer",
 		host:   "github.com",
 	}, {
-		name:   "scp", // Convert SCP-like URL to SSH URL
+		name:   "scp to github", // Convert SCP-like URL to SSH URL
 		url:    "git@github.com:motemen/pusheen-explorer.git",
 		expect: "ssh://git@github.com/motemen/pusheen-explorer.git",
 		host:   "github.com",
 	}, {
-		name:   "scp with root",
+		name:   "scp with root to github",
 		url:    "git@github.com:/motemen/pusheen-explorer.git",
 		expect: "ssh://git@github.com/motemen/pusheen-explorer.git",
 		host:   "github.com",
 	}, {
-		name:   "scp without user",
+		name:   "scp without user to github",
 		url:    "github.com:motemen/pusheen-explorer.git",
 		expect: "ssh://github.com/motemen/pusheen-explorer.git",
 		host:   "github.com",
+	}, {
+		name:   "scp to others",
+		url:    "git@example.com:repo/www.git",
+		expect: "ssh://git@example.com/~/repo/www.git",
+		host:   "example.com",
+	}, {
+		name:   "scp with root to others",
+		url:    "git@example.com:/repo/www.git",
+		expect: "ssh://git@example.com/repo/www.git",
+		host:   "example.com",
+	}, {
+		name:   "scp without user to others",
+		url:    "example.com:repo/www.git",
+		expect: "ssh://example.com/~/repo/www.git",
+		host:   "example.com",
 	}, {
 		name:   "different name repository",
 		url:    "motemen/ghq",
