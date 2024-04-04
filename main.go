@@ -8,7 +8,7 @@ import (
 	"github.com/x-motemen/ghq/logger"
 )
 
-const version = "1.5.0"
+const version = "1.6.0"
 
 var revision = "HEAD"
 
