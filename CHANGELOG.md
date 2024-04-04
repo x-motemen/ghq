@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.6.0](https://github.com/x-motemen/ghq/compare/v1.5.0...v1.6.0) - 2024-04-04
+- Feat: add alias for `ghq get` by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/377
+- Append ".git" to directory name for bare git repositories by @dochang in https://github.com/x-motemen/ghq/pull/368
+- feat(misc): add fish completion by @folliehiyuki in https://github.com/x-motemen/ghq/pull/375
+- Added mise-en-place installation and usage instructions. by @morihaya in https://github.com/x-motemen/ghq/pull/376
+- ghq rm to support bare option by @Songmu in https://github.com/x-motemen/ghq/pull/381
+- Go 1.22 and update deps by @Songmu in https://github.com/x-motemen/ghq/pull/382
+- feat: enable relative path ssh URL by @JyJyJcr in https://github.com/x-motemen/ghq/pull/378
+
 ## [v1.5.0](https://github.com/x-motemen/ghq/compare/v1.4.2...v1.5.0) - 2024-02-02
 - Support pijul by @yoichi in https://github.com/x-motemen/ghq/pull/372
 - feat: implement `ghq rm` command by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/371
