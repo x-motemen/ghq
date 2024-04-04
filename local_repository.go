@@ -72,12 +72,17 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 }
 
 // LocalRepositoryFromURL resolve LocalRepository from URL
-func LocalRepositoryFromURL(remoteURL *url.URL) (*LocalRepository, error) {
+func LocalRepositoryFromURL(remoteURL *url.URL, bare bool) (*LocalRepository, error) {
 	pathParts := append(
 		[]string{remoteURL.Hostname()}, strings.Split(remoteURL.Path, "/")...,
 	)
 	relPath := strings.TrimSuffix(filepath.Join(pathParts...), ".git")
 	pathParts[len(pathParts)-1] = strings.TrimSuffix(pathParts[len(pathParts)-1], ".git")
+	if bare {
+		// Force to append ".git" even if remoteURL does not end with ".git".
+		relPath = relPath + ".git"
+		pathParts[len(pathParts)-1] = pathParts[len(pathParts)-1] + ".git"
+	}
 
 	var (
 		localRepository *LocalRepository
@@ -234,12 +239,18 @@ func findVCSBackend(fpath, vcs string) *VCSBackend {
 		if !ok {
 			return nil
 		}
+		if vcsBackend == GitBackend && strings.HasSuffix(fpath, ".git") {
+			return vcsBackend
+		}
 		for _, d := range vcsBackend.Contents {
 			if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
 				return vcsBackend
 			}
 		}
 		return nil
+	}
+	if strings.HasSuffix(fpath, ".git") {
+		return GitBackend
 	}
 	for _, d := range vcsContents {
 		if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
