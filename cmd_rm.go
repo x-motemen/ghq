@@ -12,6 +12,7 @@ func doRm(c *cli.Context) error {
 		name = c.Args().First()
 		dry  = c.Bool("dry-run")
 		w    = c.App.Writer
+		bare = c.Bool("bare")
 	)
 
 	if name == "" {
@@ -23,7 +24,7 @@ func doRm(c *cli.Context) error {
 		return err
 	}
 
-	localRepo, err := LocalRepositoryFromURL(u)
+	localRepo, err := LocalRepositoryFromURL(u, bare)
 	if err != nil {
 		return err
 	}
