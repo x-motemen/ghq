@@ -19,5 +19,6 @@ jobs:
         brew reinstall git || true
         brew link --overwrite git
         brew install git-svn mercurial fossil breezy darcs
+        brew upgrade git-svn mercurial fossil breezy darcs
     - name: test
       run: PATH=$HOME/bin:$PATH ./misc/author/integration_test.sh
