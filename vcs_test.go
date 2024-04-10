@@ -56,6 +56,7 @@ func TestVCSBackend(t *testing.T) {
 			})
 		},
 		expect: []string{"git", "clone", remoteDummyURL.String(), localDir},
+		dir: tempDir + "/",
 	}, {
 		name: "[git] shallow clone",
 		f: func() error {
@@ -67,6 +68,7 @@ func TestVCSBackend(t *testing.T) {
 			})
 		},
 		expect: []string{"git", "clone", "--depth", "1", remoteDummyURL.String(), localDir},
+		dir: tempDir + "/",
 	}, {
 		name: "[git] clone specific branch",
 		f: func() error {
@@ -77,6 +79,7 @@ func TestVCSBackend(t *testing.T) {
 			})
 		},
 		expect: []string{"git", "clone", "--branch", "hello", "--single-branch", remoteDummyURL.String(), localDir},
+		dir: tempDir + "/",
 	}, {
 		name: "[git] update",
 		f: func() error {
@@ -115,6 +118,7 @@ func TestVCSBackend(t *testing.T) {
 			})
 		},
 		expect: []string{"git", "clone", "--recursive", remoteDummyURL.String(), localDir},
+		dir:tempDir + "/",
 	}, {
 		name: "[git] update recursive",
 		f: func() error {
@@ -136,6 +140,7 @@ func TestVCSBackend(t *testing.T) {
 			})
 		},
 		expect: []string{"git", "clone", "--bare", remoteDummyURL.String(), localDir},
+		dir:tempDir + "/",
 	}, {
 		name: "[git] switch git-svn on update",
 		f: func() error {

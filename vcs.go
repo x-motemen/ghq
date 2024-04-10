@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/x-motemen/ghq/cmdutil"
+	"github.com/x-motemen/ghq/logger"
 )
 
 func run(silent bool) func(command string, args ...string) error {
@@ -47,9 +48,34 @@ type vcsGetOption struct {
 	branch                           string
 }
 
+func gitAddTarget(vg *vcsGetOption, target string) error {
+	dir, _ := filepath.Split(vg.dir)
+	return runInDir(vg.silent)(dir, "git", "add", target)
+}
+
+func gitDetectInsideWorktree(vg *vcsGetOption, dir string) bool {
+	cmd := exec.Command(
+		"git",
+		"rev-parse",
+		"--is-inside-work-tree")
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	cmd.Dir = dir
+	if !vg.silent {
+		logger.Log(cmd.Args[0], strings.Join(cmd.Args[1:], " "))
+	}
+	err := cmd.Run()
+	return err == nil
+}
+
+type GitSubmoduleOptionError struct {}
+
+func (e *GitSubmoduleOptionError) Error() string {
+	return fmt.Sprintf("Cloning as submodule, option '--bare' is not supported")
+}
+
 // GitBackend is the VCSBackend of git
 var GitBackend = &VCSBackend{
-	// support submodules?
 	Clone: func(vg *vcsGetOption) error {
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
@@ -57,22 +83,40 @@ var GitBackend = &VCSBackend{
 			return err
 		}
 
-		args := []string{"clone"}
+		args := []string{}
+		if gitDetectInsideWorktree(vg, dir) {
+			// use git-submodule
+			if vg.bare {
+				return &GitSubmoduleOptionError{}
+			}
+			err := gitAddTarget(vg, dir)
+			if err != nil {
+				return err
+			}
+			args = []string{"submodule", "add"}
+		} else {
+			args = append(args, "clone")
+			if vg.recursive {
+				args = append(args, "--recursive")
+			}
+			if vg.bare {
+				args = append(args, "--bare")
+			}
+		}
+		
 		if vg.shallow {
 			args = append(args, "--depth", "1")
 		}
 		if vg.branch != "" {
 			args = append(args, "--branch", vg.branch, "--single-branch")
 		}
-		if vg.recursive {
-			args = append(args, "--recursive")
-		}
-		if vg.bare {
-			args = append(args, "--bare")
-		}
 		args = append(args, vg.url.String(), vg.dir)
+		err = runInDir(vg.silent)(dir, "git", args...)
+		if err != nil {
+			return err
+		}
 
-		return run(vg.silent)("git", args...)
+		return nil
 	},
 	Update: func(vg *vcsGetOption) error {
 		if _, err := os.Stat(filepath.Join(vg.dir, ".git/svn")); err == nil {
