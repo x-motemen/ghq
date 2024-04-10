@@ -112,16 +112,12 @@ func newURL(ref string, ssh, forceMe bool) (*url.URL, error) {
 			user := matched[1]
 			host := matched[2]
 			path := matched[3]
-			// When two conditions below are satisfied:
-			// 1. the path is a relative path, which not beginning with a slash, like `path/to/repo`.
-			// 2. the host is not github.com, which doesn't support relative paths.
-			// then we convert the given SCP style URL to a normal style and relative path URL using tilde, like `ssh://user@repo.example.com/~/path/to/repo`.
-			if strings.HasPrefix(path, "/") {
-				path = strings.TrimPrefix(path, "/")
-			} else if host != "github.com" {
-				path = "~/" + path
-			}
-			ref = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
+			// If the path is a relative path not beginning with a slash like
+			// `path/to/repo`, we might convert to like
+			// `ssh://user@repo.example.com/~/path/to/repo` using tilde, but
+			// since GitHub doesn't support it, we treat relative and absolute
+			// paths the same way.
+			ref = fmt.Sprintf("ssh://%s%s/%s", user, host, strings.TrimPrefix(path, "/"))
 		} else {
 			// If ref is like "github.com/motemen/ghq" convert to "https://github.com/motemen/ghq"
 			paths := strings.Split(ref, "/")
