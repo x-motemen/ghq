@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.6.1](https://github.com/x-motemen/ghq/compare/v1.6.0...v1.6.1) - 2024-04-10
+- Revert "feat: enable relative path ssh URL" by @Songmu in https://github.com/x-motemen/ghq/pull/385
+
 ## [v1.6.0](https://github.com/x-motemen/ghq/compare/v1.5.0...v1.6.0) - 2024-04-04
 - Feat: add alias for `ghq get` by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/377
 - Append ".git" to directory name for bare git repositories by @dochang in https://github.com/x-motemen/ghq/pull/368
