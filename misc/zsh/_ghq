@@ -51,6 +51,12 @@ function _ghq () {
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;
+                (rm)
+                    _arguments -C \
+                        '--dry-run[Do not remove actually]' \
+                        '(-)*:: :->null_state' \
+                        && ret=0
+                    ;;
                 (help|h)
                     __ghq_commands && ret=0
                     ;;
