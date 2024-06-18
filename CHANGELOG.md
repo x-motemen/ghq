@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.6.2](https://github.com/x-motemen/ghq/compare/v1.6.1...v1.6.2) - 2024-06-18
+- chore: Update "go build" lines by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/391
+
 ## [v1.6.1](https://github.com/x-motemen/ghq/compare/v1.6.0...v1.6.1) - 2024-04-10
 - Revert "feat: enable relative path ssh URL" by @Songmu in https://github.com/x-motemen/ghq/pull/385
 
