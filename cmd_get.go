@@ -40,8 +40,11 @@ func doGet(c *cli.Context) error {
 	}
 
 	var (
-		firstArg string
+		firstArg string // Look at the first repo only, if there are more than one
+		argCnt   int
+		getInfo  getInfo // For fetching and looking a single repo
 		scr      scanner
+		err      error
 	)
 	if len(args) > 0 {
 		scr = &sliceScanner{slice: args}
@@ -52,6 +55,7 @@ func doGet(c *cli.Context) error {
 		}
 		scr = bufio.NewScanner(os.Stdin)
 	}
+
 	eg := &errgroup.Group{}
 	sem := make(chan struct{}, 6)
 	for scr.Scan() {
@@ -59,29 +63,35 @@ func doGet(c *cli.Context) error {
 		if firstArg == "" {
 			firstArg = target
 		}
+		argCnt += 1
 		if parallel {
 			sem <- struct{}{}
 			eg.Go(func() error {
 				defer func() { <-sem }()
-				if err := g.get(target); err != nil {
+				if getInfo, err = g.get(target); err != nil {
 					logger.Logf("error", "failed to get %q: %s", target, err)
 				}
 				return nil
 			})
 		} else {
-			if err := g.get(target); err != nil {
+			if getInfo, err = g.get(target); err != nil {
 				return fmt.Errorf("failed to get %q: %w", target, err)
 			}
 		}
 	}
-	if err := scr.Err(); err != nil {
+	if err = scr.Err(); err != nil {
 		return fmt.Errorf("error occurred while reading input: %w", err)
 	}
-	if err := eg.Wait(); err != nil {
+	if err = eg.Wait(); err != nil {
 		return err
 	}
-	if andLook && firstArg != "" {
-		return look(firstArg, g.bare)
+	if andLook {
+		if argCnt > 1 && firstArg != "" {
+			return look(firstArg, g.bare)
+		}
+		if argCnt == 1 && getInfo.localRepository != nil {
+			return lookByLocalRepository(getInfo.localRepository)
+		}
 	}
 	return nil
 }
@@ -155,14 +165,7 @@ func look(name string, bare bool) error {
 	case 0:
 		return fmt.Errorf("no repository found")
 	case 1:
-		repo := reposFound[0]
-		cmd := exec.Command(detectShell())
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Dir = repo.FullPath
-		cmd.Env = append(os.Environ(), "GHQ_LOOK="+filepath.ToSlash(repo.RelPath))
-		return cmdutil.RunCommand(cmd, true)
+		return lookByLocalRepository(reposFound[0])
 	default:
 		b := &strings.Builder{}
 		b.WriteString("More than one repositories are found; Try more precise name\n")
@@ -171,4 +174,14 @@ func look(name string, bare bool) error {
 		}
 		return errors.New(b.String())
 	}
+}
+
+func lookByLocalRepository(repo *LocalRepository) error {
+	cmd := exec.Command(detectShell())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Dir = repo.FullPath
+	cmd.Env = append(os.Environ(), "GHQ_LOOK="+filepath.ToSlash(repo.RelPath))
+	return cmdutil.RunCommand(cmd, true)
 }
