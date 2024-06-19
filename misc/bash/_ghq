@@ -4,12 +4,14 @@ function _ghq () {
 
   case $cword in
   1)
-    COMPREPLY=( $(compgen -W "get list" -- $cur) );;
+    COMPREPLY=( $(compgen -W "get list rm" -- $cur) );;
   2)
     case $prev in
     get)
   	  COMPREPLY=( $(compgen -W "$(ghq list --unique)" -- $cur) );;
     list)
+  	  COMPREPLY=( $(compgen -W "$(ghq list)" -- $cur) );;
+    rm)
   	  COMPREPLY=( $(compgen -W "$(ghq list)" -- $cur) );;
     esac;;
   *)
