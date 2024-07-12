@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.6.2](https://github.com/x-motemen/ghq/compare/v1.6.1...v1.6.2) - 2024-07-12
+- chore: Update "go build" lines by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/391
+- feat(misc): support "ghq rm" completion by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/390
+- Optimize: Reduce full repo scans when look tag is set by @stong1994 in https://github.com/x-motemen/ghq/pull/386
+- Go 1.22.5 & update deps by @Songmu in https://github.com/x-motemen/ghq/pull/393
+
 ## [v1.6.1](https://github.com/x-motemen/ghq/compare/v1.6.0...v1.6.1) - 2024-04-10
 - Revert "feat: enable relative path ssh URL" by @Songmu in https://github.com/x-motemen/ghq/pull/385
 
