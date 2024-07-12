@@ -19,15 +19,19 @@ func getRepoLock(localRepoRoot string) bool {
 	return !loaded
 }
 
+type getInfo struct {
+	localRepository *LocalRepository
+}
+
 type getter struct {
 	update, shallow, silent, ssh, recursive, bare bool
 	vcs, branch                                   string
 }
 
-func (g *getter) get(argURL string) error {
+func (g *getter) get(argURL string) (getInfo, error) {
 	u, err := newURL(argURL, g.ssh, false)
 	if err != nil {
-		return fmt.Errorf("could not parse URL %q: %w", argURL, err)
+		return getInfo{}, fmt.Errorf("could not parse URL %q: %w", argURL, err)
 	}
 	branch := g.branch
 	if pos := strings.LastIndexByte(u.Path, '@'); pos >= 0 {
@@ -35,7 +39,7 @@ func (g *getter) get(argURL string) error {
 	}
 	remote, err := NewRemoteRepository(u)
 	if err != nil {
-		return err
+		return getInfo{}, err
 	}
 
 	return g.getRemoteRepository(remote, branch)
@@ -44,11 +48,14 @@ func (g *getter) get(argURL string) error {
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) error {
+func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) (getInfo, error) {
 	remoteURL := remote.URL()
 	local, err := LocalRepositoryFromURL(remoteURL, g.bare)
 	if err != nil {
-		return err
+		return getInfo{}, err
+	}
+	info := getInfo{
+		localRepository: local,
 	}
 
 	var (
@@ -63,7 +70,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) err
 			err = nil
 		}
 		if err != nil {
-			return err
+			return getInfo{}, err
 		}
 	}
 
@@ -82,7 +89,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) err
 		if !ok {
 			vcs, repoURL, err = remote.VCS()
 			if err != nil {
-				return err
+				return getInfo{}, err
 			}
 		}
 		if l := detectLocalRepoRoot(remoteURL.Path, repoURL.Path); l != "" {
@@ -97,29 +104,30 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) err
 			repoURL, _ = url.Parse(remoteURL.Opaque)
 		}
 		if getRepoLock(localRepoRoot) {
-			return vcs.Clone(&vcsGetOption{
-				url:       repoURL,
-				dir:       localRepoRoot,
-				shallow:   g.shallow,
-				silent:    g.silent,
-				branch:    branch,
-				recursive: g.recursive,
-				bare:      g.bare,
-			})
+			return info,
+				vcs.Clone(&vcsGetOption{
+					url:       repoURL,
+					dir:       localRepoRoot,
+					shallow:   g.shallow,
+					silent:    g.silent,
+					branch:    branch,
+					recursive: g.recursive,
+					bare:      g.bare,
+				})
 		}
-		return nil
+		return info, nil
 	case g.update:
 		logger.Log("update", fpath)
 		vcs, localRepoRoot := local.VCS()
 		if vcs == nil {
-			return fmt.Errorf("failed to detect VCS for %q", fpath)
+			return getInfo{}, fmt.Errorf("failed to detect VCS for %q", fpath)
 		}
 		repoURL := remoteURL
 		if remoteURL.Scheme == "codecommit" {
 			repoURL, _ = url.Parse(remoteURL.Opaque)
 		}
 		if getRepoLock(localRepoRoot) {
-			return vcs.Update(&vcsGetOption{
+			return info, vcs.Update(&vcsGetOption{
 				url:       repoURL,
 				dir:       localRepoRoot,
 				silent:    g.silent,
@@ -127,10 +135,10 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) err
 				bare:      g.bare,
 			})
 		}
-		return nil
+		return info, nil
 	}
 	logger.Log("exists", fpath)
-	return nil
+	return info, nil
 }
 
 func detectLocalRepoRoot(remotePath, repoPath string) string {
