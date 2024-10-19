@@ -39,7 +39,7 @@ get::
     shallow-cloned repository cannot be pushed to remote.
     Currently Git and Mercurial repositories are supported. +
     With '--branch' option, you can clone the repository with specified
-    repository. This option is currently supported for Git, Mercurial,
+    branch. This option is currently supported for Git, Mercurial,
     Subversion and git-svn. +
     The 'ghq' gets the git repository recursively by default. +
     We can prevent it with '--no-recursive' option.
