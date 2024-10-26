@@ -399,7 +399,7 @@ func localRepositoryRoots(all bool) ([]string, error) {
 		for _, v := range roots {
 			path := filepath.Clean(v)
 			if _, err := os.Stat(path); err == nil {
-				if path, err = filepath.EvalSymlinks(path); err != nil {
+				if path, err = evalSymlinks(path); err != nil {
 					_localRepoErr = err
 					return
 				}

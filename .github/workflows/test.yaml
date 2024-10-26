@@ -26,6 +26,6 @@ jobs:
       with:
         go-version-file: go.mod
     - name: test
-      run: go test -coverprofile coverage.out -covermode atomic ./...
+      run: sudo go test -coverprofile coverage.out -covermode atomic ./...
     - name: Send coverage
       uses: codecov/codecov-action@v1
