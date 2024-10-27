@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.6.3](https://github.com/x-motemen/ghq/compare/v1.6.2...v1.6.3) - 2024-10-27
+- Fix typo on README.adoc by @kromiii in https://github.com/x-motemen/ghq/pull/399
+- Add Windows Hardlink & Symbolic Link Support by @walnuts1018 in https://github.com/x-motemen/ghq/pull/401
+
 ## [v1.6.2](https://github.com/x-motemen/ghq/compare/v1.6.1...v1.6.2) - 2024-07-12
 - chore: Update "go build" lines by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/391
 - feat(misc): support "ghq rm" completion by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/390
