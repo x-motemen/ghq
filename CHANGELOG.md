@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.7.1](https://github.com/x-motemen/ghq/compare/v1.7.0...v1.7.1) - 2024-11-09
+- refine git vcs backend detection by @Songmu in https://github.com/x-motemen/ghq/pull/409
+
 ## [v1.7.0](https://github.com/x-motemen/ghq/compare/v1.6.3...v1.7.0) - 2024-11-09
 - fix integration_test by @Songmu in https://github.com/x-motemen/ghq/pull/403
 - add ChiselRepository by @Songmu in https://github.com/x-motemen/ghq/pull/405
