@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.7.0](https://github.com/x-motemen/ghq/compare/v1.6.3...v1.7.0) - 2024-11-09
+- fix integration_test by @Songmu in https://github.com/x-motemen/ghq/pull/403
+- add ChiselRepository by @Songmu in https://github.com/x-motemen/ghq/pull/405
+- resolve fossil-scm.org and sqlite.org as fossil repository by @Songmu in https://github.com/x-motemen/ghq/pull/406
+- on workflow_dispatch in tagpr.yaml by @Songmu in https://github.com/x-motemen/ghq/pull/407
+- update deps by @Songmu in https://github.com/x-motemen/ghq/pull/408
+
 ## [v1.6.3](https://github.com/x-motemen/ghq/compare/v1.6.2...v1.6.3) - 2024-10-27
 - Fix typo on README.adoc by @kromiii in https://github.com/x-motemen/ghq/pull/399
 - Add Windows Hardlink & Symbolic Link Support by @walnuts1018 in https://github.com/x-motemen/ghq/pull/401
