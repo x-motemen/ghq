@@ -6,7 +6,7 @@ u := $(if $(update),-u)
 
 .PHONY: deps
 deps:
-	go get ${u} -d $(VERBOSE_FLAG)
+	go get ${u} $(VERBOSE_FLAG)
 	go mod tidy
 
 .PHONY: devel-deps
