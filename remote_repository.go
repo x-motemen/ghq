@@ -134,6 +134,25 @@ func (repo *CodeCommitRepository) VCS() (*VCSBackend, *url.URL, error) {
 	return GitBackend, &u, nil
 }
 
+type ChiselRepository struct {
+	url *url.URL
+}
+
+// URL returns URL of the repository
+func (repo *ChiselRepository) URL() *url.URL {
+	return repo.url
+}
+
+// IsValid determine if the repository is valid or not
+func (repo *ChiselRepository) IsValid() bool {
+	return true
+}
+
+// VCS returns VCSBackend of the repository
+func (repo *ChiselRepository) VCS() (*VCSBackend, *url.URL, error) {
+	return FossilBackend, repo.URL(), nil
+}
+
 // OtherRepository represents other repository
 type OtherRepository struct {
 	url *url.URL
@@ -219,6 +238,8 @@ func NewRemoteRepository(u *url.URL) (RemoteRepository, error) {
 			return &DarksHubRepository{u}
 		case "nest.pijul.com":
 			return &NestPijulRepository{u}
+		case "chiselapp.com":
+			return &ChiselRepository{u}
 		default:
 			return &OtherRepository{u}
 		}
