@@ -201,6 +201,11 @@ func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL, error) {
 		return SubversionBackend, repo.URL(), nil
 	}
 
+	switch repo.url.Host {
+	case "fossil-scm.org", "sqlite.org":
+		return FossilBackend, repo.URL(), nil
+	}
+
 	// Detect VCS backend automatically
 	if cmdutil.RunSilently("git", "ls-remote", repo.url.String()) == nil {
 		return GitBackend, repo.URL(), nil
