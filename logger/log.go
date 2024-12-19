@@ -4,33 +4,63 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/motemen/go-colorine"
 )
 
-var logger = colorine.NewLogger(
-	colorine.Prefixes{
-		"git":      colorine.Verbose,
-		"hg":       colorine.Verbose,
-		"svn":      colorine.Verbose,
-		"darcs":    colorine.Verbose,
-		"pijul":    colorine.Verbose,
-		"bzr":      colorine.Verbose,
-		"fossil":   colorine.Verbose,
-		"skip":     colorine.Verbose,
-		"cd":       colorine.Verbose,
-		"resolved": colorine.Verbose,
+var (
+	NoColor      = colorine.TextStyle{Foreground: colorine.None, Background: colorine.None}
+	VerboseColor = colorine.Verbose // white
+	InfoColor    = colorine.Info    // green
+	NoticeColor  = colorine.Notice  // blue
+	WarnColor    = colorine.Warn    // yellow
+	ErrorColor   = colorine.Error   // red
+)
 
-		"open":    colorine.Warn,
-		"exists":  colorine.Warn,
-		"warning": colorine.Warn,
+var (
+	logger = colorine.NewLogger( // default logger with color
+		colorine.Prefixes{
+			// verbose
+			"git":      VerboseColor,
+			"hg":       VerboseColor,
+			"svn":      VerboseColor,
+			"darcs":    VerboseColor,
+			"pijul":    VerboseColor,
+			"bzr":      VerboseColor,
+			"fossil":   VerboseColor,
+			"skip":     VerboseColor,
+			"cd":       VerboseColor,
+			"resolved": VerboseColor,
+			// notice
+			"authorized": NoticeColor,
+			// warn
+			"open":    WarnColor,
+			"exists":  WarnColor,
+			"warning": WarnColor,
+			// error
+			"error": ErrorColor,
+		},
+		InfoColor, // default is info
+	)
 
-		"authorized": colorine.Notice,
-
-		"error": colorine.Error,
-	}, colorine.Info)
+	loggerWithoutColor = colorine.NewLogger(
+		colorine.Prefixes{},
+		NoColor,
+	)
+)
 
 func init() {
+	SelectLogger()
+}
+
+func SelectLogger() {
+	v := os.Getenv("NO_COLOR")
+
+	if strings.ToLower(v) == "true" {
+		logger = loggerWithoutColor
+	}
+
 	SetOutput(os.Stderr)
 }
 
@@ -39,12 +69,12 @@ func SetOutput(w io.Writer) {
 	logger.SetOutput(w)
 }
 
-// Log output
+// Log outputs log
 func Log(prefix, message string) {
 	logger.Log(prefix, message)
 }
 
-// Logf output log with format
+// Logf outputs log with format
 func Logf(prefix, msg string, args ...interface{}) {
 	Log(prefix, fmt.Sprintf(msg, args...))
 }
