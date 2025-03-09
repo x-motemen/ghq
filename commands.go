@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -38,6 +39,16 @@ var commandGet = &cli.Command{
 			Usage: "Specify `branch` name. This flag implies --single-branch on Git"},
 		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallelly"},
 		&cli.BoolFlag{Name: "bare", Usage: "Do a bare clone"},
+		&cli.StringFlag{
+			Name:  "partial",
+			Usage: "Do a partial clone. Can specify either \"blobless\" or \"treeless\"",
+			Action: func(ctx *cli.Context, v string) error {
+				expected := []string{"blobless", "treeless"}
+				if !slices.Contains(expected, v) {
+					return fmt.Errorf("flag partial value \"%v\" is not allowed", v)
+				}
+				return nil
+			}},
 	},
 }
 
@@ -94,7 +105,7 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
+	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
 	"list":   {"", "[-p] [-e] [<query>]"},
 	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
 	"rm":     {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
