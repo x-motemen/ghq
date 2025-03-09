@@ -35,6 +35,7 @@ func doGet(c *cli.Context) error {
 		branch:    c.String("branch"),
 		recursive: !c.Bool("no-recursive"),
 		bare:      c.Bool("bare"),
+		partial:   c.String("partial"),
 	}
 	if parallel {
 		// force silent in parallel import

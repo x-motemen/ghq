@@ -25,7 +25,7 @@ type getInfo struct {
 
 type getter struct {
 	update, shallow, silent, ssh, recursive, bare bool
-	vcs, branch                                   string
+	vcs, branch, partial                          string
 }
 
 func (g *getter) get(argURL string) (getInfo, error) {
@@ -113,6 +113,7 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) (ge
 					branch:    branch,
 					recursive: g.recursive,
 					bare:      g.bare,
+					partial:   g.partial,
 				})
 		}
 		return info, nil
