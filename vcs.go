@@ -44,7 +44,7 @@ type vcsGetOption struct {
 	url                              *url.URL
 	dir                              string
 	recursive, shallow, silent, bare bool
-	branch                           string
+	branch, partial                  string
 }
 
 // GitBackend is the VCSBackend of git
@@ -69,6 +69,11 @@ var GitBackend = &VCSBackend{
 		}
 		if vg.bare {
 			args = append(args, "--bare")
+		}
+		if vg.partial == "blobless" {
+			args = append(args, "--filter=blob:none")
+		} else if vg.partial == "treeless" {
+			args = append(args, "--filter=tree:0")
 		}
 		args = append(args, vg.url.String(), vg.dir)
 
