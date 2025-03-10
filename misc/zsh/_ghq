@@ -27,6 +27,7 @@ function _ghq () {
                         '--bare[Do a bare clone]' \
                         '(-b --branch)'{-b,--branch}'[Specify branch name]' \
                         '(-P --parallel)'{-P,--parallel}'[Import parallelly]' \
+                        '--partial[Do a partial clone]: :(blobless treeless)' \
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;
