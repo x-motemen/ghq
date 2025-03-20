@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,13 +24,14 @@ func doGet(c *cli.Context) error {
 		args     = c.Args().Slice()
 		andLook  = c.Bool("look")
 		parallel = c.Bool("parallel")
+		silent   = c.Bool("silent")
 	)
 	g := &getter{
 		update:    c.Bool("update"),
 		shallow:   c.Bool("shallow"),
 		ssh:       c.Bool("p"),
 		vcs:       c.String("vcs"),
-		silent:    c.Bool("silent"),
+		silent:    silent,
 		branch:    c.String("branch"),
 		recursive: !c.Bool("no-recursive"),
 		bare:      c.Bool("bare"),
@@ -37,6 +39,9 @@ func doGet(c *cli.Context) error {
 	if parallel {
 		// force silent in parallel import
 		g.silent = true
+	}
+	if silent {
+		logger.SetOutput(io.Discard)
 	}
 
 	var (

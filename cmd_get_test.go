@@ -221,6 +221,33 @@ func TestCommandGet(t *testing.T) {
 				t.Errorf("cloneArgs.bare should be true")
 			}
 		},
+	}, {
+		name: "silent mode",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+
+			out, _, err := captureWithInput([]string{}, func() {
+				app.Run([]string{"", "get", "--silent", "motemen/ghq-test-repo"})
+			})
+			if err != nil {
+				t.Errorf("error should be nil, but: %s", err)
+			}
+
+			expect := "https://github.com/motemen/ghq-test-repo"
+			if cloneArgs.remote.String() != expect {
+				t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+			}
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+
+			if !cloneArgs.silent {
+				t.Errorf("cloneArgs.silent should be true")
+			}
+			if out != "" {
+				t.Errorf("silent mode should not output any logs, but got: %s", out)
+			}
+		},
 	}}
 
 	for _, tc := range testCases {
