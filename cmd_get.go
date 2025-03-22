@@ -77,6 +77,12 @@ func doGet(c *cli.Context) error {
 			if getInfo, err = g.get(target); err != nil {
 				return fmt.Errorf("failed to get %q: %w", target, err)
 			}
+			fd := os.Stdout.Fd()
+			if !isatty.IsTerminal(fd) && !isatty.IsCygwinTerminal(fd) {
+				if getInfo.localRepository != nil {
+					fmt.Println(getInfo.localRepository.FullPath)
+				}
+			}
 		}
 	}
 	if err = scr.Err(); err != nil {
