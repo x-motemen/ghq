@@ -248,6 +248,52 @@ func TestCommandGet(t *testing.T) {
 				t.Errorf("silent mode should not output any logs, but got: %s", out)
 			}
 		},
+	}, {
+		name: "[partial] blobless",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+
+			app.Run([]string{"", "get", "--partial", "blobless", "motemen/ghq-test-repo"})
+
+			expect := "https://github.com/motemen/ghq-test-repo"
+			if cloneArgs.remote.String() != expect {
+				t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+			}
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+			if cloneArgs.partial != "blobless" {
+				t.Errorf("cloneArgs.partial should be \"blobless\"")
+			}
+		},
+	}, {
+		name: "[partial] treeless",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+
+			app.Run([]string{"", "get", "--partial", "treeless", "motemen/ghq-test-repo"})
+
+			expect := "https://github.com/motemen/ghq-test-repo"
+			if cloneArgs.remote.String() != expect {
+				t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+			}
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+			if cloneArgs.partial != "treeless" {
+				t.Errorf("cloneArgs.partial should be \"treeless\"")
+			}
+		},
+	}, {
+		name: "[partial] unacceptable value",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			err := app.Run([]string{"", "get", "--partial", "unacceptable", "motemen/ghq-test-repo"})
+
+			expect := "flag partial value \"unacceptable\" is not allowed"
+			if err.Error() != expect {
+				t.Errorf("got: %s, expect: %s", err.Error(), expect)
+			}
+		},
 	}}
 
 	for _, tc := range testCases {

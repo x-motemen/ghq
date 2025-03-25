@@ -16,7 +16,7 @@ You can also list local repositories (+ghq list+).
 == SYNOPSIS
 
 [verse]
-ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] [--bare] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
+ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq list [-p] [-e] [<query>]
 ghq create [--vcs <vcs>] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq rm [--dry-run] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
@@ -44,7 +44,10 @@ get::
     The 'ghq' gets the git repository recursively by default. +
     We can prevent it with '--no-recursive' option.
     With '--bare' option, a "bare clone" will be performed (for Git
-    repositories only, 'git clone --bare ...' eg.).
+    repositories only, 'git clone --bare ...' eg.). +
+    With '--partial' option, a "partial clone" will be performed (for Git
+    repositories only, in 'blobless' mode, 'git clone --filter=blob:none ...',
+    in 'treeless' mode, 'git clone --filter=tree:0 ...' eg.).
 
 list::
     List locally cloned repositories. If a query argument is given, only

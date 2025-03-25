@@ -36,6 +36,11 @@ complete -c ghq -n '__fish_seen_subcommand_from get' -l no-recursive -d 'Prevent
 complete -c ghq -n '__fish_seen_subcommand_from get' -s b -l branch -d 'Specify branch name. This flag implies --single-branch on Git'
 complete -c ghq -n '__fish_seen_subcommand_from get' -s P -l parallel -d 'Import parallelly'
 complete -c ghq -n '__fish_seen_subcommand_from get' -l bare -d 'Do a bare clone'
+function __complete_get_partial
+    printf '%s\t%s\n' 'blobless' 'Do a blobless clone'
+    printf '%s\t%s\n' 'treeless' 'Do a treeless clone'
+end
+complete -c ghq -n '__fish_seen_subcommand_from get' -l partial -d 'Do a partial clone' -xa '(__complete_get_partial)'
 
 complete -c ghq -n '__fish_seen_subcommand_from list' -s e -l exact -d 'Perform an exact match'
 complete -c ghq -n '__fish_seen_subcommand_from list' -l vcs -d 'Specify vcs backend for matching'

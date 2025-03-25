@@ -137,6 +137,26 @@ func TestVCSBackend(t *testing.T) {
 		},
 		expect: []string{"git", "clone", "--bare", remoteDummyURL.String(), localDir},
 	}, {
+		name: "[git] (partial) blobless clone",
+		f: func() error {
+			return GitBackend.Clone(&vcsGetOption{
+				url:     remoteDummyURL,
+				dir:     localDir,
+				partial: "blobless",
+			})
+		},
+		expect: []string{"git", "clone", "--filter=blob:none", remoteDummyURL.String(), localDir},
+	}, {
+		name: "[git] (partial) treeless clone",
+		f: func() error {
+			return GitBackend.Clone(&vcsGetOption{
+				url:     remoteDummyURL,
+				dir:     localDir,
+				partial: "treeless",
+			})
+		},
+		expect: []string{"git", "clone", "--filter=tree:0", remoteDummyURL.String(), localDir},
+	}, {
 		name: "[git] switch git-svn on update",
 		f: func() error {
 			err := os.MkdirAll(filepath.Join(localDir, ".git", "svn"), 0755)

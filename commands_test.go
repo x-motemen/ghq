@@ -15,6 +15,7 @@ type _cloneArgs struct {
 	recursive bool
 	bare      bool
 	silent    bool
+	partial   string
 }
 
 type _updateArgs struct {
@@ -41,6 +42,7 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 				recursive: vg.recursive,
 				bare:      vg.bare,
 				silent:    vg.silent,
+				partial:   vg.partial,
 			}
 			return nil
 		},
