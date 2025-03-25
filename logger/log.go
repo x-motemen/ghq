@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/motemen/go-colorine"
 )
@@ -51,16 +50,13 @@ var (
 )
 
 func init() {
-	SelectLogger()
+	selectLogger()
 }
 
-func SelectLogger() {
-	v := os.Getenv("NO_COLOR")
-
-	if strings.ToLower(v) == "true" {
+func selectLogger() {
+	if os.Getenv("NO_COLOR") != "" {
 		logger = loggerWithoutColor
 	}
-
 	SetOutput(os.Stderr)
 }
 
