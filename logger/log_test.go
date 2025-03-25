@@ -8,7 +8,7 @@ import (
 func TestLog(t *testing.T) {
 	t.Run("with color", func(t *testing.T) {
 		t.Logf("NO_COLOR: %s", os.Getenv("NO_COLOR"))
-		SelectLogger()
+		selectLogger()
 		// info
 		Log("default", "should be green")
 		// verbose
@@ -25,7 +25,7 @@ func TestLog(t *testing.T) {
 	t.Run("without color", func(t *testing.T) {
 		t.Setenv("NO_COLOR", "true")
 		t.Logf("NO_COLOR: %s", os.Getenv("NO_COLOR"))
-		SelectLogger()
+		selectLogger()
 		// info
 		Log("default", "should be none")
 		// verbose
