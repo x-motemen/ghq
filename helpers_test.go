@@ -78,7 +78,7 @@ func captureWithInput(in []string, block func()) (string, string, error) {
 	os.Stdin, stdin = rIn, os.Stdin
 
 	defer func() { os.Stdin = stdin }()
-	
+
 	for _, line := range in {
 		fmt.Fprintln(wIn, line)
 	}
