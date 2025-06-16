@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.9.0](https://github.com/x-motemen/ghq/compare/v1.8.0...v1.9.0) - 2025-06-16
+- Maintain: Bump dependencies by @Okabe-Junya in https://github.com/x-motemen/ghq/pull/418
+- chore(deps): bump golang.org/x/net from 0.37.0 to 0.38.0 by @dependabot in https://github.com/x-motemen/ghq/pull/423
+
 ## [v1.8.0](https://github.com/x-motemen/ghq/compare/v1.7.1...v1.8.0) - 2025-03-25
 - feat: support NO_COLOR environment variable by @hezhizhen in https://github.com/x-motemen/ghq/pull/411
 - Make the NO_COLOR environment variable accept strings other than the “true” strings by @Songmu in https://github.com/x-motemen/ghq/pull/417
