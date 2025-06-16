@@ -10,7 +10,7 @@ require (
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
 	github.com/saracen/walker v0.1.4
 	github.com/urfave/cli/v2 v2.27.6
-	golang.org/x/net v0.37.0
+	golang.org/x/net v0.38.0
 	golang.org/x/sync v0.12.0
 )
 
