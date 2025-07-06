@@ -14,12 +14,13 @@ var commands = []*cli.Command{
 	commandRm,
 	commandRoot,
 	commandCreate,
+	commandCheck,
 }
 
 var commandGet = &cli.Command{
-	Name:    "get",
+	Name:	"get",
 	Aliases: []string{"clone"},
-	Usage:   "Clone/sync with a remote repository",
+	Usage:	"Clone/sync with a remote repository",
 	Description: `
     Clone a repository under ghq root directory. If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
@@ -40,7 +41,7 @@ var commandGet = &cli.Command{
 		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallelly"},
 		&cli.BoolFlag{Name: "bare", Usage: "Do a bare clone"},
 		&cli.StringFlag{
-			Name:  "partial",
+			Name:	"partial",
 			Usage: "Do a partial clone. Can specify either \"blobless\" or \"treeless\"",
 			Action: func(ctx *cli.Context, v string) error {
 				expected := []string{"blobless", "treeless"}
@@ -53,7 +54,7 @@ var commandGet = &cli.Command{
 }
 
 var commandList = &cli.Command{
-	Name:  "list",
+	Name:	"list",
 	Usage: "List local repositories",
 	Description: `
     List locally cloned repositories. If a query argument is given, only
@@ -71,9 +72,15 @@ var commandList = &cli.Command{
 	},
 }
 
+var commandCheck = &cli.Command{
+	Name:	"check",
+	Usage:	"Check for uncommitted changes, stashes, and untracked files",
+	Action: doCheck,
+}
+
 var commandRm = &cli.Command{
-	Name:   "rm",
-	Usage:  "Remove local repository",
+	Name:	"rm",
+	Usage:	"Remove local repository",
 	Action: doRm,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "dry-run", Usage: "Do not remove actually"},
@@ -81,8 +88,8 @@ var commandRm = &cli.Command{
 }
 
 var commandRoot = &cli.Command{
-	Name:   "root",
-	Usage:  "Show repositories' root",
+	Name:	"root",
+	Usage:	"Show repositories' root",
 	Action: doRoot,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "all", Usage: "Show all roots"},
@@ -90,8 +97,8 @@ var commandRoot = &cli.Command{
 }
 
 var commandCreate = &cli.Command{
-	Name:   "create",
-	Usage:  "Create a new repository",
+	Name:	"create",
+	Usage:	"Create a new repository",
 	Action: doCreate,
 	Flags: []cli.Flag{
 		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend explicitly"},
@@ -100,16 +107,17 @@ var commandCreate = &cli.Command{
 }
 
 type commandDoc struct {
-	Parent    string
-	Arguments string
+	Parent		string
+	Arguments	string
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
-	"list":   {"", "[-p] [-e] [<query>]"},
+	"get":	{"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
+	"list":	{"", "[-p] [-e] [<query>]"},
+	"check": {"", ""},
 	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
-	"rm":     {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
-	"root":   {"", "[-all]"},
+	"rm":	{"", "<project>|<user>/<project>|<host>/<user>/<project>"},
+	"root":	{"", "[-all]"},
 }
 
 // Makes template conditionals to generate per-command documents.
