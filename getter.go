@@ -92,8 +92,12 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) (ge
 				return getInfo{}, err
 			}
 		}
+		hostFolderName, err := getHostFolderName(remoteURL)
+		if err != nil {
+			return getInfo{}, err
+		}
 		if l := detectLocalRepoRoot(remoteURL.Path, repoURL.Path); l != "" {
-			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
+			localRepoRoot = filepath.Join(local.RootPath, hostFolderName, l)
 		}
 
 		if g.bare {
@@ -144,12 +148,15 @@ func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) (ge
 
 func detectLocalRepoRoot(remotePath, repoPath string) string {
 	remotePath = strings.TrimSuffix(strings.TrimSuffix(remotePath, "/"), ".git")
+	logger.Log("remotePath", fmt.Sprintf("%s", remotePath))
 	repoPath = strings.TrimSuffix(strings.TrimSuffix(repoPath, "/"), ".git")
+	logger.Log("repoPath", fmt.Sprintf("%s", repoPath))
 	pathParts := strings.Split(repoPath, "/")
 	pathParts = pathParts[1:]
 	for i := 0; i < len(pathParts); i++ {
 		subPath := "/" + path.Join(pathParts[i:]...)
 		if subIdx := strings.Index(remotePath, subPath); subIdx >= 0 {
+			logger.Log("Returning from detectLocalRepoRoot", fmt.Sprintf("subidx %d, subPath %s", subIdx, subPath))
 			return remotePath[0:subIdx] + subPath
 		}
 	}

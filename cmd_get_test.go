@@ -194,11 +194,25 @@ func TestCommandGet(t *testing.T) {
 			tmpd := newTempDir(t)
 			t.Cleanup(gitconfig.WithConfig(t, fmt.Sprintf(`
 [ghq "https://github.com/motemen"]
-  root = "%s"
+	 root = "%s"
 `, filepath.ToSlash(tmpd))))
 			app.Run([]string{"", "get", "motemen/ghq-test-repo"})
 
 			localDir := filepath.Join(tmpd, "github.com", "motemen", "ghq-test-repo")
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+		},
+	}, {
+		name: "ghq<url>.hostFolderName",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			t.Cleanup(gitconfig.WithConfig(t, `
+[ghq "https://github.com"]
+	 hostFolderName = gh
+`))
+			app.Run([]string{"", "get", "motemen/ghq-test-repo"})
+
+			localDir := filepath.Join(tmpRoot, "gh", "motemen", "ghq-test-repo")
 			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
 				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
 			}

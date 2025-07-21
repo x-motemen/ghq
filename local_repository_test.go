@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -68,6 +69,60 @@ func TestLocalRepositoryFromFullPath(t *testing.T) {
 			}
 			if !reflect.DeepEqual(r.Subpaths(), tc.subpaths) {
 				t.Errorf("Subpaths:\ngot:    %+v\nexpect: %+v", r.Subpaths(), tc.subpaths)
+			}
+		})
+	}
+}
+
+func TestGetHostFolderName(t *testing.T) {
+	testCases := []struct {
+		name         string
+		url          string
+		configValue  string
+		configExists bool
+		expect       string
+	}{{
+		name:         "no config, uses hostname",
+		url:          "https://github.com/motemen/ghq.git",
+		configExists: false,
+		expect:       "github.com",
+	}, {
+		name:         "config with custom value",
+		url:          "https://github.com/motemen/ghq.git",
+		configValue:  "gh",
+		configExists: true,
+		expect:       "gh",
+	}, {
+		name:         "config with empty value, uses hostname",
+		url:          "https://github.com/motemen/ghq.git",
+		configValue:  "",
+		configExists: true,
+		expect:       "github.com",
+	}, {
+		name:         "config with whitespace value, uses hostname",
+		url:          "https://github.com/motemen/ghq.git",
+		configValue:  "   ",
+		configExists: true,
+		expect:       "github.com",
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.configExists {
+				cleanup := gitconfig.WithConfig(t, fmt.Sprintf(`
+[ghq "https://github.com"]
+  hostFolderName = %s
+`, tc.configValue))
+				defer cleanup()
+			}
+
+			url := mustParseURL(tc.url)
+			got, err := getHostFolderName(url)
+			if err != nil {
+				t.Errorf("error should be nil but: %s", err)
+			}
+			if got != tc.expect {
+				t.Errorf("got: %s, expect: %s", got, tc.expect)
 			}
 		})
 	}
