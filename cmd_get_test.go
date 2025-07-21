@@ -194,7 +194,7 @@ func TestCommandGet(t *testing.T) {
 			tmpd := newTempDir(t)
 			t.Cleanup(gitconfig.WithConfig(t, fmt.Sprintf(`
 [ghq "https://github.com/motemen"]
-root = "%s"
+  root = "%s"
 `, filepath.ToSlash(tmpd))))
 			app.Run([]string{"", "get", "motemen/ghq-test-repo"})
 
