@@ -77,6 +77,7 @@ var commandRm = &cli.Command{
 	Action: doRm,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "dry-run", Usage: "Do not remove actually"},
+		&cli.BoolFlag{Name: "bare", Usage: "Remove a bare repository"},
 	},
 }
 
