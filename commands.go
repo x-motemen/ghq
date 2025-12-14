@@ -39,6 +39,7 @@ var commandGet = &cli.Command{
 			Usage: "Specify `branch` name. This flag implies --single-branch on Git"},
 		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallelly"},
 		&cli.BoolFlag{Name: "bare", Usage: "Do a bare clone"},
+		&cli.StringFlag{Name: "worktree", Usage: "Create worktree at specified `path` (implies --bare)"},
 		&cli.StringFlag{
 			Name:  "partial",
 			Usage: "Do a partial clone. Can specify either \"blobless\" or \"treeless\"",

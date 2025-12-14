@@ -26,6 +26,7 @@ func doGet(c *cli.Context) error {
 		parallel = c.Bool("parallel")
 		silent   = c.Bool("silent")
 	)
+	worktreePath := c.String("worktree")
 	g := &getter{
 		update:    c.Bool("update"),
 		shallow:   c.Bool("shallow"),
@@ -34,8 +35,9 @@ func doGet(c *cli.Context) error {
 		silent:    silent,
 		branch:    c.String("branch"),
 		recursive: !c.Bool("no-recursive"),
-		bare:      c.Bool("bare"),
+		bare:      c.Bool("bare") || worktreePath != "", // --worktree implies --bare
 		partial:   c.String("partial"),
+		worktree:  worktreePath,
 	}
 	if parallel {
 		// force silent in parallel import

@@ -44,7 +44,7 @@ type vcsGetOption struct {
 	url                              *url.URL
 	dir                              string
 	recursive, shallow, silent, bare bool
-	branch, partial                  string
+	branch, partial, worktree        string
 }
 
 // GitBackend is the VCSBackend of git
@@ -77,7 +77,15 @@ var GitBackend = &VCSBackend{
 		}
 		args = append(args, vg.url.String(), vg.dir)
 
-		return run(vg.silent)("git", args...)
+		if err := run(vg.silent)("git", args...); err != nil {
+			return err
+		}
+
+		// Create worktree if specified
+		if vg.worktree != "" && vg.bare {
+			return createWorktreeFromBare(vg)
+		}
+		return nil
 	},
 	Update: func(vg *vcsGetOption) error {
 		if _, err := os.Stat(filepath.Join(vg.dir, ".git/svn")); err == nil {
@@ -396,6 +404,58 @@ var BazaarBackend = &VCSBackend{
 		return cmdutil.RunInDir(dir, "bzr", "init")
 	},
 	Contents: []string{".bzr"},
+}
+
+// createWorktreeFromBare creates a worktree from a bare repository
+func createWorktreeFromBare(vg *vcsGetOption) error {
+	// Configure fetch refspec for bare repo
+	if err := runInDir(true)(vg.dir, "git", "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"); err != nil {
+		return err
+	}
+	if err := runInDir(vg.silent)(vg.dir, "git", "fetch", "origin"); err != nil {
+		return err
+	}
+
+	branch := vg.branch
+	if branch == "" {
+		branch = detectDefaultBranch(vg.dir)
+	}
+	if branch == "" {
+		return fmt.Errorf("could not determine default branch for worktree")
+	}
+
+	localBranchExists := runInDir(true)(vg.dir, "git", "show-ref", "--verify", "--quiet", "refs/heads/"+branch) == nil
+	if localBranchExists {
+		return runInDir(vg.silent)(vg.dir, "git", "worktree", "add", vg.worktree, branch)
+	}
+	return runInDir(vg.silent)(vg.dir, "git", "worktree", "add", "-b", branch, "--track", vg.worktree, "origin/"+branch)
+}
+
+// detectDefaultBranch detects the default branch from a bare repository
+func detectDefaultBranch(dir string) string {
+	// Try symbolic-ref first
+	if out, err := exec.Command("git", "-C", dir, "symbolic-ref", "refs/remotes/origin/HEAD").Output(); err == nil {
+		parts := strings.Split(strings.TrimSpace(string(out)), "/")
+		if len(parts) > 0 {
+			return parts[len(parts)-1]
+		}
+	}
+	// Check common default branches
+	for _, b := range []string{"main", "master"} {
+		if runInDir(true)(dir, "git", "show-ref", "--verify", "--quiet", "refs/remotes/origin/"+b) == nil {
+			return b
+		}
+	}
+	// Use first remote branch
+	if out, err := exec.Command("git", "-C", dir, "branch", "-r").Output(); err == nil {
+		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "origin/") && !strings.Contains(line, "->") {
+				return strings.TrimPrefix(line, "origin/")
+			}
+		}
+	}
+	return ""
 }
 
 var vcsRegistry = map[string]*VCSBackend{
