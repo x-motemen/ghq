@@ -477,6 +477,125 @@ func TestCvsDummyBackend(t *testing.T) {
 	}
 }
 
+func TestWorktreeClone(t *testing.T) {
+	tempDir := newTempDir(t)
+	localDir := filepath.Join(tempDir, "repo.git")
+	worktreePath := filepath.Join(tempDir, "worktree")
+
+	var commands []*exec.Cmd
+	defer func(orig func(cmd *exec.Cmd) error) {
+		cmdutil.CommandRunner = orig
+	}(cmdutil.CommandRunner)
+
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+		commands = append(commands, cmd)
+		// Simulate show-ref behavior
+		if len(cmd.Args) >= 4 && cmd.Args[0] == "git" && cmd.Args[1] == "show-ref" {
+			ref := cmd.Args[len(cmd.Args)-1]
+			if ref == "refs/remotes/origin/main" {
+				return nil // remote main branch exists
+			}
+			if ref == "refs/heads/main" {
+				return fmt.Errorf("not found") // local branch doesn't exist
+			}
+		}
+		return nil
+	}
+
+	err := GitBackend.Clone(&vcsGetOption{
+		url:      remoteDummyURL,
+		dir:      localDir,
+		bare:     true,
+		worktree: worktreePath,
+		silent:   true,
+	})
+	if err != nil {
+		t.Errorf("error should be nil, but: %s", err)
+	}
+
+	// Verify the sequence of commands
+	expectedCommands := [][]string{
+		{"git", "clone", "--bare", remoteDummyURL.String(), localDir},
+		{"git", "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"},
+		{"git", "fetch", "origin"},
+		{"git", "show-ref", "--verify", "--quiet", "refs/remotes/origin/main"},
+		{"git", "show-ref", "--verify", "--quiet", "refs/heads/main"},
+		{"git", "worktree", "add", "-b", "main", "--track", worktreePath, "origin/main"},
+	}
+
+	if len(commands) != len(expectedCommands) {
+		t.Errorf("expected %d commands, got %d", len(expectedCommands), len(commands))
+		for i, cmd := range commands {
+			t.Logf("command %d: %v", i, cmd.Args)
+		}
+		return
+	}
+
+	for i, expected := range expectedCommands {
+		if !reflect.DeepEqual(commands[i].Args, expected) {
+			t.Errorf("command %d:\ngot:    %v\nexpect: %v", i, commands[i].Args, expected)
+		}
+	}
+}
+
+func TestWorktreeCloneWithBranch(t *testing.T) {
+	tempDir := newTempDir(t)
+	localDir := filepath.Join(tempDir, "repo.git")
+	worktreePath := filepath.Join(tempDir, "worktree")
+
+	var commands []*exec.Cmd
+	defer func(orig func(cmd *exec.Cmd) error) {
+		cmdutil.CommandRunner = orig
+	}(cmdutil.CommandRunner)
+
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+		commands = append(commands, cmd)
+		// Simulate show-ref behavior for develop branch
+		if len(cmd.Args) >= 4 && cmd.Args[0] == "git" && cmd.Args[1] == "show-ref" {
+			ref := cmd.Args[len(cmd.Args)-1]
+			if ref == "refs/heads/develop" {
+				return fmt.Errorf("not found") // local branch doesn't exist
+			}
+		}
+		return nil
+	}
+
+	err := GitBackend.Clone(&vcsGetOption{
+		url:      remoteDummyURL,
+		dir:      localDir,
+		bare:     true,
+		worktree: worktreePath,
+		branch:   "develop",
+		silent:   true,
+	})
+	if err != nil {
+		t.Errorf("error should be nil, but: %s", err)
+	}
+
+	// When branch is specified, it should skip detection and use that branch
+	expectedCommands := [][]string{
+		{"git", "clone", "--branch", "develop", "--single-branch", "--bare", remoteDummyURL.String(), localDir},
+		{"git", "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"},
+		{"git", "fetch", "origin"},
+		{"git", "show-ref", "--verify", "--quiet", "refs/heads/develop"},
+		{"git", "worktree", "add", "-b", "develop", "--track", worktreePath, "origin/develop"},
+	}
+
+	if len(commands) != len(expectedCommands) {
+		t.Errorf("expected %d commands, got %d", len(expectedCommands), len(commands))
+		for i, cmd := range commands {
+			t.Logf("command %d: %v", i, cmd.Args)
+		}
+		return
+	}
+
+	for i, expected := range expectedCommands {
+		if !reflect.DeepEqual(commands[i].Args, expected) {
+			t.Errorf("command %d:\ngot:    %v\nexpect: %v", i, commands[i].Args, expected)
+		}
+	}
+}
+
 func TestBranchOptionIgnoredErrors(t *testing.T) {
 	tempDir := newTempDir(t)
 	localDir := filepath.Join(tempDir, "repo")
