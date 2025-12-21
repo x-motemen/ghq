@@ -85,6 +85,13 @@ ghq.user::
     By default, the owner used is the value of the environment variable `USER` (or `USERNAME` on Windows).
     Setting this option allows you to explicitly specify the owner.
 
+ghq.completeUser::
+    Rather than always using your own username for owner completion,
+    you may want to complete the owner with the same name as the repository.
+    For example, fetch `ruby` as `github.com/ruby/ruby`,
+    `vim` as `github.com/vim/vim`, and `peco` as `github.com/peco/peco`.
+    If you prefer this behavior, set this option to `false` to switch the owner completion method.
+
 ghq.<url>.vcs::
     ghq tries to detect the remote repository's VCS backend for non-"github.com"
     repositories.  With this option you can explicitly specify the VCS for the
