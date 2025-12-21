@@ -79,6 +79,12 @@ ghq.root::
     want to specify "$GOPATH/src" as a secondary root (environment variables
     should be expanded.)
 
+ghq.user::
+    In ghq, when specifying only the repository name without slashes as in `ghq get {{Project}}`,
+    ghq attempts to auto-complete the repository owner.
+    By default, the owner used is the value of the environment variable `USER` (or `USERNAME` on Windows).
+    Setting this option allows you to explicitly specify the owner.
+
 ghq.<url>.vcs::
     ghq tries to detect the remote repository's VCS backend for non-"github.com"
     repositories.  With this option you can explicitly specify the VCS for the
