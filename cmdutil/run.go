@@ -48,6 +48,16 @@ func RunInDirSilently(dir, command string, args ...string) error {
 	return RunCommand(cmd, true)
 }
 
+// RunAndGetOutput runs the command and returns its output
+func RunAndGetOutput(command string, args ...string) (string, error) {
+	cmd := exec.Command(command, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", &RunError{cmd, err}
+	}
+	return string(output), nil
+}
+
 // RunFunc for the type command execution
 type RunFunc func(*exec.Cmd) error
 
