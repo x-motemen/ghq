@@ -1,6 +1,9 @@
 name: reviewdog
 on: [pull_request]
 
+permissions:
+  contents: read
+  pull-requests: write
 jobs:
   typos:
     timeout-minutes: 10

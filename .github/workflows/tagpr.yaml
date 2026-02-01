@@ -4,6 +4,10 @@ on:
     branches:
     - "master"
   workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
 jobs:
   tagpr:
     timeout-minutes: 20
