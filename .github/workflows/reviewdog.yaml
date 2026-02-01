@@ -3,6 +3,7 @@ on: [pull_request]
 
 jobs:
   typos:
+    timeout-minutes: 10
     name: Spell Check with Typos
     runs-on: ubuntu-latest
     steps:
@@ -10,6 +11,7 @@ jobs:
     - uses: crate-ci/typos@6e14cefb85882467bea636b5459c246203e7ac93 # v1.13.10
 
   staticcheck:
+    timeout-minutes: 10
     name: staticcheck
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +26,7 @@ jobs:
           level: warning
 
   misspell:
+    timeout-minutes: 10
     name: misspell
     runs-on: ubuntu-latest
     steps:
@@ -39,6 +42,7 @@ jobs:
           locale: "US"
 
   actionlint:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1

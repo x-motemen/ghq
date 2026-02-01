@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 jobs:
   tagpr:
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
     - name: checkout
