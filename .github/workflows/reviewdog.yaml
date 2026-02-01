@@ -16,7 +16,7 @@ jobs:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         persist-credentials: false
-    - uses: crate-ci/typos@6e14cefb85882467bea636b5459c246203e7ac93 # v1.13.10
+    - uses: crate-ci/typos@06d010dfe4c84fdab1a25ea02b57b3585018ba80 # v1.42.3
 
   staticcheck:
     permissions:
