@@ -6,6 +6,9 @@ permissions:
   pull-requests: write
 jobs:
   typos:
+    permissions:
+      contents: read
+      pull-requests: write
     timeout-minutes: 10
     name: Spell Check with Typos
     runs-on: ubuntu-latest
@@ -16,6 +19,9 @@ jobs:
     - uses: crate-ci/typos@6e14cefb85882467bea636b5459c246203e7ac93 # v1.13.10
 
   staticcheck:
+    permissions:
+      contents: read
+      pull-requests: write
     timeout-minutes: 10
     name: staticcheck
     runs-on: ubuntu-latest
@@ -31,6 +37,9 @@ jobs:
           level: warning
 
   misspell:
+    permissions:
+      contents: read
+      pull-requests: write
     timeout-minutes: 10
     name: misspell
     runs-on: ubuntu-latest
@@ -47,6 +56,9 @@ jobs:
           locale: "US"
 
   actionlint:
+    permissions:
+      contents: read
+      pull-requests: write
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
