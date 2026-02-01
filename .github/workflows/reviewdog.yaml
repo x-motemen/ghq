@@ -1,49 +1,70 @@
 name: reviewdog
 on: [pull_request]
 
+permissions:
+  contents: read
+  pull-requests: write
 jobs:
   typos:
+    permissions:
+      contents: read
+      pull-requests: write
+    timeout-minutes: 10
     name: Spell Check with Typos
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: crate-ci/typos@v1.13.10
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        persist-credentials: false
+    - uses: crate-ci/typos@6e14cefb85882467bea636b5459c246203e7ac93 # v1.13.10
 
   staticcheck:
+    permissions:
+      contents: read
+      pull-requests: write
+    timeout-minutes: 10
     name: staticcheck
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
       - name: staticcheck
-        uses: reviewdog/action-staticcheck@v1
+        uses: reviewdog/action-staticcheck@50f9bfcf3738839ddc95deac241b904d77469096 # v1.28.0
         with:
           reporter: github-pr-review
           level: warning
 
   misspell:
+    permissions:
+      contents: read
+      pull-requests: write
+    timeout-minutes: 10
     name: misspell
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
       - name: misspell
-        uses: reviewdog/action-misspell@v1
+        uses: reviewdog/action-misspell@d6429416b12b09b4e2768307d53bef58d172e962 # v1.27.0
         with:
           reporter: github-pr-review
           level: warning
           locale: "US"
 
   actionlint:
+    permissions:
+      contents: read
+      pull-requests: write
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: reviewdog/action-actionlint@v1
+      - uses: reviewdog/action-actionlint@e58ee9d111489c31395fbe4857b0be6e7635dbda # v1.70.0
         with:
           reporter: github-pr-review
