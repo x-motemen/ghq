@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.6
 
 require (
-	github.com/Songmu/gitconfig v0.2.1
+	github.com/Songmu/gitconfig v0.2.2
 	github.com/mattn/go-isatty v0.0.20
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
 	github.com/saracen/walker v0.1.4
