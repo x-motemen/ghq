@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.9.1](https://github.com/x-motemen/ghq/compare/v1.9.0...v1.9.1) - 2026-02-13
+- Go 1.26 by @Songmu in https://github.com/x-motemen/ghq/pull/439
+- migrate: Add multi-VCS remote URL support by @Copilot in https://github.com/x-motemen/ghq/pull/442
+
 ## [v1.9.0](https://github.com/x-motemen/ghq/compare/v1.8.1...v1.9.0) - 2026-02-13
 - chore(deps): bump github.com/Songmu/gitconfig from 0.2.1 to 0.2.2 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/434
 - chore(deps): bump crate-ci/typos from 1.42.3 to 1.43.3 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/436
