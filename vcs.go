@@ -38,6 +38,9 @@ type VCSBackend struct {
 	Init   func(dir string) error
 	// Returns VCS specific files
 	Contents []string
+	// Returns the remote URL of the repository at the given directory.
+	// If nil, the VCS backend does not support retrieving remote URLs.
+	RemoteURL func(dir string) (string, error)
 }
 
 type vcsGetOption struct {
@@ -46,6 +49,51 @@ type vcsGetOption struct {
 	recursive, shallow, silent, bare bool
 	branch, partial                  string
 }
+
+// getGitRemoteURL retrieves the remote URL from a git repository.
+// It tries 'origin' first, then falls back to the first remote.
+func getGitRemoteURL(dir string) (string, error) {
+	// Try 'origin' first
+	originCmd := exec.Command("git", "remote", "get-url", "origin")
+	originCmd.Dir = dir
+	originOut, originErr := originCmd.Output()
+	if originErr == nil {
+		originURL := strings.TrimSpace(string(originOut))
+		if originURL != "" {
+			return originURL, nil
+		}
+	}
+
+	// List all remotes
+	listCmd := exec.Command("git", "remote")
+	listCmd.Dir = dir
+	listOut, listErr := listCmd.Output()
+	if listErr != nil {
+		return "", fmt.Errorf("failed to list remotes: %w", listErr)
+	}
+
+	allRemotes := strings.Split(strings.TrimSpace(string(listOut)), "\n")
+	if len(allRemotes) == 0 || allRemotes[0] == "" {
+		return "", fmt.Errorf("no remotes found")
+	}
+
+	// Get first remote URL
+	first := allRemotes[0]
+	urlCmd := exec.Command("git", "remote", "get-url", first)
+	urlCmd.Dir = dir
+	urlOut, urlErr := urlCmd.Output()
+	if urlErr != nil {
+		return "", fmt.Errorf("failed to get URL of remote %q: %w", first, urlErr)
+	}
+
+	finalURL := strings.TrimSpace(string(urlOut))
+	if finalURL == "" {
+		return "", fmt.Errorf("remote %q has no URL", first)
+	}
+
+	return finalURL, nil
+}
+
 
 // GitBackend is the VCSBackend of git
 var GitBackend = &VCSBackend{
@@ -111,6 +159,9 @@ var GitBackend = &VCSBackend{
 		return cmdutil.RunInDir(dir, "git", args...)
 	},
 	Contents: []string{".git"},
+	RemoteURL: func(dir string) (string, error) {
+		return getGitRemoteURL(dir)
+	},
 }
 
 /*
@@ -184,6 +235,19 @@ var SubversionBackend = &VCSBackend{
 		return runInDir(vg.silent)(vg.dir, "svn", "update")
 	},
 	Contents: []string{".svn"},
+	RemoteURL: func(dir string) (string, error) {
+		cmd := exec.Command("svn", "info", "--show-item", "repos-root-url")
+		cmd.Dir = dir
+		output, err := cmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to get repository root URL: %w", err)
+		}
+		url := strings.TrimSpace(string(output))
+		if url == "" {
+			return "", fmt.Errorf("repository root URL is empty")
+		}
+		return url, nil
+	},
 }
 
 var svnLastRevReg = regexp.MustCompile(`(?m)^Last Changed Rev: (\d+)$`)
@@ -251,6 +315,10 @@ var GitsvnBackend = &VCSBackend{
 		return runInDir(vg.silent)(vg.dir, "git", "svn", "rebase")
 	},
 	Contents: []string{".git/svn"},
+	RemoteURL: func(dir string) (string, error) {
+		// git-svn repos are git repos, use git remote logic
+		return getGitRemoteURL(dir)
+	},
 }
 
 // MercurialBackend is the VCSBackend for mercurial
@@ -277,6 +345,19 @@ var MercurialBackend = &VCSBackend{
 		return cmdutil.RunInDir(dir, "hg", "init")
 	},
 	Contents: []string{".hg"},
+	RemoteURL: func(dir string) (string, error) {
+		cmd := exec.Command("hg", "paths", "default")
+		cmd.Dir = dir
+		output, err := cmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to get default path: %w", err)
+		}
+		url := strings.TrimSpace(string(output))
+		if url == "" {
+			return "", fmt.Errorf("default path is empty")
+		}
+		return url, nil
+	},
 }
 
 // DarcsBackend is the VCSBackend for darcs
@@ -307,6 +388,27 @@ var DarcsBackend = &VCSBackend{
 		return cmdutil.RunInDir(dir, "darcs", "init")
 	},
 	Contents: []string{"_darcs"},
+	RemoteURL: func(dir string) (string, error) {
+		cmd := exec.Command("darcs", "show", "repo")
+		cmd.Dir = dir
+		output, err := cmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to show repo: %w", err)
+		}
+		lines := strings.Split(string(output), "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(strings.TrimSpace(line), "Default Remote:") {
+				parts := strings.SplitN(line, ":", 2)
+				if len(parts) == 2 {
+					url := strings.TrimSpace(parts[1])
+					if url != "" {
+						return url, nil
+					}
+				}
+			}
+		}
+		return "", fmt.Errorf("no default remote found")
+	},
 }
 
 // PijulBackend is the VCSBackend for pijul
@@ -333,6 +435,23 @@ var PijulBackend = &VCSBackend{
 		return cmdutil.RunInDir(dir, "pijul", "init")
 	},
 	Contents: []string{".pijul"},
+	RemoteURL: func(dir string) (string, error) {
+		cmd := exec.Command("pijul", "remote")
+		cmd.Dir = dir
+		output, err := cmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to list remotes: %w", err)
+		}
+		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed != "" {
+				// First non-empty line is the first remote
+				return trimmed, nil
+			}
+		}
+		return "", fmt.Errorf("no remotes found")
+	},
 }
 
 var cvsDummyBackend = &VCSBackend{
@@ -372,6 +491,19 @@ var FossilBackend = &VCSBackend{
 		return cmdutil.RunInDir(dir, "fossil", "open", fossilRepoName)
 	},
 	Contents: []string{".fslckout", "_FOSSIL_"},
+	RemoteURL: func(dir string) (string, error) {
+		cmd := exec.Command("fossil", "remote-url")
+		cmd.Dir = dir
+		output, err := cmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to get remote URL: %w", err)
+		}
+		url := strings.TrimSpace(string(output))
+		if url == "" || url == "off" {
+			return "", fmt.Errorf("no remote URL configured")
+		}
+		return url, nil
+	},
 }
 
 // BazaarBackend is the VCSBackend for bazaar
@@ -396,6 +528,19 @@ var BazaarBackend = &VCSBackend{
 		return cmdutil.RunInDir(dir, "bzr", "init")
 	},
 	Contents: []string{".bzr"},
+	RemoteURL: func(dir string) (string, error) {
+		cmd := exec.Command("bzr", "config", "parent_location")
+		cmd.Dir = dir
+		output, err := cmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to get parent location: %w", err)
+		}
+		url := strings.TrimSpace(string(output))
+		if url == "" {
+			return "", fmt.Errorf("parent location is empty")
+		}
+		return url, nil
+	},
 }
 
 var vcsRegistry = map[string]*VCSBackend{

@@ -135,4 +135,38 @@ func TestMigrateEdgeCases(t *testing.T) {
 			t.Error("should fail when dest exists")
 		}
 	})
+
+	t.Run("unsupported_vcs", func(t *testing.T) {
+		// Create a CVS repository structure to test unsupported VCS
+		srcdir := filepath.Join(tmpdir, "src6", "cvs-repo")
+		cvsDir := filepath.Join(srcdir, "CVS")
+		os.MkdirAll(cvsDir, 0755)
+
+		// Create a minimal CVS/Repository file
+		repoFile := filepath.Join(cvsDir, "Repository")
+		os.WriteFile(repoFile, []byte("test-repo\n"), 0644)
+
+		a := newApp()
+		e := a.Run([]string{"ghq", "migrate", "-y", srcdir})
+		if e == nil {
+			t.Error("should fail for unsupported VCS (CVS)")
+		}
+		// Check that the error message mentions unsupported VCS
+		if e != nil && !contains(e.Error(), "not supported") {
+			t.Errorf("expected 'not supported' error, got: %v", e)
+		}
+	})
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsHelper(s, substr))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }
