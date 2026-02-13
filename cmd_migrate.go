@@ -12,10 +12,10 @@ import (
 
 func doMigrate(c *cli.Context) error {
 	var (
-		repoDir = c.Args().First()
-		dry     = c.Bool("dry-run")
+		repoDir     = c.Args().First()
+		dry         = c.Bool("dry-run")
 		skipConfirm = c.Bool("y")
-		w       = c.App.Writer
+		w           = c.App.Writer
 	)
 
 	if repoDir == "" {

@@ -107,11 +107,11 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":    {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
-	"list":   {"", "[-p] [-e] [<query>]"},
-	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
-	"rm":     {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
-	"root":   {"", "[-all]"},
+	"get":     {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
+	"list":    {"", "[-p] [-e] [<query>]"},
+	"create":  {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
+	"rm":      {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
+	"root":    {"", "[-all]"},
 	"migrate": {"", "[-y] [--dry-run] <repository-directory>"},
 }
 
@@ -143,15 +143,15 @@ OPTIONS:
 }
 
 var commandMigrate = &cli.Command{
-Name:  "migrate",
-Usage: "Migrate existing repository to ghq-managed directory",
-Description: `
+	Name:  "migrate",
+	Usage: "Migrate existing repository to ghq-managed directory",
+	Description: `
     Migrate an existing repository directory to the ghq-managed directory structure.
     The command detects the VCS backend, retrieves the remote URL, and moves
     the repository to the appropriate location under ghq root.`,
-Action: doMigrate,
-Flags: []cli.Flag{
-&cli.BoolFlag{Name: "y", Usage: "Skip confirmation prompt"},
-&cli.BoolFlag{Name: "dry-run", Usage: "Show what would happen without moving"},
-},
+	Action: doMigrate,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{Name: "y", Usage: "Skip confirmation prompt"},
+		&cli.BoolFlag{Name: "dry-run", Usage: "Show what would happen without moving"},
+	},
 }
