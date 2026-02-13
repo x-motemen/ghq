@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.9.2](https://github.com/x-motemen/ghq/compare/v1.9.1...v1.9.2) - 2026-02-13
+- Go 1.26 by @Songmu in https://github.com/x-motemen/ghq/pull/443
+
 ## [v1.9.1](https://github.com/x-motemen/ghq/compare/v1.9.0...v1.9.1) - 2026-02-13
 - Go 1.26 by @Songmu in https://github.com/x-motemen/ghq/pull/439
 - migrate: Add multi-VCS remote URL support by @Copilot in https://github.com/x-motemen/ghq/pull/442
