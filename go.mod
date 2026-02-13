@@ -1,8 +1,6 @@
 module github.com/x-motemen/ghq
 
-go 1.25.0
-
-toolchain go1.26.0
+go 1.26.0
 
 require (
 	github.com/Songmu/gitconfig v0.2.2
