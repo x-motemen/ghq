@@ -14,6 +14,7 @@ var commands = []*cli.Command{
 	commandRm,
 	commandRoot,
 	commandCreate,
+	commandMigrate,
 }
 
 var commandGet = &cli.Command{
@@ -111,6 +112,7 @@ var commandDocs = map[string]commandDoc{
 	"create": {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
 	"rm":     {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
 	"root":   {"", "[-all]"},
+	"migrate": {"", "[-y] [--dry-run] <repository-directory>"},
 }
 
 // Makes template conditionals to generate per-command documents.
@@ -138,4 +140,18 @@ OPTIONS:
     {{range .Flags}}{{.}}
     {{end}}
 {{end}}`
+}
+
+var commandMigrate = &cli.Command{
+Name:  "migrate",
+Usage: "Migrate existing repository to ghq-managed directory",
+Description: `
+    Migrate an existing repository directory to the ghq-managed directory structure.
+    The command detects the VCS backend, retrieves the remote URL, and moves
+    the repository to the appropriate location under ghq root.`,
+Action: doMigrate,
+Flags: []cli.Flag{
+&cli.BoolFlag{Name: "y", Usage: "Skip confirmation prompt"},
+&cli.BoolFlag{Name: "dry-run", Usage: "Show what would happen without moving"},
+},
 }
