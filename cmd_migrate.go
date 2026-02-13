@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 )
@@ -41,15 +39,13 @@ func doMigrate(c *cli.Context) error {
 		return fmt.Errorf("failed to detect VCS backend in %q", absDir)
 	}
 
-	// Get remote URL (currently only git is supported)
-	var remoteURL string
-	if vcsBackend == GitBackend {
-		remoteURL, err = getGitRemoteURL(absDir)
-		if err != nil {
-			return fmt.Errorf("failed to get remote URL: %w", err)
-		}
-	} else {
-		return fmt.Errorf("only git repositories are currently supported")
+	// Get remote URL
+	if vcsBackend.RemoteURL == nil {
+		return fmt.Errorf("migrate is not supported for this VCS backend")
+	}
+	remoteURL, err := vcsBackend.RemoteURL(absDir)
+	if err != nil {
+		return fmt.Errorf("failed to get remote URL: %w", err)
 	}
 
 	// Parse the remote URL
@@ -108,48 +104,4 @@ func doMigrate(c *cli.Context) error {
 
 	fmt.Fprintln(w, destPath)
 	return nil
-}
-
-// getGitRemoteURL retrieves the remote URL from a git repository
-// It tries 'origin' first, then falls back to the first remote
-func getGitRemoteURL(repoDir string) (string, error) {
-	// Try to get the URL of 'origin' remote
-	cmd := exec.Command("git", "remote", "get-url", "origin")
-	cmd.Dir = repoDir
-	output, err := cmd.Output()
-	if err == nil {
-		url := strings.TrimSpace(string(output))
-		if url != "" {
-			return url, nil
-		}
-	}
-
-	// Fall back to the first remote
-	cmd = exec.Command("git", "remote")
-	cmd.Dir = repoDir
-	output, err = cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to list remotes: %w", err)
-	}
-
-	remotes := strings.Split(strings.TrimSpace(string(output)), "\n")
-	if len(remotes) == 0 || remotes[0] == "" {
-		return "", fmt.Errorf("no remotes found")
-	}
-
-	// Get URL of the first remote
-	firstRemote := remotes[0]
-	cmd = exec.Command("git", "remote", "get-url", firstRemote)
-	cmd.Dir = repoDir
-	output, err = cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to get URL of remote %q: %w", firstRemote, err)
-	}
-
-	url := strings.TrimSpace(string(output))
-	if url == "" {
-		return "", fmt.Errorf("remote %q has no URL", firstRemote)
-	}
-
-	return url, nil
 }
