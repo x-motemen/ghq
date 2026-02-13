@@ -94,7 +94,6 @@ func getGitRemoteURL(dir string) (string, error) {
 	return finalURL, nil
 }
 
-
 // GitBackend is the VCSBackend of git
 var GitBackend = &VCSBackend{
 	// support submodules?

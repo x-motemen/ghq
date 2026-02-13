@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -152,21 +153,8 @@ func TestMigrateEdgeCases(t *testing.T) {
 			t.Error("should fail for unsupported VCS (CVS)")
 		}
 		// Check that the error message mentions unsupported VCS
-		if e != nil && !contains(e.Error(), "not supported") {
+		if e != nil && !strings.Contains(e.Error(), "not supported") {
 			t.Errorf("expected 'not supported' error, got: %v", e)
 		}
 	})
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsHelper(s, substr))
-}
-
-func containsHelper(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
