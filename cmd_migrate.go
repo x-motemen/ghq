@@ -91,7 +91,7 @@ func doMigrate(c *cli.Context) error {
 			return err
 		}
 		if !ok {
-			return fmt.Errorf("aborted")
+			return fmt.Errorf("migration aborted by user")
 		}
 	}
 
