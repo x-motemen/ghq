@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.9.3](https://github.com/x-motemen/ghq/compare/v1.9.2...v1.9.3) - 2026-02-14
+- migrate: Handle cross-device move (EXDEV fallback) by @Copilot in https://github.com/x-motemen/ghq/pull/446
+
 ## [v1.9.2](https://github.com/x-motemen/ghq/compare/v1.9.1...v1.9.2) - 2026-02-13
 - Go 1.26 by @Songmu in https://github.com/x-motemen/ghq/pull/443
 
