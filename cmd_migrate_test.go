@@ -158,3 +158,76 @@ func TestMigrateEdgeCases(t *testing.T) {
 		}
 	})
 }
+
+func TestMoveDir(t *testing.T) {
+	tmpdir := newTempDir(t)
+
+	t.Run("move_same_device", func(t *testing.T) {
+		srcDir := filepath.Join(tmpdir, "move_src")
+		dstDir := filepath.Join(tmpdir, "move_dst")
+
+		os.MkdirAll(srcDir, 0755)
+		os.WriteFile(filepath.Join(srcDir, "testfile.txt"), []byte("test"), 0644)
+
+		if err := moveDir(srcDir, dstDir); err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify destination exists
+		if _, err := os.Stat(dstDir); os.IsNotExist(err) {
+			t.Error("destination directory does not exist")
+		}
+
+		// Verify source is gone
+		if _, err := os.Stat(srcDir); !os.IsNotExist(err) {
+			t.Error("source directory still exists")
+		}
+
+		// Verify content
+		content, err := os.ReadFile(filepath.Join(dstDir, "testfile.txt"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(content) != "test" {
+			t.Errorf("content mismatch: got %q, want %q", content, "test")
+		}
+	})
+
+	t.Run("move_with_subdirectories", func(t *testing.T) {
+		srcDir := filepath.Join(tmpdir, "move_src2")
+		dstDir := filepath.Join(tmpdir, "move_dst2")
+
+		os.MkdirAll(filepath.Join(srcDir, "sub1", "sub2"), 0755)
+		os.WriteFile(filepath.Join(srcDir, "root.txt"), []byte("root"), 0644)
+		os.WriteFile(filepath.Join(srcDir, "sub1", "file1.txt"), []byte("file1"), 0644)
+		os.WriteFile(filepath.Join(srcDir, "sub1", "sub2", "file2.txt"), []byte("file2"), 0644)
+
+		if err := moveDir(srcDir, dstDir); err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify all files exist
+		files := []string{
+			"root.txt",
+			"sub1/file1.txt",
+			"sub1/sub2/file2.txt",
+		}
+		for _, f := range files {
+			path := filepath.Join(dstDir, f)
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				t.Errorf("file %s does not exist", f)
+			}
+		}
+
+		// Verify source is gone
+		if _, err := os.Stat(srcDir); !os.IsNotExist(err) {
+			t.Error("source directory still exists")
+		}
+	})
+
+	// Note: moveDir also has a cross-device (EXDEV) fallback path which is
+	// difficult to exercise reliably in unit tests because it depends on
+	// running across different filesystems. That behavior is validated in
+	// higher-level integration tests / environments that provide multiple
+	// mounts, rather than in this unit test.
+}

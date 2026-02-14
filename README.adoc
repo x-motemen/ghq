@@ -20,6 +20,7 @@ ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no
 ghq list [-p] [-e] [<query>]
 ghq create [--vcs <vcs>] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq rm [--dry-run] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
+ghq migrate [-y] [--dry-run] <local repository path>
 ghq root [--all]
 
 == COMMANDS
@@ -66,6 +67,11 @@ rm::
 
 create::
     Creates new repository.
+
+migrate::
+    Migrate an existing repository directory to the ghq-managed directory structure.
+    The command detects the VCS backend, retrieves the remote URL, and moves
+    the repository to the appropriate location under ghq root.
 
 == CONFIGURATION
 

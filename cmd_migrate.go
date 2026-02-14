@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
+	"github.com/otiai10/copy"
 	"github.com/urfave/cli/v2"
 )
 
@@ -98,10 +101,55 @@ func doMigrate(c *cli.Context) error {
 	}
 
 	// Move the repository
-	if err := os.Rename(absDir, destPath); err != nil {
+	if err := moveDir(absDir, destPath); err != nil {
 		return fmt.Errorf("failed to move repository: %w", err)
 	}
 
 	fmt.Fprintln(w, destPath)
 	return nil
+}
+
+// moveDir attempts to move directory from src to dst, with fallback for cross-device moves
+func moveDir(src, dst string) error {
+	// Try atomic rename first
+	renameErr := os.Rename(src, dst)
+	if renameErr == nil {
+		return nil
+	}
+
+	// Check for cross-device error
+	var linkError *os.LinkError
+	isCrossDevice := errors.As(renameErr, &linkError) && errors.Is(linkError.Err, syscall.EXDEV)
+
+	if !isCrossDevice {
+		return renameErr
+	}
+
+	// Fallback: copy directory tree using otiai10/copy, then remove source
+	opt := copy.Options{
+		// Preserve symlinks as-is
+		OnSymlink: func(src string) copy.SymlinkAction {
+			return copy.Shallow
+		},
+		// Skip special files (pipes, sockets, devices) as they're uncommon in repos
+		Skip: func(srcinfo os.FileInfo, src, dest string) (bool, error) {
+			mode := srcinfo.Mode()
+			// Skip if not regular file, directory, or symlink
+			if !mode.IsRegular() && !mode.IsDir() && mode&os.ModeSymlink == 0 {
+				return true, nil
+			}
+			return false, nil
+		},
+	}
+
+	copyErr := copy.Copy(src, dst, opt)
+	if copyErr != nil {
+		// Attempt to cleanup partial copy
+		if cleanupErr := os.RemoveAll(dst); cleanupErr != nil {
+			return fmt.Errorf("copy failed: %w (cleanup also failed: %v)", copyErr, cleanupErr)
+		}
+		return copyErr
+	}
+
+	return os.RemoveAll(src)
 }

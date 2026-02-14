@@ -3,3 +3,4 @@
 /dist
 .vscode
 .idea
+coverage.out
