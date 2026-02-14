@@ -3,12 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"syscall"
 
+	"github.com/otiai10/copy"
 	"github.com/urfave/cli/v2"
 )
 
@@ -126,84 +125,31 @@ func moveDir(src, dst string) error {
 		return renameErr
 	}
 
-	// Fallback: copy directory tree, then remove source
-	copyErr := copyDir(src, dst)
+	// Fallback: copy directory tree using otiai10/copy, then remove source
+	opt := copy.Options{
+		// Preserve symlinks as-is
+		OnSymlink: func(src string) copy.SymlinkAction {
+			return copy.Shallow
+		},
+		// Skip special files (pipes, sockets, devices) as they're uncommon in repos
+		Skip: func(srcinfo os.FileInfo, src, dest string) (bool, error) {
+			mode := srcinfo.Mode()
+			// Skip if not regular file, directory, or symlink
+			if !mode.IsRegular() && !mode.IsDir() && mode&os.ModeSymlink == 0 {
+				return true, nil
+			}
+			return false, nil
+		},
+	}
+
+	copyErr := copy.Copy(src, dst, opt)
 	if copyErr != nil {
-		// Attempt to cleanup partial copy, but prioritize returning the original error
+		// Attempt to cleanup partial copy
 		if cleanupErr := os.RemoveAll(dst); cleanupErr != nil {
-			// Log cleanup failure but return the original copy error
 			return fmt.Errorf("copy failed: %w (cleanup also failed: %v)", copyErr, cleanupErr)
 		}
 		return copyErr
 	}
 
 	return os.RemoveAll(src)
-}
-
-// copyDir recursively copies directory from src to dst, preserving permissions
-func copyDir(src, dst string) error {
-	walkFunc := func(path string, d fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-		destPath := filepath.Join(dst, relPath)
-
-		if d.IsDir() {
-			dirInfo, infoErr := d.Info()
-			if infoErr != nil {
-				return infoErr
-			}
-			return os.MkdirAll(destPath, dirInfo.Mode().Perm())
-		}
-
-		// Get file info for type checking
-		fileInfo, infoErr := d.Info()
-		if infoErr != nil {
-			return infoErr
-		}
-
-		// Handle symbolic links
-		if fileInfo.Mode()&os.ModeSymlink != 0 {
-			linkTarget, linkErr := os.Readlink(path)
-			if linkErr != nil {
-				return linkErr
-			}
-			return os.Symlink(linkTarget, destPath)
-		}
-
-		// Skip special non-regular files (named pipes, sockets, devices, etc.)
-		if !fileInfo.Mode().IsRegular() {
-			return nil
-		}
-		// Copy regular file
-		return copyFile(path, destPath, fileInfo.Mode().Perm())
-	}
-
-	return filepath.WalkDir(src, walkFunc)
-}
-
-// copyFile copies a file from src to dst with specified permissions
-func copyFile(src, dst string, perm os.FileMode) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer sourceFile.Close()
-
-	destFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	_, err = io.Copy(destFile, sourceFile)
-	if err == nil {
-		err = destFile.Sync()
-	}
-	return err
 }

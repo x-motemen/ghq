@@ -15,6 +15,8 @@ require (
 require (
 	github.com/cli/go-gh/v2 v2.13.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/otiai10/copy v1.14.1 // indirect
+	github.com/otiai10/mint v1.6.3 // indirect
 )
 
 require (
