@@ -129,7 +129,11 @@ func moveDir(src, dst string) error {
 	// Fallback: copy directory tree, then remove source
 	copyErr := copyDir(src, dst)
 	if copyErr != nil {
-		os.RemoveAll(dst) // cleanup partial copy
+		// Attempt to cleanup partial copy, but prioritize returning the original error
+		if cleanupErr := os.RemoveAll(dst); cleanupErr != nil {
+			// Log cleanup failure but return the original copy error
+			return fmt.Errorf("copy failed: %w (cleanup also failed: %v)", copyErr, cleanupErr)
+		}
 		return copyErr
 	}
 
@@ -154,7 +158,7 @@ func copyDir(src, dst string) error {
 			if infoErr != nil {
 				return infoErr
 			}
-			return os.MkdirAll(destPath, dirInfo.Mode())
+			return os.MkdirAll(destPath, dirInfo.Mode().Perm())
 		}
 
 		// Get file info for type checking
