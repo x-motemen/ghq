@@ -1,9 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/urfave/cli/v2"
 )
@@ -98,10 +102,97 @@ func doMigrate(c *cli.Context) error {
 	}
 
 	// Move the repository
-	if err := os.Rename(absDir, destPath); err != nil {
+	if err := moveDir(absDir, destPath); err != nil {
 		return fmt.Errorf("failed to move repository: %w", err)
 	}
 
 	fmt.Fprintln(w, destPath)
 	return nil
+}
+
+// moveDir attempts to move directory from src to dst, with fallback for cross-device moves
+func moveDir(src, dst string) error {
+	// Try atomic rename first
+	renameErr := os.Rename(src, dst)
+	if renameErr == nil {
+		return nil
+	}
+
+	// Check for cross-device error
+	var linkError *os.LinkError
+	isCrossDevice := errors.As(renameErr, &linkError) && errors.Is(linkError.Err, syscall.EXDEV)
+
+	if !isCrossDevice {
+		return renameErr
+	}
+
+	// Fallback: copy directory tree, then remove source
+	copyErr := copyDir(src, dst)
+	if copyErr != nil {
+		os.RemoveAll(dst) // cleanup partial copy
+		return copyErr
+	}
+
+	return os.RemoveAll(src)
+}
+
+// copyDir recursively copies directory from src to dst, preserving permissions
+func copyDir(src, dst string) error {
+	walkFunc := func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		destPath := filepath.Join(dst, relPath)
+
+		if d.IsDir() {
+			dirInfo, infoErr := d.Info()
+			if infoErr != nil {
+				return infoErr
+			}
+			return os.MkdirAll(destPath, dirInfo.Mode())
+		}
+
+		// Get file info for type checking
+		fileInfo, infoErr := d.Info()
+		if infoErr != nil {
+			return infoErr
+		}
+
+		// Handle symbolic links
+		if fileInfo.Mode()&os.ModeSymlink != 0 {
+			linkTarget, linkErr := os.Readlink(path)
+			if linkErr != nil {
+				return linkErr
+			}
+			return os.Symlink(linkTarget, destPath)
+		}
+
+		// Copy regular file
+		return copyFile(path, destPath, fileInfo.Mode())
+	}
+
+	return filepath.WalkDir(src, walkFunc)
+}
+
+// copyFile copies a file from src to dst with specified permissions
+func copyFile(src, dst string, perm os.FileMode) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	return err
 }
