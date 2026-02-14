@@ -392,4 +392,10 @@ func TestMoveDir(t *testing.T) {
 			t.Error("source directory still exists")
 		}
 	})
+
+	// Note: moveDir also has a cross-device (EXDEV) fallback path which is
+	// difficult to exercise reliably in unit tests because it depends on
+	// running across different filesystems. That behavior is validated in
+	// higher-level integration tests / environments that provide multiple
+	// mounts, rather than in this unit test.
 }
