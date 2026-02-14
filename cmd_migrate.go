@@ -176,6 +176,10 @@ func copyDir(src, dst string) error {
 			return os.Symlink(linkTarget, destPath)
 		}
 
+		// Skip special non-regular files (named pipes, sockets, devices, etc.)
+		if !fileInfo.Mode().IsRegular() {
+			return nil
+		}
 		// Copy regular file
 		return copyFile(path, destPath, fileInfo.Mode().Perm())
 	}
