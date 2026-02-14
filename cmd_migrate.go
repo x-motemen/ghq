@@ -202,5 +202,8 @@ func copyFile(src, dst string, perm os.FileMode) error {
 	defer destFile.Close()
 
 	_, err = io.Copy(destFile, sourceFile)
+	if err == nil {
+		err = destFile.Sync()
+	}
 	return err
 }
