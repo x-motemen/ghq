@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -185,13 +186,15 @@ if string(dstContent) != string(content) {
 t.Errorf("content mismatch: got %q, want %q", dstContent, content)
 }
 
-// Check permissions
-dstInfo, err := os.Stat(dstFile)
-if err != nil {
-t.Fatal(err)
-}
-if dstInfo.Mode().Perm() != 0644 {
-t.Errorf("permission mismatch: got %o, want %o", dstInfo.Mode().Perm(), 0644)
+// Check permissions (skip on Windows as it doesn't support Unix-style permissions)
+if runtime.GOOS != "windows" {
+	dstInfo, err := os.Stat(dstFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dstInfo.Mode().Perm() != 0644 {
+		t.Errorf("permission mismatch: got %o, want %o", dstInfo.Mode().Perm(), 0644)
+	}
 }
 })
 
@@ -207,12 +210,15 @@ if err := copyFile(srcFile, dstFile, 0755); err != nil {
 t.Fatal(err)
 }
 
-dstInfo, err := os.Stat(dstFile)
-if err != nil {
-t.Fatal(err)
-}
-if dstInfo.Mode().Perm() != 0755 {
-t.Errorf("permission mismatch: got %o, want %o", dstInfo.Mode().Perm(), 0755)
+// Check permissions (skip on Windows as it doesn't support Unix-style permissions)
+if runtime.GOOS != "windows" {
+	dstInfo, err := os.Stat(dstFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dstInfo.Mode().Perm() != 0755 {
+		t.Errorf("permission mismatch: got %o, want %o", dstInfo.Mode().Perm(), 0755)
+	}
 }
 })
 }
@@ -307,13 +313,16 @@ if err := copyDir(srcDir, dstDir); err != nil {
 t.Fatal(err)
 }
 
-dstSubdir := filepath.Join(dstDir, "restricted")
-info, err := os.Stat(dstSubdir)
-if err != nil {
-t.Fatal(err)
-}
-if info.Mode().Perm() != 0700 {
-t.Errorf("directory permission: got %o, want %o", info.Mode().Perm(), 0700)
+// Check permissions (skip on Windows as it doesn't support Unix-style permissions)
+if runtime.GOOS != "windows" {
+	dstSubdir := filepath.Join(dstDir, "restricted")
+	info, err := os.Stat(dstSubdir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0700 {
+		t.Errorf("directory permission: got %o, want %o", info.Mode().Perm(), 0700)
+	}
 }
 })
 }
