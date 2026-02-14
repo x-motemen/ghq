@@ -177,7 +177,7 @@ func copyDir(src, dst string) error {
 		}
 
 		// Copy regular file
-		return copyFile(path, destPath, fileInfo.Mode())
+		return copyFile(path, destPath, fileInfo.Mode().Perm())
 	}
 
 	return filepath.WalkDir(src, walkFunc)
