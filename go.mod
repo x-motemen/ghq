@@ -6,6 +6,7 @@ require (
 	github.com/Songmu/gitconfig v0.2.2
 	github.com/mattn/go-isatty v0.0.20
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
+	github.com/otiai10/copy v1.14.1
 	github.com/saracen/walker v0.1.4
 	github.com/urfave/cli/v2 v2.27.7
 	golang.org/x/net v0.50.0
@@ -15,7 +16,6 @@ require (
 require (
 	github.com/cli/go-gh/v2 v2.13.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/otiai10/copy v1.14.1 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
 )
 
