@@ -193,8 +193,8 @@ func replaceOnce(reg *regexp.Regexp, str, replace string) string {
 }
 
 func svnBase(p string) string {
-	if strings.HasSuffix(p, trunk) {
-		return strings.TrimSuffix(p, trunk)
+	if before, ok := strings.CutSuffix(p, trunk); ok {
+		return before
 	}
 	return replaceOnce(svnReg, p, "")
 }
@@ -394,8 +394,8 @@ var DarcsBackend = &VCSBackend{
 		if err != nil {
 			return "", fmt.Errorf("failed to show repo: %w", err)
 		}
-		lines := strings.Split(string(output), "\n")
-		for _, line := range lines {
+		lines := strings.SplitSeq(string(output), "\n")
+		for line := range lines {
 			if strings.HasPrefix(strings.TrimSpace(line), "Default Remote:") {
 				parts := strings.SplitN(line, ":", 2)
 				if len(parts) == 2 {
@@ -441,8 +441,8 @@ var PijulBackend = &VCSBackend{
 		if err != nil {
 			return "", fmt.Errorf("failed to list remotes: %w", err)
 		}
-		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-		for _, line := range lines {
+		lines := strings.SplitSeq(strings.TrimSpace(string(output)), "\n")
+		for line := range lines {
 			trimmed := strings.TrimSpace(line)
 			if trimmed != "" {
 				// First non-empty line is the first remote
