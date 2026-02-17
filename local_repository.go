@@ -74,8 +74,12 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 
 // LocalRepositoryFromURL resolve LocalRepository from URL
 func LocalRepositoryFromURL(remoteURL *url.URL, bare bool) (*LocalRepository, error) {
+	hostFolderName, err := getHostFolderName(remoteURL)
+	if err != nil {
+		return nil, err
+	}
 	pathParts := append(
-		[]string{remoteURL.Hostname()}, strings.Split(remoteURL.Path, "/")...,
+		[]string{hostFolderName}, strings.Split(remoteURL.Path, "/")...,
 	)
 	relPath := strings.TrimSuffix(filepath.Join(pathParts...), ".git")
 	pathParts[len(pathParts)-1] = strings.TrimSuffix(pathParts[len(pathParts)-1], ".git")
@@ -140,6 +144,30 @@ func getRoot(u string) (string, error) {
 		}
 	}
 	return prim, nil
+}
+
+// getHostFolderName returns the configured host folder name for the given URL,
+// or the hostname if no specific configuration is found
+// getHostFolderName returns the configured host folder name for the given URL,
+// or the hostname if no specific configuration is found
+func getHostFolderName(remoteURL *url.URL) (string, error) {
+	// Try to get ghq.hostFolderName config
+	hostFolderName, err := gitconfig.Do("--path", "--get-urlmatch", "ghq.hostFolderName", remoteURL.String())
+	if err != nil {
+		if gitconfig.IsNotFound(err) {
+			// No config found, use hostname
+			return remoteURL.Hostname(), nil
+		}
+		return "", err
+	}
+	
+	// If config exists and is not empty, use it
+	if strings.TrimSpace(hostFolderName) != "" {
+		return strings.TrimSpace(hostFolderName), nil
+	}
+	
+	// If config exists but is empty, use hostname
+	return remoteURL.Hostname(), nil
 }
 
 // Subpaths returns lists of tail parts of relative path from the root directory (shortest first)

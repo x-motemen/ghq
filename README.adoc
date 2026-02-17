@@ -112,11 +112,19 @@ ghq.<url>.root::
     you can specify a repository-specific root directory instead of the common ghq root directory. +
     The URL is matched against '<url>' using 'git config --get-urlmatch'.
 
+ghq<url>.hostFolderName::
+    By default, ghq uses the hostname from the repository URL as the directory name
+    (e.g., "github.com" for GitHub repositories). With this option, you can specify
+    a custom folder name to use instead of the hostname for all repositories. +
+    For example, setting this to "gh" will cause GitHub repositories to be stored
+    under "gh/" instead of "github.com/".
+
 
 === Example configuration (.gitconfig):
 
 ....
 [ghq "https://git.example.com/repos/"]
+hostFolderName = example
 vcs = git
 root = ~/myproj
 ....
