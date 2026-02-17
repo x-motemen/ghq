@@ -238,7 +238,9 @@ func repairWorktreeBackPointers(oldDir, destDir string) ([]string, error) {
 		return nil, err
 	}
 
-	oldPrefix := oldDir + string(filepath.Separator)
+	// Normalize paths to forward slashes for comparison, since Git uses forward slashes
+	// in gitdir files even on Windows
+	oldPrefixNorm := filepath.ToSlash(oldDir) + "/"
 	var paths []string
 	for _, e := range entries {
 		if !e.IsDir() {
@@ -255,8 +257,12 @@ func repairWorktreeBackPointers(oldDir, destDir string) ([]string, error) {
 		}
 
 		// Internal worktree: moved along with the repo → fix back-pointer
-		if strings.HasPrefix(wtPath, oldPrefix) {
-			newPath := filepath.Join(destDir, wtPath[len(oldDir):])
+		// Normalize wtPath for comparison since Git writes forward slashes on all platforms
+		wtPathNorm := filepath.ToSlash(wtPath)
+		if strings.HasPrefix(wtPathNorm, oldPrefixNorm) {
+			// Compute new path: take the relative portion and join with destDir
+			relativePart := wtPathNorm[len(oldPrefixNorm):]
+			newPath := filepath.ToSlash(filepath.Join(destDir, relativePart))
 			if err := os.WriteFile(gitdirFile, []byte(newPath+"\n"), 0644); err != nil {
 				return nil, fmt.Errorf("failed to rewrite gitdir for worktree %s: %w", e.Name(), err)
 			}
@@ -266,7 +272,8 @@ func repairWorktreeBackPointers(oldDir, destDir string) ([]string, error) {
 		// The gitdir file stores the path to the worktree's .git file
 		// (e.g., "/path/to/wt/.git"), but git worktree repair expects
 		// the worktree working directory (e.g., "/path/to/wt").
-		wtDir := strings.TrimSuffix(wtPath, string(filepath.Separator)+".git")
+		// Since wtPath is normalized to forward slashes, trim "/.git"
+		wtDir := strings.TrimSuffix(wtPath, "/.git")
 		paths = append(paths, wtDir)
 	}
 	return paths, nil

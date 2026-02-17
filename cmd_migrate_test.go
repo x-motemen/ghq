@@ -132,7 +132,7 @@ func TestDoMigrate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		wantGitdir := "gitdir: " + filepath.Join(dest, ".git", "worktrees", "wt")
+		wantGitdir := "gitdir: " + filepath.ToSlash(filepath.Join(dest, ".git", "worktrees", "wt"))
 		if got := strings.TrimSpace(string(content)); got != wantGitdir {
 			t.Errorf("worktree .git:\n  got:  %s\n  want: %s", got, wantGitdir)
 		}
@@ -197,7 +197,7 @@ func TestDoMigrate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		wantGitdir := "gitdir: " + filepath.Join(dest, ".git", "worktrees", "feat")
+		wantGitdir := "gitdir: " + filepath.ToSlash(filepath.Join(dest, ".git", "worktrees", "feat"))
 		if got := strings.TrimSpace(string(content)); got != wantGitdir {
 			t.Errorf("internal worktree .git:\n  got:  %s\n  want: %s", got, wantGitdir)
 		}
