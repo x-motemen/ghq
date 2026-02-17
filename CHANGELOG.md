@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.9.4](https://github.com/x-motemen/ghq/compare/v1.9.3...v1.9.4) - 2026-02-17
+- apply go fix modernizations by @yulog in https://github.com/x-motemen/ghq/pull/450
+- feat(migrate): make worktree and submodule aware by @atusy in https://github.com/x-motemen/ghq/pull/449
+- chore(deps): bump crate-ci/typos from 1.43.3 to 1.43.4 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/451
+- chore(deps): bump Songmu/tagpr from 1.15.0 to 1.17.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/452
+- Fix Windows worktree migration failure: normalize Git path separators by @Copilot in https://github.com/x-motemen/ghq/pull/454
+
 ## [v1.9.3](https://github.com/x-motemen/ghq/compare/v1.9.2...v1.9.3) - 2026-02-14
 - migrate: Handle cross-device move (EXDEV fallback) by @Copilot in https://github.com/x-motemen/ghq/pull/446
 
