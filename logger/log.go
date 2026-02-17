@@ -71,6 +71,6 @@ func Log(prefix, message string) {
 }
 
 // Logf outputs log with format
-func Logf(prefix, msg string, args ...interface{}) {
+func Logf(prefix, msg string, args ...any) {
 	Log(prefix, fmt.Sprintf(msg, args...))
 }

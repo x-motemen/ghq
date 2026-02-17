@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -166,7 +167,7 @@ func (repo *LocalRepository) repoRootCandidates() []string {
 	hostRoot := filepath.Join(repo.RootPath, repo.PathParts[0])
 	nonHostParts := repo.PathParts[1:]
 	candidates := make([]string, len(nonHostParts))
-	for i := 0; i < len(nonHostParts); i++ {
+	for i := range nonHostParts {
 		candidates[i] = filepath.Join(append(
 			[]string{hostRoot}, nonHostParts[0:len(nonHostParts)-i]...)...)
 	}
@@ -184,13 +185,7 @@ func (repo *LocalRepository) IsUnderPrimaryRoot() bool {
 
 // Matches checks if any subpath of the local repository equals the query.
 func (repo *LocalRepository) Matches(pathQuery string) bool {
-	for _, p := range repo.Subpaths() {
-		if p == pathQuery {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(repo.Subpaths(), pathQuery)
 }
 
 // VCS returns VCSBackend of the repository

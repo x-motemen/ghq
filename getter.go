@@ -149,8 +149,8 @@ func detectLocalRepoRoot(remotePath, repoPath string) string {
 	pathParts = pathParts[1:]
 	for i := 0; i < len(pathParts); i++ {
 		subPath := "/" + path.Join(pathParts[i:]...)
-		if subIdx := strings.Index(remotePath, subPath); subIdx >= 0 {
-			return remotePath[0:subIdx] + subPath
+		if before, _, ok := strings.Cut(remotePath, subPath); ok {
+			return before + subPath
 		}
 	}
 	return ""
