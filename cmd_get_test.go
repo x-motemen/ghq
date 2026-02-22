@@ -303,6 +303,73 @@ func TestCommandGet(t *testing.T) {
 	}
 }
 
+func TestCommandGet_print(t *testing.T) {
+	testCases := []struct {
+		name       string
+		args       []string
+		inputRepos []string
+	}{{
+		name:       "single repo",
+		args:       []string{"", "get", "--print", "motemen/ghq-test-repo"},
+		inputRepos: nil,
+	}, {
+		name:       "bulk from stdin",
+		args:       []string{"", "get", "--print"},
+		inputRepos: []string{"github.com/x-motemen/ghq", "github.com/motemen/gore"},
+	}, {
+		name:       "bulk parallel",
+		args:       []string{"", "get", "--print", "--parallel"},
+		inputRepos: []string{"github.com/x-motemen/ghq", "github.com/motemen/gore"},
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			withFakeGitBackend(t, func(t *testing.T, tmpRoot string, _ *_cloneArgs, _ *_updateArgs) {
+				// pre-create dirs for bulk cases
+				for _, r := range tc.inputRepos {
+					os.MkdirAll(filepath.Join(tmpRoot, r, ".git"), 0755)
+				}
+
+				var out string
+				var err error
+				if len(tc.inputRepos) > 0 {
+					out, _, err = captureWithInput(tc.inputRepos, func() {
+						newApp().Run(tc.args)
+					})
+				} else {
+					out, _, err = capture(func() {
+						newApp().Run(tc.args)
+					})
+				}
+				if err != nil {
+					t.Fatalf("capture error: %s", err)
+				}
+
+				lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+				if len(tc.inputRepos) == 0 {
+					// single repo: output should contain the local path
+					if len(lines) != 1 || lines[0] == "" {
+						t.Errorf("expected one path in output, got: %q", out)
+					}
+					if !filepath.IsAbs(lines[0]) {
+						t.Errorf("expected absolute path, got: %q", lines[0])
+					}
+				} else {
+					// bulk: one path per repo
+					if len(lines) != len(tc.inputRepos) {
+						t.Errorf("expected %d paths, got %d: %q", len(tc.inputRepos), len(lines), out)
+					}
+					for _, line := range lines {
+						if !filepath.IsAbs(line) {
+							t.Errorf("expected absolute path, got: %q", line)
+						}
+					}
+				}
+			})
+		})
+	}
+}
+
 func TestLook(t *testing.T) {
 	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {
 		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "ghq", ".git"), 0755)
