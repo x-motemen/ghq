@@ -10,7 +10,7 @@ require (
 	github.com/saracen/walker v0.1.4
 	github.com/urfave/cli/v2 v2.27.7
 	golang.org/x/net v0.50.0
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
