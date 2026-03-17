@@ -21,10 +21,11 @@ import (
 
 func doGet(c *cli.Context) error {
 	var (
-		args     = c.Args().Slice()
-		andLook  = c.Bool("look")
-		parallel = c.Bool("parallel")
-		silent   = c.Bool("silent")
+		args      = c.Args().Slice()
+		andLook   = c.Bool("look")
+		parallel  = c.Bool("parallel")
+		silent    = c.Bool("silent")
+		printPath = c.Bool("print")
 	)
 	g := &getter{
 		update:    c.Bool("update"),
@@ -74,14 +75,21 @@ func doGet(c *cli.Context) error {
 			sem <- struct{}{}
 			eg.Go(func() error {
 				defer func() { <-sem }()
-				if getInfo, err = g.get(target); err != nil {
-					logger.Logf("error", "failed to get %q: %s", target, err)
+				info, getErr := g.get(target)
+				getInfo, err = info, getErr
+				if getErr != nil {
+					logger.Logf("error", "failed to get %q: %s", target, getErr)
+				} else if printPath && info.localRepository != nil {
+					fmt.Println(info.localRepository.FullPath)
 				}
 				return nil
 			})
 		} else {
 			if getInfo, err = g.get(target); err != nil {
 				return fmt.Errorf("failed to get %q: %w", target, err)
+			}
+			if printPath && getInfo.localRepository != nil {
+				fmt.Println(getInfo.localRepository.FullPath)
 			}
 		}
 	}
