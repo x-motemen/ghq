@@ -396,6 +396,31 @@ func TestBareLook(t *testing.T) {
 	})
 }
 
+func TestLookFromGitConfig(t *testing.T) {
+	withFakeGitBackend(t, func(t *testing.T, tmproot string, _ *_cloneArgs, _ *_updateArgs) {
+		os.MkdirAll(filepath.Join(tmproot, "github.com", "motemen", "ghq", ".git"), 0755)
+		defer func(orig func(cmd *exec.Cmd) error) {
+			cmdutil.CommandRunner = orig
+		}(cmdutil.CommandRunner)
+		var lastCmd *exec.Cmd
+		cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+			lastCmd = cmd
+			return nil
+		}
+
+		t.Cleanup(gitconfig.WithConfig(t, `[ghq]
+  look = true
+`))
+		err := newApp().Run([]string{"", "get", "https://github.com/motemen/ghq"})
+		if err != nil {
+			t.Errorf("error should be nil, but: %s", err)
+		}
+		if lastCmd == nil {
+			t.Fatal("shell should have been launched")
+		}
+	})
+}
+
 func TestDoGet_bulk(t *testing.T) {
 	in := []string{
 		"github.com/x-motemen/ghq",
