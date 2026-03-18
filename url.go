@@ -139,7 +139,12 @@ func newURL(ref string, ssh, forceMe bool) (*url.URL, error) {
 			}
 		}
 		u.Scheme = "https"
-		u.Host = "github.com"
+		host, err := gitconfig.Get("ghq.defaultHost")
+		if (err != nil && !gitconfig.IsNotFound(err)) || host != "" {
+			u.Host = host
+		} else {
+			u.Host = "github.com"
+		}
 		if u.Path[0] != '/' {
 			u.Path = "/" + u.Path
 		}

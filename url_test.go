@@ -66,6 +66,15 @@ completeUser = false`))
 		url:    "peco",
 		expect: "https://github.com/peco/peco",
 		host:   "github.com",
+	}, {
+		name: "configured default host",
+		setup: func(t *testing.T) {
+			t.Cleanup(gitconfig.WithConfig(t, `[ghq]
+defaultHost = gitlab.com`))
+		},
+		url:    "gnuwget/wget2",
+		expect: "https://gitlab.com/gnuwget/wget2",
+		host:   "gitlab.com",
 	}}
 
 	for _, tc := range testCases {
