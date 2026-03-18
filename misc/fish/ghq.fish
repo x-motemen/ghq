@@ -48,6 +48,7 @@ complete -c ghq -n '__fish_seen_subcommand_from list' -s p -l full-path -d 'Prin
 complete -c ghq -n '__fish_seen_subcommand_from list' -l unique -d 'Print unique subpaths'
 
 complete -c ghq -n '__fish_seen_subcommand_from rm' -l dry-run -d 'Do not remove actually'
+complete -c ghq -n '__fish_seen_subcommand_from rm' -xa '(ghq list)'
 
 complete -c ghq -n '__fish_seen_subcommand_from root' -l all -d 'Show all roots'
 

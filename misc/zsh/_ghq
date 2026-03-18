@@ -58,7 +58,7 @@ function _ghq () {
                     _arguments -C \
                         '--dry-run[Do not remove actually]' \
                         '--bare[Remove a bare repository]' \
-                        '(-)*:: :->null_state' \
+                        '(-)*: :__ghq_all_repositories' \
                         && ret=0
                     ;;
                 (migrate)
@@ -81,6 +81,12 @@ function _ghq () {
 __ghq_repositories () {
     local -a _repos
     _repos=( ${(@f)"$(_call_program repositories ghq list --unique)"} )
+    _describe -t repositories Repositories _repos
+}
+
+__ghq_all_repositories () {
+    local -a _repos
+    _repos=( ${(@f)"$(_call_program repositories ghq list)"} )
     _describe -t repositories Repositories _repos
 }
 
