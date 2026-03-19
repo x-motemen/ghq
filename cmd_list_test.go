@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	"context"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -9,26 +9,11 @@ import (
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/urfave/cli/v2"
 )
-
-func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
-	set := flag.NewFlagSet(name, flag.ContinueOnError)
-
-	for _, f := range flags {
-		f.Apply(set)
-	}
-	return set
-}
 
 func TestCommandList(t *testing.T) {
 	_, _, err := capture(func() {
-		app := cli.NewApp()
-		flagSet := flagSet("list", commandList.Flags)
-		c := cli.NewContext(app, flagSet, nil)
-
-		doList(c)
+		newApp().Run(context.Background(), []string{"ghq", "list"})
 	})
 
 	if err != nil {
@@ -38,12 +23,7 @@ func TestCommandList(t *testing.T) {
 
 func TestCommandListUnique(t *testing.T) {
 	_, _, err := capture(func() {
-		app := cli.NewApp()
-		flagSet := flagSet("list", commandList.Flags)
-		flagSet.Parse([]string{"--unique"})
-		c := cli.NewContext(app, flagSet, nil)
-
-		doList(c)
+		newApp().Run(context.Background(), []string{"ghq", "list", "--unique"})
 	})
 
 	if err != nil {
@@ -53,12 +33,7 @@ func TestCommandListUnique(t *testing.T) {
 
 func TestCommandListUnknown(t *testing.T) {
 	_, _, err := capture(func() {
-		app := cli.NewApp()
-		flagSet := flagSet("list", commandList.Flags)
-		flagSet.Parse([]string{"--unknown-flag"})
-		c := cli.NewContext(app, flagSet, nil)
-
-		doList(c)
+		newApp().Run(context.Background(), []string{"ghq", "list", "--unknown-flag"})
 	})
 
 	if err != nil {
@@ -158,7 +133,7 @@ func TestDoList_query(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				args := append([]string{"ghq", "list"}, tc.args...)
 				out, _, _ := capture(func() {
-					newApp().Run(args)
+					newApp().Run(context.Background(), args)
 				})
 				if !equalPathLines(out, tc.expect) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, tc.expect)
@@ -177,7 +152,7 @@ func TestDoList_query(t *testing.T) {
 					fullExpect += "\n"
 				}
 				out, _, _ = capture(func() {
-					newApp().Run(argsFull)
+					newApp().Run(context.Background(), argsFull)
 				})
 				if !equalPathLines(out, fullExpect) {
 					t.Errorf("got:\n%s\nexpect:\n%s", out, fullExpect)
@@ -201,7 +176,7 @@ func TestDoList_unique(t *testing.T) {
 		os.MkdirAll(filepath.Join(rootPath, "github.com/motemen/ghq/.git"), 0755)
 	}
 	out, _, _ := capture(func() {
-		newApp().Run([]string{"ghq", "list", "--unique"})
+		newApp().Run(context.Background(), []string{"ghq", "list", "--unique"})
 	})
 	if out != "ghq\n" {
 		t.Errorf("got: %s, expect: ghq\n", out)
@@ -214,7 +189,7 @@ func TestDoList_unknownRoot(t *testing.T) {
 	_localRepositoryRoots = nil
 	localRepoOnce = &sync.Once{}
 
-	err := newApp().Run([]string{"ghq", "list"})
+	err := newApp().Run(context.Background(), []string{"ghq", "list"})
 	if err != nil {
 		t.Errorf("error should be nil, but: %v", err)
 	}
@@ -233,7 +208,7 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 	localRepoOnce = &sync.Once{}
 	os.Chmod(tmpdir, 0000)
 
-	err := newApp().Run([]string{"ghq", "list"})
+	err := newApp().Run(context.Background(), []string{"ghq", "list"})
 	if err != nil {
 		t.Errorf("error should be nil, but: %+v", err)
 	}
@@ -253,7 +228,7 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 	_localRepositoryRoots = nil
 	localRepoOnce = &sync.Once{}
 
-	err := newApp().Run([]string{"ghq", "list"})
+	err := newApp().Run(context.Background(), []string{"ghq", "list"})
 	if err != nil {
 		t.Errorf("error should be nil, but: %v", err)
 	}
