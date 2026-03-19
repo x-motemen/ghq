@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -26,7 +27,7 @@ func TestCommandGet(t *testing.T) {
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
-			app.Run([]string{"", "get", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "motemen/ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -53,7 +54,7 @@ func TestCommandGet(t *testing.T) {
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
-			app.Run([]string{"", "get", "-p", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "-p", "motemen/ghq-test-repo"})
 
 			expect := "ssh://git@github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -73,7 +74,7 @@ func TestCommandGet(t *testing.T) {
 			// mark as "already cloned", the condition may change later
 			os.MkdirAll(filepath.Join(localDir, ".git"), 0755)
 
-			app.Run([]string{"", "get", "-update", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "-update", "motemen/ghq-test-repo"})
 
 			if updateArgs.local != localDir {
 				t.Errorf("got: %s, expect: %s", updateArgs.local, localDir)
@@ -84,7 +85,7 @@ func TestCommandGet(t *testing.T) {
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
-			app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "-shallow", "motemen/ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -106,7 +107,7 @@ func TestCommandGet(t *testing.T) {
 			os.Chdir(localDir)
 			defer os.Chdir(wd)
 
-			app.Run([]string{"", "get", "-update", "." + string(filepath.Separator) + "ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "-update", "." + string(filepath.Separator) + "ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -126,7 +127,7 @@ func TestCommandGet(t *testing.T) {
 			os.Chdir(localDir)
 			defer os.Chdir(wd)
 
-			app.Run([]string{"", "get", "-update", ".." + string(filepath.Separator) + "ghq-another-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "-update", ".." + string(filepath.Separator) + "ghq-another-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-another-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -143,7 +144,7 @@ func TestCommandGet(t *testing.T) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
 			expectBranch := "hello"
-			app.Run([]string{"", "get", "-shallow", "-branch", expectBranch, "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "-shallow", "-branch", expectBranch, "motemen/ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -162,7 +163,7 @@ func TestCommandGet(t *testing.T) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
 			expectBranch := "hello"
-			app.Run([]string{"", "get", "-shallow", "motemen/ghq-test-repo@" + expectBranch})
+			app.Run(context.Background(), []string{"", "get", "-shallow", "motemen/ghq-test-repo@" + expectBranch})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -178,7 +179,7 @@ func TestCommandGet(t *testing.T) {
 	}, {
 		name: "with --no-recursive option",
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-			app.Run([]string{"", "get", "--no-recursive", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "--no-recursive", "motemen/ghq-test-repo"})
 
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
@@ -196,7 +197,7 @@ func TestCommandGet(t *testing.T) {
 [ghq "https://github.com/motemen"]
   root = "%s"
 `, filepath.ToSlash(tmpd))))
-			app.Run([]string{"", "get", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "motemen/ghq-test-repo"})
 
 			localDir := filepath.Join(tmpd, "github.com", "motemen", "ghq-test-repo")
 			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
@@ -208,7 +209,7 @@ func TestCommandGet(t *testing.T) {
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo.git")
 
-			app.Run([]string{"", "get", "--bare", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "--bare", "motemen/ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -227,7 +228,7 @@ func TestCommandGet(t *testing.T) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
 			out, _, err := captureWithInput([]string{}, func() {
-				app.Run([]string{"", "get", "--silent", "motemen/ghq-test-repo"})
+				app.Run(context.Background(), []string{"", "get", "--silent", "motemen/ghq-test-repo"})
 			})
 			if err != nil {
 				t.Errorf("error should be nil, but: %s", err)
@@ -253,7 +254,7 @@ func TestCommandGet(t *testing.T) {
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
-			app.Run([]string{"", "get", "--partial", "blobless", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "--partial", "blobless", "motemen/ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -271,7 +272,7 @@ func TestCommandGet(t *testing.T) {
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
 
-			app.Run([]string{"", "get", "--partial", "treeless", "motemen/ghq-test-repo"})
+			app.Run(context.Background(), []string{"", "get", "--partial", "treeless", "motemen/ghq-test-repo"})
 
 			expect := "https://github.com/motemen/ghq-test-repo"
 			if cloneArgs.remote.String() != expect {
@@ -287,7 +288,7 @@ func TestCommandGet(t *testing.T) {
 	}, {
 		name: "[partial] unacceptable value",
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
-			err := app.Run([]string{"", "get", "--partial", "unacceptable", "motemen/ghq-test-repo"})
+			err := app.Run(context.Background(), []string{"", "get", "--partial", "unacceptable", "motemen/ghq-test-repo"})
 
 			expect := "flag partial value \"unacceptable\" is not allowed"
 			if err.Error() != expect {
@@ -318,7 +319,7 @@ func TestLook(t *testing.T) {
 		}
 		sh := detectShell()
 
-		err := newApp().Run([]string{"", "get", "--look", "https://github.com/motemen/ghq"})
+		err := newApp().Run(context.Background(), []string{"", "get", "--look", "https://github.com/motemen/ghq"})
 		if err != nil {
 			t.Errorf("error should be nil, but: %s", err)
 		}
@@ -364,7 +365,7 @@ func TestBareLook(t *testing.T) {
 		}
 		sh := detectShell()
 
-		err := newApp().Run([]string{"", "get", "--bare", "--look", "https://github.com/motemen/ghq.git"})
+		err := newApp().Run(context.Background(), []string{"", "get", "--bare", "--look", "https://github.com/motemen/ghq.git"})
 		if err != nil {
 			t.Errorf("error should be nil, but: %s", err)
 		}
@@ -426,7 +427,7 @@ func TestDoGet_bulk(t *testing.T) {
 				buf.Reset()
 				out, _, err := captureWithInput(in, func() {
 					args := append([]string{"", "get"}, tc.args...)
-					if err := newApp().Run(args); err != nil {
+					if err := newApp().Run(context.Background(), args); err != nil {
 						t.Errorf("error should be nil but: %s", err)
 					}
 				})

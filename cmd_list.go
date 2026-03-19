@@ -1,24 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-func doList(c *cli.Context) error {
+func doList(ctx context.Context, cmd *cli.Command) error {
 	var (
-		w                = c.App.Writer
-		query            = c.Args().First()
-		exact            = c.Bool("exact")
-		vcsBackend       = c.String("vcs")
-		printFullPaths   = c.Bool("full-path")
-		printUniquePaths = c.Bool("unique")
-		bare             = c.Bool("bare")
+		w                = cmd.Root().Writer
+		query            = cmd.Args().First()
+		exact            = cmd.Bool("exact")
+		vcsBackend       = cmd.String("vcs")
+		printFullPaths   = cmd.Bool("full-path")
+		printUniquePaths = cmd.Bool("unique")
+		bare             = cmd.Bool("bare")
 	)
 
 	filterByQuery := func(_ *LocalRepository) bool {

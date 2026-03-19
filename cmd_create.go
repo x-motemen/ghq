@@ -1,19 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-func doCreate(c *cli.Context) error {
+func doCreate(ctx context.Context, cmd *cli.Command) error {
 	var (
-		name = c.Args().First()
-		vcs  = c.String("vcs")
-		w    = c.App.Writer
-		bare = c.Bool("bare")
+		name = cmd.Args().First()
+		vcs  = cmd.String("vcs")
+		w    = cmd.Root().Writer
+		bare = cmd.Bool("bare")
 	)
 
 	if name == "" {
