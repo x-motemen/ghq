@@ -1,8 +1,11 @@
 name: test
 on:
-  push:
+  pull_request:
     branches:
     - "**"
+  push:
+    branches:
+    - main
 permissions:
   contents: read
   pull-requests: read
