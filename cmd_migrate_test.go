@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -65,7 +66,7 @@ func TestDoMigrate(t *testing.T) {
 		c2.Run()
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", srcdir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", srcdir})
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -79,7 +80,7 @@ func TestDoMigrate(t *testing.T) {
 	// Test case: nonexistent directory
 	t.Run("migrate_nonexist", func(t *testing.T) {
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", "/does/not/exist"})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", "/does/not/exist"})
 		if e == nil {
 			t.Error("expected error")
 		}
@@ -99,7 +100,7 @@ func TestDoMigrate(t *testing.T) {
 		c2.Run()
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "--dry-run", srcdir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "--dry-run", srcdir})
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -117,7 +118,7 @@ func TestDoMigrate(t *testing.T) {
 		addWorktree(t, srcdir, wtDir, "wt-branch")
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", srcdir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", srcdir})
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -154,7 +155,7 @@ func TestDoMigrate(t *testing.T) {
 
 		out, _, err := capture(func() {
 			a := newApp()
-			a.Run([]string{"ghq", "migrate", "--dry-run", srcdir})
+			a.Run(context.Background(), []string{"ghq", "migrate", "--dry-run", srcdir})
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -180,7 +181,7 @@ func TestDoMigrate(t *testing.T) {
 		addWorktree(t, srcdir, wtDir, "wt-int-branch")
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", srcdir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", srcdir})
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -226,7 +227,7 @@ func TestMigrateEdgeCases(t *testing.T) {
 		os.MkdirAll(srcdir, 0755)
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", srcdir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", srcdir})
 		if e == nil {
 			t.Error("should fail when no VCS found")
 		}
@@ -241,7 +242,7 @@ func TestMigrateEdgeCases(t *testing.T) {
 		c.Run()
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", srcdir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", srcdir})
 		if e == nil {
 			t.Error("should fail when no remote")
 		}
@@ -263,7 +264,7 @@ func TestMigrateEdgeCases(t *testing.T) {
 		os.MkdirAll(dest, 0755)
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", srcdir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", srcdir})
 		if e == nil {
 			t.Error("should fail when dest exists")
 		}
@@ -276,7 +277,7 @@ func TestMigrateEdgeCases(t *testing.T) {
 		addWorktree(t, srcdir, wtDir, "wt-ref-branch")
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", wtDir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", wtDir})
 		if e == nil {
 			t.Fatal("expected error migrating a worktree")
 		}
@@ -299,7 +300,7 @@ func TestMigrateEdgeCases(t *testing.T) {
 		os.WriteFile(repoFile, []byte("test-repo\n"), 0644)
 
 		a := newApp()
-		e := a.Run([]string{"ghq", "migrate", "-y", srcdir})
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", srcdir})
 		if e == nil {
 			t.Error("should fail for unsupported VCS (CVS)")
 		}

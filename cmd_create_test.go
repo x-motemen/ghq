@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"os"
 	"os/exec"
@@ -128,7 +129,7 @@ func TestDoCreate(t *testing.T) {
 
 			var err error
 			out, _, _ := capture(func() {
-				err = newApp().Run(append([]string{""}, tc.input...))
+				err = newApp().Run(context.Background(), append([]string{""}, tc.input...))
 			})
 			out = strings.TrimSpace(out)
 

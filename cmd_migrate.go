@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -10,16 +11,16 @@ import (
 	"syscall"
 
 	"github.com/otiai10/copy"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"github.com/x-motemen/ghq/logger"
 )
 
-func doMigrate(c *cli.Context) error {
+func doMigrate(ctx context.Context, cmd *cli.Command) error {
 	var (
-		repoDir     = c.Args().First()
-		dry         = c.Bool("dry-run")
-		skipConfirm = c.Bool("y")
-		w           = c.App.Writer
+		repoDir     = cmd.Args().First()
+		dry         = cmd.Bool("dry-run")
+		skipConfirm = cmd.Bool("y")
+		w           = cmd.Root().Writer
 	)
 
 	if repoDir == "" {
