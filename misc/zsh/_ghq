@@ -1,4 +1,4 @@
-#compdef ghq
+#compdef ghq ghq-dev
 
 function _ghq () {
     local context curcontext=$curcontext state line
@@ -37,6 +37,7 @@ function _ghq () {
                         '--vcs[Specify vcs backend for matching]' \
                         '(-p --full-path)'{-p,--full-path}'[Print full paths]' \
                         '--unique[Print unique subpaths]' \
+                        '--bare[Query bare repositories]' \
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;
@@ -49,13 +50,22 @@ function _ghq () {
                 (create)
                     _arguments -C \
                         '--vcs[Specify vcs backend explicitly]' \
+                        '--bare[Create a bare repository]' \
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;
                 (rm)
                     _arguments -C \
                         '--dry-run[Do not remove actually]' \
-                        '(-)*:: :->null_state' \
+                        '--bare[Remove a bare repository]' \
+                        '(-)*: :__ghq_all_repositories' \
+                        && ret=0
+                    ;;
+                (migrate)
+                    _arguments -C \
+                        '-y[Skip confirmation prompt]' \
+                        '--dry-run[Show what would happen without moving]' \
+                        ':repository directory:_directories' \
                         && ret=0
                     ;;
                 (help|h)
@@ -74,12 +84,20 @@ __ghq_repositories () {
     _describe -t repositories Repositories _repos
 }
 
+__ghq_all_repositories () {
+    local -a _repos
+    _repos=( ${(@f)"$(_call_program repositories ghq list)"} )
+    _describe -t repositories Repositories _repos
+}
+
 __ghq_commands () {
     local -a _c
     _c=(
         'get:Clone/sync with a remote repository'
         'list:List local repositories'
+        'rm:Remove local repository'
         'create:Create a new repository'
+        'migrate:Migrate existing repository to ghq-managed directory'
         "root:Show repositories' root"
         'help:Show a list of commands or help for one command'
     )

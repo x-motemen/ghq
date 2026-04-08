@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var commands = []*cli.Command{
@@ -44,7 +45,7 @@ var commandGet = &cli.Command{
 		&cli.StringFlag{
 			Name:  "partial",
 			Usage: "Do a partial clone. Can specify either \"blobless\" or \"treeless\"",
-			Action: func(ctx *cli.Context, v string) error {
+			Action: func(ctx context.Context, cmd *cli.Command, v string) error {
 				expected := []string{"blobless", "treeless"}
 				if !slices.Contains(expected, v) {
 					return fmt.Errorf("flag partial value \"%v\" is not allowed", v)

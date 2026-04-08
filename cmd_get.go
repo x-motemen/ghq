@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,30 +14,30 @@ import (
 	"sync"
 
 	"github.com/mattn/go-isatty"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"github.com/x-motemen/ghq/cmdutil"
 	"github.com/x-motemen/ghq/logger"
 	"golang.org/x/sync/errgroup"
 )
 
-func doGet(c *cli.Context) error {
+func doGet(ctx context.Context, cmd *cli.Command) error {
 	var (
-		args      = c.Args().Slice()
-		andLook   = c.Bool("look")
-		parallel  = c.Bool("parallel")
-		silent    = c.Bool("silent")
-		printPath = c.Bool("print")
+		args      = cmd.Args().Slice()
+		andLook   = cmd.Bool("look")
+		parallel  = cmd.Bool("parallel")
+		silent    = cmd.Bool("silent")
+    printPath = cmd.Bool("print")
 	)
 	g := &getter{
-		update:    c.Bool("update"),
-		shallow:   c.Bool("shallow"),
-		ssh:       c.Bool("p"),
-		vcs:       c.String("vcs"),
+		update:    cmd.Bool("update"),
+		shallow:   cmd.Bool("shallow"),
+		ssh:       cmd.Bool("p"),
+		vcs:       cmd.String("vcs"),
 		silent:    silent,
-		branch:    c.String("branch"),
-		recursive: !c.Bool("no-recursive"),
-		bare:      c.Bool("bare"),
-		partial:   c.String("partial"),
+		branch:    cmd.String("branch"),
+		recursive: !cmd.Bool("no-recursive"),
+		bare:      cmd.Bool("bare"),
+		partial:   cmd.String("partial"),
 	}
 	if parallel {
 		// force silent in parallel import

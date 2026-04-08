@@ -1,18 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-func doRm(c *cli.Context) error {
+func doRm(ctx context.Context, cmd *cli.Command) error {
 	var (
-		name = c.Args().First()
-		dry  = c.Bool("dry-run")
-		w    = c.App.Writer
-		bare = c.Bool("bare")
+		name = cmd.Args().First()
+		dry  = cmd.Bool("dry-run")
+		w    = cmd.Root().Writer
+		bare = cmd.Bool("bare")
 	)
 
 	if name == "" {

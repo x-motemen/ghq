@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -90,13 +91,13 @@ func TestDoRoot(t *testing.T) {
 			homeOnce = &sync.Once{}
 			tc.setup(t)
 			out, _, _ := capture(func() {
-				newApp().Run([]string{"", "root"})
+				newApp().Run(context.Background(), []string{"", "root"})
 			})
 			if !samePaths(out, tc.expect) {
 				t.Errorf("got: %s, expect: %s", out, tc.expect)
 			}
 			out, _, _ = capture(func() {
-				newApp().Run([]string{"", "root", "--all"})
+				newApp().Run(context.Background(), []string{"", "root", "--all"})
 			})
 			if !samePaths(out, tc.allExpect) {
 				t.Errorf("got: %s, expect: %s", out, tc.allExpect)

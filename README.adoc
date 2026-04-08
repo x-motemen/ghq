@@ -98,6 +98,11 @@ ghq.completeUser::
     `vim` as `github.com/vim/vim`, and `peco` as `github.com/peco/peco`.
     If you prefer this behavior, set this option to `false` to switch the owner completion method.
 
+ghq.defaultHost::
+    The default host used when the repository specification omits the host.
+    For example, `ghq get owner/project` normally resolves to `github.com/owner/project`.
+    If this option is set, the specified host will be used instead.
+
 ghq.<url>.vcs::
     ghq tries to detect the remote repository's VCS backend for non-"github.com"
     repositories.  With this option you can explicitly specify the VCS for the
