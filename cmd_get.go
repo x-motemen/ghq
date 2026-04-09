@@ -22,11 +22,10 @@ import (
 
 func doGet(ctx context.Context, cmd *cli.Command) error {
 	var (
-		args      = cmd.Args().Slice()
-		andLook   = cmd.Bool("look")
-		parallel  = cmd.Bool("parallel")
-		silent    = cmd.Bool("silent")
-    printPath = cmd.Bool("print")
+		args     = cmd.Args().Slice()
+		andLook  = cmd.Bool("look")
+		parallel = cmd.Bool("parallel")
+		silent   = cmd.Bool("silent")
 	)
 	g := &getter{
 		update:    cmd.Bool("update"),
@@ -76,20 +75,23 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 			sem <- struct{}{}
 			eg.Go(func() error {
 				defer func() { <-sem }()
-				info, getErr := g.get(target)
+				info, getErr := g.get(ctx, target)
 				getInfo, err = info, getErr
 				if getErr != nil {
 					logger.Logf("error", "failed to get %q: %s", target, getErr)
-				} else if printPath && info.localRepository != nil {
+				} else if info.localRepository != nil {
 					fmt.Println(info.localRepository.FullPath)
 				}
 				return nil
 			})
 		} else {
-			if getInfo, err = g.get(target); err != nil {
+			if getInfo, err = g.get(ctx, target); err != nil {
 				return fmt.Errorf("failed to get %q: %w", target, err)
 			}
-			if printPath && getInfo.localRepository != nil {
+			if getInfo.localRepository != nil {
+				if !silent {
+					fmt.Fprintln(os.Stderr, "Got the repo to the following:")
+				}
 				fmt.Println(getInfo.localRepository.FullPath)
 			}
 		}

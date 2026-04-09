@@ -26,11 +26,11 @@ func main() {
 
 func newApp() *cli.Command {
 	return &cli.Command{
-		Name:    "ghq",
-		Usage:   "Manage remote repository clones",
-		Version: fmt.Sprintf("%s (rev:%s)", version, revision),
-		Authors: []any{"motemen <motemen@gmail.com>", "Songmu <y.songmu@gmail.com>"},
-		Suggest: true,
+		Name:     "ghq",
+		Usage:    "Manage remote repository clones",
+		Version:  fmt.Sprintf("%s (rev:%s)", version, revision),
+		Authors:  []any{"motemen <motemen@gmail.com>", "Songmu <y.songmu@gmail.com>"},
+		Suggest:  true,
 		Commands: commands,
 	}
 }
