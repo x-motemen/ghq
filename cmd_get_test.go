@@ -245,8 +245,8 @@ func TestCommandGet(t *testing.T) {
 			if !cloneArgs.silent {
 				t.Errorf("cloneArgs.silent should be true")
 			}
-			if out != "" {
-				t.Errorf("silent mode should not output any logs, but got: %s", out)
+			if !strings.Contains(out, localDir) {
+				t.Errorf("silent mode should still print local path to stdout, but got: %q", out)
 			}
 		},
 	}, {
@@ -302,6 +302,106 @@ func TestCommandGet(t *testing.T) {
 			withFakeGitBackend(t, tc.scenario)
 		})
 	}
+}
+
+func TestCommandGet_printPath(t *testing.T) {
+	testCases := []struct {
+		name       string
+		args       []string
+		inputRepos []string
+	}{{
+		name:       "single repo",
+		args:       []string{"", "get", "motemen/ghq-test-repo"},
+		inputRepos: nil,
+	}, {
+		name:       "bulk from stdin",
+		args:       []string{"", "get"},
+		inputRepos: []string{"github.com/x-motemen/ghq", "github.com/motemen/gore"},
+	}, {
+		name:       "bulk parallel",
+		args:       []string{"", "get", "--parallel"},
+		inputRepos: []string{"github.com/x-motemen/ghq", "github.com/motemen/gore"},
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			withFakeGitBackend(t, func(t *testing.T, tmpRoot string, _ *_cloneArgs, _ *_updateArgs) {
+				// pre-create dirs for bulk cases
+				for _, r := range tc.inputRepos {
+					os.MkdirAll(filepath.Join(tmpRoot, r, ".git"), 0755)
+				}
+
+				var out string
+				var err error
+				if len(tc.inputRepos) > 0 {
+					out, _, err = captureWithInput(tc.inputRepos, func() {
+						newApp().Run(context.Background(), tc.args)
+					})
+				} else {
+					out, _, err = capture(func() {
+						newApp().Run(context.Background(), tc.args)
+					})
+				}
+				if err != nil {
+					t.Fatalf("capture error: %s", err)
+				}
+
+				lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+				if len(tc.inputRepos) == 0 {
+					// single repo: output should contain the local path
+					if len(lines) != 1 || lines[0] == "" {
+						t.Errorf("expected one path in output, got: %q", out)
+					}
+					if !filepath.IsAbs(lines[0]) {
+						t.Errorf("expected absolute path, got: %q", lines[0])
+					}
+				} else {
+					// bulk: one path per repo
+					if len(lines) != len(tc.inputRepos) {
+						t.Errorf("expected %d paths, got %d: %q", len(tc.inputRepos), len(lines), out)
+					}
+					for _, line := range lines {
+						if !filepath.IsAbs(line) {
+							t.Errorf("expected absolute path, got: %q", line)
+						}
+					}
+				}
+			})
+		})
+	}
+}
+
+func TestCommandGet_gotMessage(t *testing.T) {
+	t.Run("prints 'Got the repo to the following:' to stderr", func(t *testing.T) {
+		withFakeGitBackend(t, func(t *testing.T, tmpRoot string, _ *_cloneArgs, _ *_updateArgs) {
+			_, errOut, err := capture(func() {
+				newApp().Run(context.Background(), []string{"", "get", "motemen/ghq-test-repo"})
+			})
+			if err != nil {
+				t.Fatalf("capture error: %s", err)
+			}
+			if !strings.Contains(errOut, "Got the repo to the following:") {
+				t.Errorf("expected stderr to contain 'Got the repo to the following:', got: %q", errOut)
+			}
+		})
+	})
+
+	t.Run("suppresses message with --silent but still prints path to stdout", func(t *testing.T) {
+		withFakeGitBackend(t, func(t *testing.T, tmpRoot string, _ *_cloneArgs, _ *_updateArgs) {
+			out, errOut, err := capture(func() {
+				newApp().Run(context.Background(), []string{"", "get", "--silent", "motemen/ghq-test-repo"})
+			})
+			if err != nil {
+				t.Fatalf("capture error: %s", err)
+			}
+			if strings.Contains(errOut, "Got the repo to the following:") {
+				t.Errorf("expected stderr not to contain 'Got the repo to the following:' with --silent, got: %q", errOut)
+			}
+			if !filepath.IsAbs(strings.TrimRight(out, "\n")) {
+				t.Errorf("expected absolute path in stdout, got: %q", out)
+			}
+		})
+	})
 }
 
 func TestLook(t *testing.T) {
@@ -434,8 +534,11 @@ func TestDoGet_bulk(t *testing.T) {
 				if err != nil {
 					t.Errorf("error should be nil, but: %s", err)
 				}
-				if out != "" {
-					t.Errorf("out should be empty, but: %s", out)
+				for _, r := range in {
+					expectedPath := filepath.Join(tmproot, r)
+					if !strings.Contains(out, expectedPath) {
+						t.Errorf("out should contain %q, but got: %s", expectedPath, out)
+					}
 				}
 				log := filepath.ToSlash(buf.String())
 				for _, r := range in {

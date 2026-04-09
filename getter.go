@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -28,7 +29,7 @@ type getter struct {
 	vcs, branch, partial                          string
 }
 
-func (g *getter) get(argURL string) (getInfo, error) {
+func (g *getter) get(ctx context.Context, argURL string) (getInfo, error) {
 	u, err := newURL(argURL, g.ssh, false)
 	if err != nil {
 		return getInfo{}, fmt.Errorf("could not parse URL %q: %w", argURL, err)
@@ -42,13 +43,13 @@ func (g *getter) get(argURL string) (getInfo, error) {
 		return getInfo{}, err
 	}
 
-	return g.getRemoteRepository(remote, branch)
+	return g.getRemoteRepository(ctx, remote, branch)
 }
 
 // getRemoteRepository clones or updates a remote repository remote.
 // If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
-func (g *getter) getRemoteRepository(remote RemoteRepository, branch string) (getInfo, error) {
+func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepository, branch string) (getInfo, error) {
 	remoteURL := remote.URL()
 	local, err := LocalRepositoryFromURL(remoteURL, g.bare)
 	if err != nil {
