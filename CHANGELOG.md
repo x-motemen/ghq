@@ -1,5 +1,23 @@
 # Changelog
 
+## [v1.10.0](https://github.com/x-motemen/ghq/compare/v1.9.4...v1.10.0) - 2026-04-09
+- Update zsh completion to match current commands and flags by @upft-kengotate in https://github.com/x-motemen/ghq/pull/465
+- chore(deps): bump Songmu/tagpr from 1.17.0 to 1.17.1 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/461
+- chore(deps): bump golang.org/x/text from 0.34.0 to 0.35.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/468
+- chore(deps): bump actions/setup-go from 6.2.0 to 6.3.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/463
+- chore(deps): bump crate-ci/typos from 1.43.4 to 1.44.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/462
+- chore(deps): bump reviewdog/action-actionlint from 1.70.0 to 1.71.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/458
+- chore(deps): bump golang.org/x/net from 0.50.0 to 0.52.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/467
+- feat(completion): add ghq list completion to ghq rm in fish/zsh by @nurazon59 in https://github.com/x-motemen/ghq/pull/469
+- chore(deps): bump Songmu/tagpr from 1.17.1 to 1.18.1 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/478
+- feat(get): add `ghq.defaultHost` config to resolve the default host. by @sciencesakura in https://github.com/x-motemen/ghq/pull/472
+- Update urfave/cli/v2 to v3 by @hezhizhen in https://github.com/x-motemen/ghq/pull/473
+- chore(deps): bump actions/setup-go from 6.3.0 to 6.4.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/475
+- chore(deps): bump reviewdog/action-actionlint from 1.71.0 to 1.72.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/477
+- chore(deps): bump codecov/codecov-action from 5.5.2 to 6.0.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/476
+- chore(deps): bump crate-ci/typos from 1.44.0 to 1.45.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/479
+- feat(get): output local repository path to stdout by @KeitaShimura in https://github.com/x-motemen/ghq/pull/457
+
 ## [v1.9.4](https://github.com/x-motemen/ghq/compare/v1.9.3...v1.9.4) - 2026-02-17
 - apply go fix modernizations by @yulog in https://github.com/x-motemen/ghq/pull/450
 - feat(migrate): make worktree and submodule aware by @atusy in https://github.com/x-motemen/ghq/pull/449
