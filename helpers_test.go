@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"os/exec"
 	"testing"
 )
 
@@ -134,4 +135,35 @@ func setEnv(t *testing.T, key, val string) {
 			os.Unsetenv(key)
 		}
 	})
+}
+
+// initGitRepo creates a git repo at dir with the given remote URL and an
+// initial empty commit. It returns dir for convenience.
+func initGitRepo(t *testing.T, dir, remoteURL string) string {
+	t.Helper()
+	os.MkdirAll(dir, 0755)
+
+	for _, args := range [][]string{
+		{"init"},
+		{"remote", "add", "origin", remoteURL},
+		{"-c", "user.name=test", "-c", "user.email=test@test.com",
+			"commit", "--allow-empty", "-m", "init"},
+	} {
+		c := exec.Command("git", args...)
+		c.Dir = dir
+		if out, err := c.CombinedOutput(); err != nil {
+			t.Fatalf("git %s: %v\n%s", args[0], err, out)
+		}
+	}
+	return dir
+}
+
+// addWorktree creates a git worktree at wtDir branching from the repo at repoDir.
+func addWorktree(t *testing.T, repoDir, wtDir, branch string) {
+	t.Helper()
+	c := exec.Command("git", "worktree", "add", "-b", branch, wtDir)
+	c.Dir = repoDir
+	if out, err := c.CombinedOutput(); err != nil {
+		t.Fatalf("git worktree add: %v\n%s", err, out)
+	}
 }
