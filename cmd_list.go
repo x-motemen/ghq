@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -19,8 +20,13 @@ func doList(ctx context.Context, cmd *cli.Command) error {
 		vcsBackend       = cmd.String("vcs")
 		printFullPaths   = cmd.Bool("full-path")
 		printUniquePaths = cmd.Bool("unique")
+		printTree        = cmd.Bool("tree")
 		bare             = cmd.Bool("bare")
 	)
+
+	if printTree && (printFullPaths || printUniquePaths) {
+		return fmt.Errorf("--tree cannot be used with --full-path or --unique")
+	}
 
 	filterByQuery := func(_ *LocalRepository) bool {
 		return true
@@ -75,6 +81,16 @@ func doList(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to filter repos while walkLocalRepositories(repo): %w", err)
 	}
 
+	if printTree {
+		repoList := make([]string, 0, len(repos))
+		for _, repo := range repos {
+			repoList = append(repoList, repo.RelPath)
+		}
+		sort.Strings(repoList)
+		printRepoTree(w, repoList)
+		return nil
+	}
+
 	repoList := make([]string, 0, len(repos))
 	if printUniquePaths {
 		subpathCount := map[string]int{} // Count duplicated subpaths (ex. foo/dotfiles and bar/dotfiles)
@@ -117,4 +133,62 @@ func doList(ctx context.Context, cmd *cli.Command) error {
 		fmt.Fprintln(w, r)
 	}
 	return nil
+}
+
+type trieNode struct {
+	children map[string]*trieNode
+	keys     []string
+}
+
+func (n *trieNode) add(parts []string) {
+	cur := n
+	for _, p := range parts {
+		if cur.children[p] == nil {
+			if cur.children == nil {
+				cur.children = map[string]*trieNode{}
+			}
+			cur.children[p] = &trieNode{}
+			cur.keys = append(cur.keys, p)
+		}
+		cur = cur.children[p]
+	}
+}
+
+func printRepoTree(w io.Writer, repos []string) {
+	if len(repos) == 0 {
+		fmt.Fprintln(w, "0 repositories")
+		return
+	}
+	root := &trieNode{}
+	for _, r := range repos {
+		root.add(strings.Split(r, "/"))
+	}
+	fmt.Fprintln(w, ".")
+	printTrieChildren(w, root, "")
+	fmt.Fprintf(w, "\n%d repositories\n", len(repos))
+}
+
+func printTrieChildren(w io.Writer, n *trieNode, prefix string) {
+	sort.Strings(n.keys)
+	for i, key := range n.keys {
+		child := n.children[key]
+		// Collapse single-child intermediate nodes: golang.org/x instead of golang.org → x
+		parts := []string{key}
+		for len(child.keys) == 1 {
+			parts = append(parts, child.keys[0])
+			child = child.children[child.keys[0]]
+		}
+		label := strings.Join(parts, "/")
+		last := i == len(n.keys)-1
+		connector := "├── "
+		childPrefix := "│   "
+		if last {
+			connector = "└── "
+			childPrefix = "    "
+		}
+		fmt.Fprintf(w, "%s%s%s\n", prefix, connector, label)
+		if len(child.keys) > 0 {
+			printTrieChildren(w, child, prefix+childPrefix)
+		}
+	}
 }

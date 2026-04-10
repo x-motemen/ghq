@@ -233,3 +233,61 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 		t.Errorf("error should be nil, but: %v", err)
 	}
 }
+
+func TestDoList_tree(t *testing.T) {
+	t.Run("output", func(t *testing.T) {
+		defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+
+		tmpdir := newTempDir(t)
+		_localRepositoryRoots = nil
+		localRepoOnce = &sync.Once{}
+		setEnv(t, envGhqRoot, tmpdir)
+
+		for _, repo := range []string{
+			"github.com/motemen/ghq",
+			"github.com/motemen/gore",
+			"github.com/Songmu/gobump",
+			"golang.org/x/image",
+		} {
+			os.MkdirAll(filepath.Join(tmpdir, repo, ".git"), 0755)
+		}
+
+		out, _, _ := capture(func() {
+			newApp().Run(context.Background(), []string{"ghq", "list", "--tree"})
+		})
+
+		expected := `.
+├── github.com
+│   ├── Songmu/gobump
+│   └── motemen
+│       ├── ghq
+│       └── gore
+└── golang.org/x/image
+
+4 repositories
+`
+		if out != expected {
+			t.Errorf("got:\n%s\nexpect:\n%s", out, expected)
+		}
+	})
+
+	t.Run("conflict with full-path", func(t *testing.T) {
+		err := newApp().Run(context.Background(), []string{"ghq", "list", "--tree", "--full-path"})
+		if err == nil {
+			t.Fatal("expected error but got nil")
+		}
+		if !strings.Contains(err.Error(), "--tree cannot be used with") {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("conflict with unique", func(t *testing.T) {
+		err := newApp().Run(context.Background(), []string{"ghq", "list", "--tree", "--unique"})
+		if err == nil {
+			t.Fatal("expected error but got nil")
+		}
+		if !strings.Contains(err.Error(), "--tree cannot be used with") {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+}

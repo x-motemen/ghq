@@ -69,6 +69,7 @@ var commandList = &cli.Command{
 		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend for matching"},
 		&cli.BoolFlag{Name: "full-path", Aliases: []string{"p"}, Usage: "Print full paths"},
 		&cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
+		&cli.BoolFlag{Name: "tree", Usage: "Print in tree format"},
 		&cli.BoolFlag{Name: "bare", Usage: "Query bare repositories"},
 	},
 }
