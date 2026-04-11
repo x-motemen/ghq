@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.10.1](https://github.com/x-motemen/ghq/compare/v1.10.0...v1.10.1) - 2026-04-11
+- feat(rm): make ghq rm worktree-aware by @chris-monardo in https://github.com/x-motemen/ghq/pull/481
+
 ## [v1.10.0](https://github.com/x-motemen/ghq/compare/v1.9.4...v1.10.0) - 2026-04-09
 - Update zsh completion to match current commands and flags by @upft-kengotate in https://github.com/x-motemen/ghq/pull/465
 - chore(deps): bump Songmu/tagpr from 1.17.0 to 1.17.1 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/461
