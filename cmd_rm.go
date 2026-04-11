@@ -102,12 +102,21 @@ func doRm(ctx context.Context, cmd *cli.Command) error {
 	// Removal
 	if isWorktree {
 		// Use git worktree remove to properly unregister from parent repo.
-		// Run from inside the worktree so git can read its .git file to
-		// discover the main repository.
-		gitCmd := exec.Command("git", "worktree", "remove", "--force", p)
-		gitCmd.Dir = p
-		if out, gitErr := gitCmd.CombinedOutput(); gitErr != nil {
-			logger.Log("warning", fmt.Sprintf("git worktree remove failed: %v\n%s", gitErr, out))
+		// Resolve the main repo directory so we don't run git from inside
+		// the directory being deleted.
+		removed := false
+		if mainRepoDir, dirErr := resolveMainRepoDir(gitdirTarget); dirErr == nil {
+			gitCmd := exec.Command("git", "worktree", "remove", "--force", p)
+			gitCmd.Dir = mainRepoDir
+			if out, gitErr := gitCmd.CombinedOutput(); gitErr != nil {
+				logger.Log("warning", fmt.Sprintf("git worktree remove failed: %v\n%s", gitErr, out))
+			} else {
+				removed = true
+			}
+		} else {
+			logger.Log("warning", fmt.Sprintf("cannot resolve main repo dir: %v", dirErr))
+		}
+		if !removed {
 			logger.Log("warning", "falling back to direct removal")
 			if err := os.RemoveAll(p); err != nil {
 				return err

@@ -127,6 +127,24 @@ func listLinkedWorktreePaths(dir string) ([]string, error) {
 	return paths, nil
 }
 
+// resolveMainRepoDir resolves the main repository working directory from a
+// worktree's gitdir target path (e.g., /path/to/main/.git/worktrees/<name>).
+// It reads the commondir file to find the shared .git directory.
+func resolveMainRepoDir(gitdirTarget string) (string, error) {
+	commondirFile := filepath.Join(gitdirTarget, "commondir")
+	content, err := os.ReadFile(commondirFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to read commondir: %w", err)
+	}
+	commondir := strings.TrimSpace(string(content))
+	if !filepath.IsAbs(commondir) {
+		commondir = filepath.Join(gitdirTarget, commondir)
+	}
+	commondir = filepath.Clean(commondir)
+	// commondir points to the .git directory; the working tree is its parent
+	return filepath.Dir(commondir), nil
+}
+
 // repairWorktreeBackPointers reads .git/worktrees/*/gitdir in destDir and
 // returns the current worktree working-directory paths. For worktrees that
 // were inside the old repo directory (oldDir), it rewrites the gitdir file

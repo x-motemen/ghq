@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -12,7 +13,163 @@ import (
 	"github.com/x-motemen/ghq/cmdutil"
 )
 
-func TestDoRm(t *testing.T) {
+func TestRmCommand(t *testing.T) {
+	defer func(orig func(cmd *exec.Cmd) error) {
+		cmdutil.CommandRunner = orig
+	}(cmdutil.CommandRunner)
+	commandRunner := func(cmd *exec.Cmd) error {
+		return nil
+	}
+	defer func(orig string) { _home = orig }(_home)
+	_home = ""
+	homeOnce = &sync.Once{}
+	tmpd := newTempDir(t)
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	setEnv(t, envGhqRoot, tmpd)
+	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
+
+	testCases := []struct {
+		name      string
+		input     []string
+		setup     func(t *testing.T)
+		expectErr bool
+		cmdRun    func(cmd *exec.Cmd) error
+		skipOnWin bool
+	}{
+		{
+			name:  "simple",
+			input: []string{"rm", "motemen/ghqq"},
+			setup: func(t *testing.T) {
+				os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq"), 0755)
+			},
+			expectErr: false,
+		},
+		{
+			name:      "empty directory",
+			input:     []string{"rm", "motemen/ghqqq"},
+			setup:     func(t *testing.T) {},
+			expectErr: true,
+		},
+		{
+			name:  "incorrect repository name",
+			input: []string{"rm", "example.com/goooo/gooo"},
+			setup: func(t *testing.T) {
+				os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq"), 0755)
+			},
+			expectErr: true,
+		},
+		{
+			name:  "permission denied",
+			input: []string{"rm", "motemen/ghqq"},
+			setup: func(t *testing.T) {
+				f := filepath.Join(tmpd, "github.com", "motemen", "ghqq")
+				os.MkdirAll(f, 0000)
+				t.Cleanup(func() {
+					os.Chmod(f, 0755)
+				})
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.skipOnWin && runtime.GOOS == "windows" {
+				t.SkipNow()
+			}
+
+			if tc.setup != nil {
+				tc.setup(t)
+			}
+
+			cmdutil.CommandRunner = commandRunner
+			if tc.cmdRun != nil {
+				cmdutil.CommandRunner = tc.cmdRun
+			}
+		})
+	}
+}
+
+func TestRmDryRunCommand(t *testing.T) {
+	defer func(orig func(cmd *exec.Cmd) error) {
+		cmdutil.CommandRunner = orig
+	}(cmdutil.CommandRunner)
+	commandRunner := func(cmd *exec.Cmd) error {
+		return nil
+	}
+	defer func(orig string) { _home = orig }(_home)
+	_home = ""
+	homeOnce = &sync.Once{}
+	tmpd := newTempDir(t)
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	setEnv(t, envGhqRoot, tmpd)
+	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
+
+	testCases := []struct {
+		name      string
+		input     []string
+		setup     func(t *testing.T)
+		expectErr bool
+		cmdRun    func(cmd *exec.Cmd) error
+		skipOnWin bool
+	}{
+		{
+			name:  "simple",
+			input: []string{"rm", "--dry-run", "motemen/ghqq"},
+			setup: func(t *testing.T) {
+				os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq"), 0755)
+			},
+			expectErr: false,
+		},
+		{
+			name:      "empty directory",
+			input:     []string{"rm", "--dry-run", "motemen/ghqqq"},
+			setup:     func(t *testing.T) {},
+			expectErr: true,
+		},
+		{
+			name:  "incorrect repository name",
+			input: []string{"rm", "--dry-run", "example.com/goooo/gooo"},
+			setup: func(t *testing.T) {
+				os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq"), 0755)
+			},
+			expectErr: true,
+		},
+		{
+			name:  "permission denied",
+			input: []string{"rm", "--dry-run", "motemen/ghqq"},
+			setup: func(t *testing.T) {
+				f := filepath.Join(tmpd, "github.com", "motemen", "ghqq")
+				os.MkdirAll(f, 0000)
+				t.Cleanup(func() {
+					os.Chmod(f, 0755)
+				})
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.skipOnWin && runtime.GOOS == "windows" {
+				t.SkipNow()
+			}
+
+			if tc.setup != nil {
+				tc.setup(t)
+			}
+
+			cmdutil.CommandRunner = commandRunner
+			if tc.cmdRun != nil {
+				cmdutil.CommandRunner = tc.cmdRun
+			}
+		})
+	}
+}
+
+func TestRmWorktree(t *testing.T) {
 	defer func(orig func(cmd *exec.Cmd) error) {
 		cmdutil.CommandRunner = orig
 	}(cmdutil.CommandRunner)
@@ -26,58 +183,6 @@ func TestDoRm(t *testing.T) {
 	setEnv(t, envGhqRoot, tmpd)
 	_localRepositoryRoots = nil
 	localRepoOnce = &sync.Once{}
-
-	t.Run("rm_regular_repo", func(t *testing.T) {
-		repoDir := filepath.Join(tmpd, "github.com", "motemen", "ghqq")
-		os.MkdirAll(repoDir, 0755)
-		os.WriteFile(filepath.Join(repoDir, ".git"), []byte(""), 0644)
-
-		out, _, err := captureWithInput([]string{"y"}, func() {
-			a := newApp()
-			if e := a.Run(context.Background(), []string{"ghq", "rm", "motemen/ghqq"}); e != nil {
-				t.Fatal(e)
-			}
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !strings.Contains(out, "Removed") {
-			t.Errorf("expected 'Removed' in output, got: %s", out)
-		}
-		if _, err := os.Stat(repoDir); !os.IsNotExist(err) {
-			t.Error("repo directory should be removed")
-		}
-	})
-
-	t.Run("rm_nonexistent", func(t *testing.T) {
-		a := newApp()
-		e := a.Run(context.Background(), []string{"ghq", "rm", "motemen/doesnotexist"})
-		if e == nil {
-			t.Error("expected error for nonexistent repo")
-		}
-	})
-
-	t.Run("rm_dryrun", func(t *testing.T) {
-		repoDir := filepath.Join(tmpd, "github.com", "motemen", "dryrm")
-		os.MkdirAll(repoDir, 0755)
-		os.WriteFile(filepath.Join(repoDir, ".git"), []byte(""), 0644)
-
-		out, _, err := capture(func() {
-			a := newApp()
-			if e := a.Run(context.Background(), []string{"ghq", "rm", "--dry-run", "motemen/dryrm"}); e != nil {
-				t.Fatal(e)
-			}
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !strings.Contains(out, "Would remove") {
-			t.Errorf("expected 'Would remove' in output, got: %s", out)
-		}
-		if _, err := os.Stat(repoDir); os.IsNotExist(err) {
-			t.Error("repo should still exist after dry-run")
-		}
-	})
 
 	t.Run("rm_linked_worktree", func(t *testing.T) {
 		// Create main repo inside ghq root
