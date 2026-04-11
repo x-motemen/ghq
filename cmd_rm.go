@@ -126,7 +126,7 @@ func doRm(ctx context.Context, cmd *cli.Command) error {
 			gitCmd := exec.Command("git", "worktree", "remove", "--force", wt)
 			gitCmd.Dir = p
 			if out, gitErr := gitCmd.CombinedOutput(); gitErr != nil {
-				logger.Log("warning", fmt.Sprintf("failed to remove worktree %s: %v\n%s", wt, gitErr, out))
+				return fmt.Errorf("failed to remove worktree %s: %w\n%s", wt, gitErr, out)
 			}
 		}
 		if err := os.RemoveAll(p); err != nil {
