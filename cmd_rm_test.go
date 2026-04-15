@@ -41,19 +41,25 @@ func TestRmCommand(t *testing.T) {
 			name:  "simple",
 			input: []string{"rm", "motemen/ghqq"},
 			setup: func(t *testing.T) {
-				f := filepath.Join(tmpd, "github.com", "motemen", "ghqq", "README.md")
-				if err := os.MkdirAll(filepath.Dir(f), 0755); err != nil {
-					t.Fatal(err)
-				}
-				if err := os.WriteFile(f, []byte("test"), 0644); err != nil {
+				if err := os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq", ".git"), 0755); err != nil {
 					t.Fatal(err)
 				}
 			},
 			expectErr: false,
 		},
 		{
-			name:      "empty directory",
-			input:     []string{"rm", "motemen/ghqqq"},
+			name:  "empty directory",
+			input: []string{"rm", "motemen/ghqqq"},
+			setup: func(t *testing.T) {
+				if err := os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqqq"), 0755); err != nil {
+					t.Fatal(err)
+				}
+			},
+			expectErr: true,
+		},
+		{
+			name:      "missing directory",
+			input:     []string{"rm", "motemen/missing"},
 			setup:     func(t *testing.T) {},
 			expectErr: true,
 		},
