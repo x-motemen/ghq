@@ -41,7 +41,13 @@ func TestRmCommand(t *testing.T) {
 			name:  "simple",
 			input: []string{"rm", "motemen/ghqq"},
 			setup: func(t *testing.T) {
-				os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq"), 0755)
+				f := filepath.Join(tmpd, "github.com", "motemen", "ghqq", "README.md")
+				if err := os.MkdirAll(filepath.Dir(f), 0755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(f, []byte("test"), 0644); err != nil {
+					t.Fatal(err)
+				}
 			},
 			expectErr: false,
 		},
@@ -86,6 +92,21 @@ func TestRmCommand(t *testing.T) {
 			cmdutil.CommandRunner = commandRunner
 			if tc.cmdRun != nil {
 				cmdutil.CommandRunner = tc.cmdRun
+			}
+
+			var runErr error
+			_, _, err := captureWithInput([]string{"y"}, func() {
+				a := newApp()
+				args := append([]string{"ghq"}, tc.input...)
+				runErr = a.Run(context.Background(), args)
+			})
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if gotErr := runErr != nil; gotErr != tc.expectErr {
+				t.Fatalf("error = %v, expectErr = %v", runErr, tc.expectErr)
 			}
 		})
 	}
