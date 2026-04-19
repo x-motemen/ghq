@@ -41,13 +41,25 @@ func TestRmCommand(t *testing.T) {
 			name:  "simple",
 			input: []string{"rm", "motemen/ghqq"},
 			setup: func(t *testing.T) {
-				os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq"), 0755)
+				if err := os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq", ".git"), 0755); err != nil {
+					t.Fatal(err)
+				}
 			},
 			expectErr: false,
 		},
 		{
-			name:      "empty directory",
-			input:     []string{"rm", "motemen/ghqqq"},
+			name:  "empty directory",
+			input: []string{"rm", "motemen/ghqqq"},
+			setup: func(t *testing.T) {
+				if err := os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqqq"), 0755); err != nil {
+					t.Fatal(err)
+				}
+			},
+			expectErr: true,
+		},
+		{
+			name:      "missing directory",
+			input:     []string{"rm", "motemen/missing"},
 			setup:     func(t *testing.T) {},
 			expectErr: true,
 		},
@@ -87,6 +99,21 @@ func TestRmCommand(t *testing.T) {
 			if tc.cmdRun != nil {
 				cmdutil.CommandRunner = tc.cmdRun
 			}
+
+			var runErr error
+			_, _, err := captureWithInput([]string{"y"}, func() {
+				a := newApp()
+				args := append([]string{"ghq"}, tc.input...)
+				runErr = a.Run(context.Background(), args)
+			})
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if gotErr := runErr != nil; gotErr != tc.expectErr {
+				t.Fatalf("error = %v, expectErr = %v", runErr, tc.expectErr)
+			}
 		})
 	}
 }
@@ -119,7 +146,9 @@ func TestRmDryRunCommand(t *testing.T) {
 			name:  "simple",
 			input: []string{"rm", "--dry-run", "motemen/ghqq"},
 			setup: func(t *testing.T) {
-				os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq"), 0755)
+				if err := os.MkdirAll(filepath.Join(tmpd, "github.com", "motemen", "ghqq", ".git"), 0755); err != nil {
+					t.Fatal(err)
+				}
 			},
 			expectErr: false,
 		},
@@ -139,9 +168,9 @@ func TestRmDryRunCommand(t *testing.T) {
 		},
 		{
 			name:  "permission denied",
-			input: []string{"rm", "--dry-run", "motemen/ghqq"},
+			input: []string{"rm", "--dry-run", "motemen/ghq-notpermitted"},
 			setup: func(t *testing.T) {
-				f := filepath.Join(tmpd, "github.com", "motemen", "ghqq")
+				f := filepath.Join(tmpd, "github.com", "motemen", "ghq-notpermitted")
 				os.MkdirAll(f, 0000)
 				t.Cleanup(func() {
 					os.Chmod(f, 0755)
@@ -164,6 +193,21 @@ func TestRmDryRunCommand(t *testing.T) {
 			cmdutil.CommandRunner = commandRunner
 			if tc.cmdRun != nil {
 				cmdutil.CommandRunner = tc.cmdRun
+			}
+
+			var runErr error
+			_, _, err := capture(func() {
+				a := newApp()
+				args := append([]string{"ghq"}, tc.input...)
+				runErr = a.Run(context.Background(), args)
+			})
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if gotErr := runErr != nil; gotErr != tc.expectErr {
+				t.Fatalf("error = %v, expectErr = %v", runErr, tc.expectErr)
 			}
 		})
 	}
