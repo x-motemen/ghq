@@ -20,10 +20,13 @@ _ghq() {
         return 0
       fi
       case "$prev" in
-        --vcs)
-          COMPREPLY=( $(compgen -W "$vcs_backends" -- "$cur") );;
+        --branch|-b)
+          # expects branch name
+          ;;
         --partial)
           COMPREPLY=( $(compgen -W "blobless treeless" -- "$cur") );;
+        --vcs)
+          COMPREPLY=( $(compgen -W "$vcs_backends" -- "$cur") );;
         *)
           local arg
           for arg in "${words[@]}"; do
