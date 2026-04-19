@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.10.2](https://github.com/x-motemen/ghq/compare/v1.10.1...v1.10.2) - 2026-04-19
+- feat(completion): improve bash completions. by @sciencesakura in https://github.com/x-motemen/ghq/pull/490
+- fix(test): exercise `ghq rm` in command tests by @nurazon59 in https://github.com/x-motemen/ghq/pull/489
+- chore(deps): bump golang.org/x/net from 0.52.0 to 0.53.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/485
+- chore(deps): bump github.com/mattn/go-isatty from 0.0.20 to 0.0.21 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/486
+- chore(deps): bump Songmu/tagpr from 1.18.1 to 1.18.2 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/484
+- chore(deps): bump github.com/urfave/cli/v3 from 3.7.0 to 3.8.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/487
+
 ## [v1.10.1](https://github.com/x-motemen/ghq/compare/v1.10.0...v1.10.1) - 2026-04-11
 - feat(rm): make ghq rm worktree-aware by @chris-monardo in https://github.com/x-motemen/ghq/pull/481
 
