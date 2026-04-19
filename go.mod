@@ -8,7 +8,7 @@ require (
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
 	github.com/otiai10/copy v1.14.1
 	github.com/saracen/walker v0.1.4
-	github.com/urfave/cli/v3 v3.7.0
+	github.com/urfave/cli/v3 v3.8.0
 	golang.org/x/net v0.53.0
 	golang.org/x/sync v0.20.0
 )
