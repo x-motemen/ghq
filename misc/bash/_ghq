@@ -1,21 +1,84 @@
-function _ghq () {
+_ghq() {
   local cur prev words cword
   _init_completion || return
 
-  case $cword in
-  1)
-    COMPREPLY=( $(compgen -W "get list rm" -- $cur) );;
-  2)
-    case $prev in
-    get)
-  	  COMPREPLY=( $(compgen -W "$(ghq list --unique)" -- $cur) );;
+  local subcommands="get clone list root rm create migrate help"
+  local global_opts="--help -h"
+
+  if [[ $cword = 1 ]]; then
+    COMPREPLY=( $(compgen -W "$subcommands $global_opts --version -v" -- "$cur") )
+    return 0
+  fi
+
+  local vcs_backends="git svn git-svn hg darcs pijul fossil bzr"
+
+  case "${words[1]}" in
+    get|clone)
+      local opts="--update -u -p --shallow --look -l --vcs --silent -s --no-recursive --branch -b --parallel -P --bare --partial"
+      if [[ $cur = -* ]]; then
+        COMPREPLY=( $(compgen -W "$opts $global_opts" -- "$cur") )
+        return 0
+      fi
+      case "$prev" in
+        --branch|-b)
+          # expects branch name
+          ;;
+        --partial)
+          COMPREPLY=( $(compgen -W "blobless treeless" -- "$cur") );;
+        --vcs)
+          COMPREPLY=( $(compgen -W "$vcs_backends" -- "$cur") );;
+        *)
+          local arg
+          for arg in "${words[@]}"; do
+            case "$arg" in
+              --update|-u)
+                COMPREPLY=( $(compgen -W "$(ghq list)" -- "$cur") )
+                break;;
+            esac
+          done;;
+      esac;;
     list)
-  	  COMPREPLY=( $(compgen -W "$(ghq list)" -- $cur) );;
+      local opts="--exact -e --vcs --full-path -p --unique --bare"
+      if [[ $cur = -* ]]; then
+        COMPREPLY=( $(compgen -W "$opts $global_opts" -- "$cur") )
+        return 0
+      fi
+      case "$prev" in
+        --vcs)
+          COMPREPLY=( $(compgen -W "$vcs_backends" -- "$cur") );;
+      esac;;
+    root)
+      local opts="--all"
+      if [[ $cur = -* ]]; then
+        COMPREPLY=( $(compgen -W "$opts $global_opts" -- "$cur") )
+        return 0
+      fi;;
     rm)
-  	  COMPREPLY=( $(compgen -W "$(ghq list)" -- $cur) );;
-    esac;;
-  *)
-    COMPREPLY=( $(compgen -W "$(ls)" -- $cur) );;
+      local opts="--dry-run --bare"
+      if [[ $cur = -* ]]; then
+        COMPREPLY=( $(compgen -W "$opts $global_opts" -- "$cur") )
+        return 0
+      fi
+      COMPREPLY=( $(compgen -W "$(ghq list)" -- "$cur") );;
+    create)
+      local opts="--vcs --bare"
+      if [[ $cur = -* ]]; then
+        COMPREPLY=( $(compgen -W "$opts $global_opts" -- "$cur") )
+        return 0
+      fi
+      case "$prev" in
+        --vcs)
+          COMPREPLY=( $(compgen -W "$vcs_backends" -- "$cur") );;
+      esac;;
+    migrate)
+      local opts="-y --dry-run"
+      if [[ $cur = -* ]]; then
+        COMPREPLY=( $(compgen -W "$opts $global_opts" -- "$cur") )
+        return 0
+      fi
+      _filedir -d;;
+    help)
+      COMPREPLY=( $(compgen -W "$subcommands $global_opts" -- "$cur") );;
   esac
 }
 
