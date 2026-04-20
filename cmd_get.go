@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Songmu/gitconfig"
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v3"
 	"github.com/x-motemen/ghq/cmdutil"
@@ -27,6 +28,15 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 		parallel = cmd.Bool("parallel")
 		silent   = cmd.Bool("silent")
 	)
+	if !andLook {
+		v, err := gitconfig.Bool("ghq.look")
+		if err != nil && !gitconfig.IsNotFound(err) {
+			return err
+		}
+		if err == nil {
+			andLook = v
+		}
+	}
 	g := &getter{
 		update:    cmd.Bool("update"),
 		shallow:   cmd.Bool("shallow"),
