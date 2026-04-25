@@ -77,6 +77,38 @@ func TestDoMigrate(t *testing.T) {
 		}
 	})
 
+	t.Run("migrate_success_ignore_host", func(t *testing.T) {
+		srcdir := initGitRepo(t, filepath.Join(tmpdir, "github.com", "alice", "proj-ignore"),
+			"https://github.com/alice/proj-ignore.git")
+
+		a := newApp()
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", "--ignore-host", srcdir})
+		if e != nil {
+			t.Fatal(e)
+		}
+
+		dest := filepath.Join(tmpdir, "alice", "proj-ignore")
+		if _, err := os.Stat(dest); os.IsNotExist(err) {
+			t.Error("dest not found")
+		}
+	})
+
+	t.Run("migrate_success_ignore_host_from_unmanaged_source", func(t *testing.T) {
+		srcdir := initGitRepo(t, filepath.Join(tmpdir, "external", "alice", "proj-unmanaged"),
+			"https://github.com/alice/proj-unmanaged.git")
+
+		a := newApp()
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", "--ignore-host", srcdir})
+		if e != nil {
+			t.Fatal(e)
+		}
+
+		dest := filepath.Join(tmpdir, "alice", "proj-unmanaged")
+		if _, err := os.Stat(dest); os.IsNotExist(err) {
+			t.Error("dest not found")
+		}
+	})
+
 	// Test case: nonexistent directory
 	t.Run("migrate_nonexist", func(t *testing.T) {
 		a := newApp()
@@ -267,6 +299,37 @@ func TestMigrateEdgeCases(t *testing.T) {
 		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", srcdir})
 		if e == nil {
 			t.Error("should fail when dest exists")
+		}
+	})
+
+	t.Run("ignore_host_rejects_mismatched_host_root", func(t *testing.T) {
+		srcdir := initGitRepo(t, filepath.Join(tmpdir, "gitlab.com", "alice", "wrong-host"),
+			"https://github.com/alice/wrong-host.git")
+
+		a := newApp()
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", "--ignore-host", srcdir})
+		if e == nil {
+			t.Fatal("expected error")
+		}
+		if !strings.Contains(e.Error(), "does not match remote host") {
+			t.Fatalf("unexpected error: %v", e)
+		}
+	})
+
+	t.Run("ignore_host_rejects_colliding_repository", func(t *testing.T) {
+		srcdir := initGitRepo(t, filepath.Join(tmpdir, "github.com", "alice", "collision"),
+			"https://github.com/alice/collision.git")
+		if err := os.MkdirAll(filepath.Join(tmpdir, "gitlab.com", "alice", "collision", ".git"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+
+		a := newApp()
+		e := a.Run(context.Background(), []string{"ghq", "migrate", "-y", "--ignore-host", srcdir})
+		if e == nil {
+			t.Fatal("expected error")
+		}
+		if !strings.Contains(e.Error(), "ignore-host naming collision") {
+			t.Fatalf("unexpected error: %v", e)
 		}
 	})
 

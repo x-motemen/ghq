@@ -12,6 +12,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/Songmu/gitconfig"
 	"github.com/x-motemen/ghq/cmdutil"
 )
 
@@ -168,5 +169,88 @@ func TestDoCreate(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestDoCreateIgnoreHost(t *testing.T) {
+	defer func(orig func(cmd *exec.Cmd) error) {
+		cmdutil.CommandRunner = orig
+	}(cmdutil.CommandRunner)
+	defer func(orig string) { _home = orig }(_home)
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+
+	_home = ""
+	homeOnce = &sync.Once{}
+	tmpd := newTempDir(t)
+	setEnv(t, envGhqRoot, tmpd)
+	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
+
+	var lastCmd *exec.Cmd
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+		lastCmd = cmd
+		return nil
+	}
+
+	var runErr error
+	out, _, err := capture(func() {
+		runErr = newApp().Run(context.Background(), []string{"ghq", "create", "--ignore-host", "motemen/ghq-ignore"})
+	})
+	if err != nil {
+		t.Fatalf("capture returned error: %v", err)
+	}
+	if runErr != nil {
+		t.Fatalf("create returned error: %v", runErr)
+	}
+
+	want := filepath.Join(tmpd, "motemen", "ghq-ignore")
+	if lastCmd == nil || lastCmd.Dir != want {
+		t.Fatalf("cmd.Dir = %q, want %q", lastCmd.Dir, want)
+	}
+	if strings.TrimSpace(out) != want {
+		t.Fatalf("stdout = %q, want %q", strings.TrimSpace(out), want)
+	}
+}
+
+func TestDoCreateConfigIgnoreHost(t *testing.T) {
+	defer func(orig func(cmd *exec.Cmd) error) {
+		cmdutil.CommandRunner = orig
+	}(cmdutil.CommandRunner)
+	defer func(orig string) { _home = orig }(_home)
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+
+	_home = ""
+	homeOnce = &sync.Once{}
+	tmpd := newTempDir(t)
+	setEnv(t, envGhqRoot, tmpd)
+	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
+	t.Cleanup(gitconfig.WithConfig(t, `[ghq]
+ignoreHost = true
+`))
+
+	var lastCmd *exec.Cmd
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+		lastCmd = cmd
+		return nil
+	}
+
+	var runErr error
+	out, _, err := capture(func() {
+		runErr = newApp().Run(context.Background(), []string{"ghq", "create", "motemen/ghq-config-ignore"})
+	})
+	if err != nil {
+		t.Fatalf("capture returned error: %v", err)
+	}
+	if runErr != nil {
+		t.Fatalf("create returned error: %v", runErr)
+	}
+
+	want := filepath.Join(tmpd, "motemen", "ghq-config-ignore")
+	if lastCmd == nil || lastCmd.Dir != want {
+		t.Fatalf("cmd.Dir = %q, want %q", lastCmd.Dir, want)
+	}
+	if strings.TrimSpace(out) != want {
+		t.Fatalf("stdout = %q, want %q", strings.TrimSpace(out), want)
 	}
 }

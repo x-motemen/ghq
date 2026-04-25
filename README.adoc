@@ -16,11 +16,11 @@ You can also list local repositories (+ghq list+).
 == SYNOPSIS
 
 [verse]
-ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
-ghq list [-p] [-e] [<query>]
-ghq create [--vcs <vcs>] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
-ghq rm [--dry-run] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
-ghq migrate [-y] [--dry-run] <local repository path>
+ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] [--bare] [--ignore-host] [--partial blobless|treeless] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
+ghq list [-p] [-e] [--ignore-host] [<query>]
+ghq create [--vcs <vcs>] [--ignore-host] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
+ghq rm [--dry-run] [--ignore-host] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
+ghq migrate [-y] [--dry-run] [--ignore-host] <local repository path>
 ghq root [--all]
 
 == COMMANDS
@@ -103,6 +103,20 @@ ghq.defaultHost::
     For example, `ghq get owner/project` normally resolves to `github.com/owner/project`.
     If this option is set, the specified host will be used instead.
 
+ghq.ignoreHost::
+    Store repositories without the host path component.
+    For example, `ghq get github.com/owner/project` is stored as `owner/project`
+    instead of `github.com/owner/project`.
+    This option can also be enabled per command with `--ignore-host`.
+    The default is `false`, which preserves the current host-prefixed layout.
++
+    WARNING: different remotes such as `github.com/owner/project` and
+    `gitlab.com/owner/project` collide under this mode because they map to the
+    same local path. ghq treats that as an error. Use `ghq migrate --ignore-host`
+    to move an existing repository into the hostless layout, and note that
+    `migrate` also refuses a source repository whose current host directory does
+    not match the repository remote host.
+
 ghq.<url>.vcs::
     ghq tries to detect the remote repository's VCS backend for non-"github.com"
     repositories.  With this option you can explicitly specify the VCS for the
@@ -135,6 +149,9 @@ GHQ_ROOT::
 == [[directory-structures]]DIRECTORY STRUCTURES
 
 Local repositories are placed under 'ghq.root' with named github.com/_user_/_repo_.
+
+When `ghq.ignoreHost` or `--ignore-host` is enabled, repositories are placed
+under 'ghq.root' without the leading host directory.
 
 ....
 ~/ghq

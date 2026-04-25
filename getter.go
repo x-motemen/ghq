@@ -27,6 +27,7 @@ type getInfo struct {
 type getter struct {
 	update, shallow, silent, ssh, recursive, bare bool
 	vcs, branch, partial                          string
+	ignoreHost                                    bool
 }
 
 func (g *getter) get(ctx context.Context, argURL string) (getInfo, error) {
@@ -51,7 +52,7 @@ func (g *getter) get(ctx context.Context, argURL string) (getInfo, error) {
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
 func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepository, branch string) (getInfo, error) {
 	remoteURL := remote.URL()
-	local, err := LocalRepositoryFromURL(remoteURL, g.bare)
+	local, err := localRepositoryForURL(remoteURL, g.bare, g.ignoreHost)
 	if err != nil {
 		return getInfo{}, err
 	}
@@ -94,7 +95,14 @@ func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepositor
 			}
 		}
 		if l := detectLocalRepoRoot(remoteURL.Path, repoURL.Path); l != "" {
-			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
+			rootParts := []string{local.RootPath}
+			if g.ignoreHost {
+				rootParts = append(rootParts, splitRepoPath(l)...)
+			} else {
+				rootParts = append(rootParts, remoteURL.Hostname())
+				rootParts = append(rootParts, splitRepoPath(l)...)
+			}
+			localRepoRoot = filepath.Join(rootParts...)
 		}
 
 		if g.bare {

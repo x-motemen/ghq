@@ -134,6 +134,59 @@ func TestNewLocalRepository(t *testing.T) {
 	}
 }
 
+func TestLocalRepositoryForURLIgnoreHost(t *testing.T) {
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	tmproot := newTempDir(t)
+	_localRepositoryRoots = []string{tmproot}
+
+	repo, err := localRepositoryForURL(mustParseURL("https://github.com/motemen/ghq.git"), false, true)
+	if err != nil {
+		t.Fatalf("localRepositoryForURL returned error: %v", err)
+	}
+
+	want := filepath.Join(tmproot, "motemen", "ghq")
+	if repo.FullPath != want {
+		t.Fatalf("FullPath = %q, want %q", repo.FullPath, want)
+	}
+	if repo.RelPath != "motemen/ghq" {
+		t.Fatalf("RelPath = %q, want %q", repo.RelPath, "motemen/ghq")
+	}
+}
+
+func TestLocalRepositoryForURLIgnoreHostCollision(t *testing.T) {
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	tmproot := newTempDir(t)
+	_localRepositoryRoots = []string{tmproot}
+
+	if err := os.MkdirAll(filepath.Join(tmproot, "gitlab.com", "motemen", "ghq", ".git"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := localRepositoryForURL(mustParseURL("https://github.com/motemen/ghq.git"), false, true)
+	if err == nil || !strings.Contains(err.Error(), "ignore-host naming collision") {
+		t.Fatalf("expected ignore-host collision error, got: %v", err)
+	}
+}
+
+func TestLookupLocalRepositoryForURLIgnoreHostFindsLegacyLayout(t *testing.T) {
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	tmproot := newTempDir(t)
+	_localRepositoryRoots = []string{tmproot}
+
+	legacy := filepath.Join(tmproot, "github.com", "motemen", "ghq")
+	if err := os.MkdirAll(filepath.Join(legacy, ".git"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	repo, err := lookupLocalRepositoryForURL(mustParseURL("https://github.com/motemen/ghq.git"), false, true)
+	if err != nil {
+		t.Fatalf("lookupLocalRepositoryForURL returned error: %v", err)
+	}
+	if repo.FullPath != legacy {
+		t.Fatalf("FullPath = %q, want %q", repo.FullPath, legacy)
+	}
+}
+
 func TestLocalRepositoryRoots(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 

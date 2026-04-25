@@ -18,6 +18,10 @@ func doRm(ctx context.Context, cmd *cli.Command) error {
 		w    = cmd.Root().Writer
 		bare = cmd.Bool("bare")
 	)
+	ignoreHost, err := ignoreHostFromCommand(cmd)
+	if err != nil {
+		return err
+	}
 
 	if name == "" {
 		return fmt.Errorf("repository name is required")
@@ -28,7 +32,7 @@ func doRm(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	localRepo, err := LocalRepositoryFromURL(u, bare)
+	localRepo, err := lookupLocalRepositoryForURL(u, bare, ignoreHost)
 	if err != nil {
 		return err
 	}
