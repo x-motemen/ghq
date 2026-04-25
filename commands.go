@@ -41,6 +41,7 @@ var commandGet = &cli.Command{
 			Usage: "Specify `branch` name. This flag implies --single-branch on Git"},
 		&cli.BoolFlag{Name: "parallel", Aliases: []string{"P"}, Usage: "Import parallelly"},
 		&cli.BoolFlag{Name: "bare", Usage: "Do a bare clone"},
+		&cli.BoolFlag{Name: "ignore-host", Usage: "Ignore the repository host in local path naming"},
 		&cli.StringFlag{
 			Name:  "partial",
 			Usage: "Do a partial clone. Can specify either \"blobless\" or \"treeless\"",
@@ -70,6 +71,7 @@ var commandList = &cli.Command{
 		&cli.BoolFlag{Name: "full-path", Aliases: []string{"p"}, Usage: "Print full paths"},
 		&cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
 		&cli.BoolFlag{Name: "bare", Usage: "Query bare repositories"},
+		&cli.BoolFlag{Name: "ignore-host", Usage: "Ignore the repository host in local path naming"},
 	},
 }
 
@@ -80,6 +82,7 @@ var commandRm = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "dry-run", Usage: "Do not remove actually"},
 		&cli.BoolFlag{Name: "bare", Usage: "Remove a bare repository"},
+		&cli.BoolFlag{Name: "ignore-host", Usage: "Ignore the repository host in local path naming"},
 	},
 }
 
@@ -99,6 +102,7 @@ var commandCreate = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend explicitly"},
 		&cli.BoolFlag{Name: "bare", Usage: "Create a bare repository"},
+		&cli.BoolFlag{Name: "ignore-host", Usage: "Ignore the repository host in local path naming"},
 	},
 }
 
@@ -108,12 +112,12 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":     {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
-	"list":    {"", "[-p] [-e] [<query>]"},
-	"create":  {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
-	"rm":      {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
+	"get":     {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] [--ignore-host] [--partial blobless|treeless] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
+	"list":    {"", "[-p] [-e] [--ignore-host] [<query>]"},
+	"create":  {"", "[--ignore-host] <project>|<user>/<project>|<host>/<user>/<project>"},
+	"rm":      {"", "[--ignore-host] <project>|<user>/<project>|<host>/<user>/<project>"},
 	"root":    {"", "[-all]"},
-	"migrate": {"", "[-y] [--dry-run] <repository-directory>"},
+	"migrate": {"", "[-y] [--dry-run] [--ignore-host] <repository-directory>"},
 }
 
 // Makes template conditionals to generate per-command documents.
@@ -154,5 +158,6 @@ var commandMigrate = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "y", Usage: "Skip confirmation prompt"},
 		&cli.BoolFlag{Name: "dry-run", Usage: "Show what would happen without moving"},
+		&cli.BoolFlag{Name: "ignore-host", Usage: "Ignore the repository host in local path naming"},
 	},
 }

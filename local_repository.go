@@ -72,53 +72,19 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 	}, nil
 }
 
+// MaybeLocalRepositoryFromFullPath resolves a managed local repository from a file path.
+// If the path is not under any ghq-managed root, it returns (nil, nil).
+func MaybeLocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRepository, error) {
+	repo, err := LocalRepositoryFromFullPath(fullPath, backend)
+	if err != nil && strings.HasPrefix(err.Error(), "no local repository found for: ") {
+		return nil, nil
+	}
+	return repo, err
+}
+
 // LocalRepositoryFromURL resolve LocalRepository from URL
 func LocalRepositoryFromURL(remoteURL *url.URL, bare bool) (*LocalRepository, error) {
-	pathParts := append(
-		[]string{remoteURL.Hostname()}, strings.Split(remoteURL.Path, "/")...,
-	)
-	relPath := strings.TrimSuffix(filepath.Join(pathParts...), ".git")
-	pathParts[len(pathParts)-1] = strings.TrimSuffix(pathParts[len(pathParts)-1], ".git")
-	if bare {
-		// Force to append ".git" even if remoteURL does not end with ".git".
-		relPath = relPath + ".git"
-		pathParts[len(pathParts)-1] = pathParts[len(pathParts)-1] + ".git"
-	}
-
-	var (
-		localRepository *LocalRepository
-		mu              sync.Mutex
-	)
-	// Find existing local repository first
-	if err := walkAllLocalRepositories(func(repo *LocalRepository) {
-		if repo.RelPath == relPath {
-			mu.Lock()
-			localRepository = repo
-			mu.Unlock()
-		}
-	}); err != nil {
-		return nil, err
-	}
-
-	if localRepository != nil {
-		return localRepository, nil
-	}
-	var remoteURLStr = remoteURL.String()
-	if remoteURL.Scheme == "codecommit" {
-		remoteURLStr = remoteURL.Opaque
-	}
-	prim, err := getRoot(remoteURLStr)
-	if err != nil {
-		return nil, err
-	}
-
-	// No local repository found, returning new one
-	return &LocalRepository{
-		FullPath:  filepath.Join(prim, relPath),
-		RelPath:   relPath,
-		RootPath:  prim,
-		PathParts: pathParts,
-	}, nil
+	return localRepositoryForURL(remoteURL, bare, false)
 }
 
 func getRoot(u string) (string, error) {
@@ -156,7 +122,20 @@ func (repo *LocalRepository) Subpaths() []string {
 
 // NonHostPath returns non host path
 func (repo *LocalRepository) NonHostPath() string {
-	return strings.Join(repo.PathParts[1:], "/")
+	return repo.HostlessRelPath()
+}
+
+// HostlessRelPath returns the repository path without the host prefix when present.
+func (repo *LocalRepository) HostlessRelPath() string {
+	if repo.HasHostPathPrefix() {
+		return strings.Join(repo.PathParts[1:], "/")
+	}
+	return strings.Join(repo.PathParts, "/")
+}
+
+// HasHostPathPrefix reports whether the path begins with a host directory.
+func (repo *LocalRepository) HasHostPathPrefix() bool {
+	return len(repo.PathParts) >= 3 && looksLikeAuthorityPattern.MatchString(repo.PathParts[0])
 }
 
 // list as bellow
@@ -164,12 +143,10 @@ func (repo *LocalRepository) NonHostPath() string {
 // - "$GHQ_ROOT/github.com/motemen/ghq"
 // - "$GHQ_ROOT/github.com/motemen
 func (repo *LocalRepository) repoRootCandidates() []string {
-	hostRoot := filepath.Join(repo.RootPath, repo.PathParts[0])
-	nonHostParts := repo.PathParts[1:]
-	candidates := make([]string, len(nonHostParts))
-	for i := range nonHostParts {
+	candidates := make([]string, len(repo.PathParts))
+	for i := range repo.PathParts {
 		candidates[i] = filepath.Join(append(
-			[]string{hostRoot}, nonHostParts[0:len(nonHostParts)-i]...)...)
+			[]string{repo.RootPath}, repo.PathParts[0:len(repo.PathParts)-i]...)...)
 	}
 	return candidates
 }

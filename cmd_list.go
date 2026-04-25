@@ -21,6 +21,10 @@ func doList(ctx context.Context, cmd *cli.Command) error {
 		printUniquePaths = cmd.Bool("unique")
 		bare             = cmd.Bool("bare")
 	)
+	ignoreHost, err := ignoreHostFromCommand(cmd)
+	if err != nil {
+		return err
+	}
 
 	filterByQuery := func(_ *LocalRepository) bool {
 		return true
@@ -28,7 +32,7 @@ func doList(ctx context.Context, cmd *cli.Command) error {
 	if query != "" {
 		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
 			if url, err := newURL(query, false, false); err == nil {
-				if repo, err := LocalRepositoryFromURL(url, bare); err == nil {
+				if repo, err := lookupLocalRepositoryForURL(url, bare, ignoreHost); err == nil {
 					query = filepath.ToSlash(repo.RelPath)
 				}
 			}

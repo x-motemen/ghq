@@ -27,16 +27,21 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 		parallel = cmd.Bool("parallel")
 		silent   = cmd.Bool("silent")
 	)
+	ignoreHost, err := ignoreHostFromCommand(cmd)
+	if err != nil {
+		return err
+	}
 	g := &getter{
-		update:    cmd.Bool("update"),
-		shallow:   cmd.Bool("shallow"),
-		ssh:       cmd.Bool("p"),
-		vcs:       cmd.String("vcs"),
-		silent:    silent,
-		branch:    cmd.String("branch"),
-		recursive: !cmd.Bool("no-recursive"),
-		bare:      cmd.Bool("bare"),
-		partial:   cmd.String("partial"),
+		update:     cmd.Bool("update"),
+		shallow:    cmd.Bool("shallow"),
+		ssh:        cmd.Bool("p"),
+		vcs:        cmd.String("vcs"),
+		silent:     silent,
+		branch:     cmd.String("branch"),
+		recursive:  !cmd.Bool("no-recursive"),
+		bare:       cmd.Bool("bare"),
+		partial:    cmd.String("partial"),
+		ignoreHost: ignoreHost,
 	}
 	if parallel {
 		// force silent in parallel import
@@ -51,7 +56,6 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 		argCnt   int
 		getInfo  getInfo // For fetching and looking a single repo
 		scr      scanner
-		err      error
 	)
 	if len(args) > 0 {
 		scr = &sliceScanner{slice: args}
@@ -104,7 +108,7 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 	}
 	if andLook {
 		if argCnt > 1 && firstArg != "" {
-			return look(firstArg, g.bare)
+			return lookWithOption(firstArg, g.bare, g.ignoreHost)
 		}
 		if argCnt == 1 && getInfo.localRepository != nil {
 			return lookByLocalRepository(getInfo.localRepository)
@@ -149,6 +153,10 @@ func detectShell() string {
 }
 
 func look(name string, bare bool) error {
+	return lookWithOption(name, bare, false)
+}
+
+func lookWithOption(name string, bare, ignoreHost bool) error {
 	var (
 		reposFound []*LocalRepository
 		mu         sync.Mutex
@@ -165,7 +173,7 @@ func look(name string, bare bool) error {
 
 	if len(reposFound) == 0 {
 		if url, err := newURL(name, false, false); err == nil {
-			repo, err := LocalRepositoryFromURL(url, bare)
+			repo, err := lookupLocalRepositoryForURL(url, bare, ignoreHost)
 			if err != nil {
 				return err
 			}

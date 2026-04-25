@@ -21,6 +21,10 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 		skipConfirm = cmd.Bool("y")
 		w           = cmd.Root().Writer
 	)
+	ignoreHost, err := ignoreHostFromCommand(cmd)
+	if err != nil {
+		return err
+	}
 
 	if repoDir == "" {
 		return fmt.Errorf("repository directory is required")
@@ -71,13 +75,47 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to parse remote URL %q: %w", remoteURL, err)
 	}
 
-	// Derive destination path
-	localRepo, err := LocalRepositoryFromURL(u, false)
+	srcRepo, err := MaybeLocalRepositoryFromFullPath(absDir, vcsBackend)
 	if err != nil {
-		return fmt.Errorf("failed to derive destination path: %w", err)
+		return fmt.Errorf("failed to resolve source repository location: %w", err)
 	}
 
-	destPath := localRepo.FullPath
+	var destPath string
+	if ignoreHost {
+		if srcRepo != nil && srcRepo.HasHostPathPrefix() && srcRepo.PathParts[0] != u.Hostname() {
+			return fmt.Errorf("source repository host root %q does not match remote host %q", srcRepo.PathParts[0], u.Hostname())
+		}
+
+		naming := repoNamingFromURL(u, false, true)
+		remoteURLStr := u.String()
+		if u.Scheme == "codecommit" {
+			remoteURLStr = u.Opaque
+		}
+		root, err := getRoot(remoteURLStr)
+		if err != nil {
+			return fmt.Errorf("failed to derive destination path: %w", err)
+		}
+		destPath = filepath.Join(root, naming.canonicalRelPath)
+
+		var conflicts []*LocalRepository
+		if err := walkAllLocalRepositories(func(repo *LocalRepository) {
+			if repo.HostlessRelPath() != naming.hostlessRelPath || (srcRepo != nil && repo.RelPath == srcRepo.RelPath) {
+				return
+			}
+			conflicts = append(conflicts, repo)
+		}); err != nil {
+			return fmt.Errorf("failed to derive destination path: %w", err)
+		}
+		if len(conflicts) > 0 {
+			return ignoreHostConflictError(naming.hostlessRelPath, conflicts)
+		}
+	} else {
+		localRepo, err := LocalRepositoryFromURL(u, false)
+		if err != nil {
+			return fmt.Errorf("failed to derive destination path: %w", err)
+		}
+		destPath = localRepo.FullPath
+	}
 
 	// Check if source and destination are the same
 	if absDir == destPath {
