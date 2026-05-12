@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/Songmu/gitconfig v0.2.2
-	github.com/mattn/go-isatty v0.0.21
+	github.com/mattn/go-isatty v0.0.22
 	github.com/motemen/go-colorine v0.0.0-20180816141035-45d19169413a
 	github.com/otiai10/copy v1.14.1
 	github.com/saracen/walker v0.1.4
