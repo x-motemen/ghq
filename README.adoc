@@ -204,6 +204,13 @@ mise install ghq
 mise use ghq
 ----
 
+=== https://github.com/nixos/nixpkgs[nixpkgs]
+
+----
+nix run nixpkgs#ghq # run ghq once
+nix profile install nixpkgs#ghq # install ghq to your profile
+----
+
 === build
 
 ----
