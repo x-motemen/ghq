@@ -10,7 +10,7 @@ _ghq() {
     return 0
   fi
 
-  local vcs_backends="git svn git-svn hg darcs pijul fossil bzr"
+  local vcs_backends="git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar"
 
   case "${words[1]}" in
     get|clone)

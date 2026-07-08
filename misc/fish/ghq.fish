@@ -42,6 +42,8 @@ function __complete_get_partial
     printf '%s\t%s\n' 'treeless' 'Do a treeless clone'
 end
 complete -c ghq -n '__fish_seen_subcommand_from get clone' -l partial -d 'Do a partial clone' -xa '(__complete_get_partial)'
+# When updating an existing repository (-u/--update), complete with local repositories
+complete -c ghq -n '__fish_seen_subcommand_from get clone' -n '__fish_seen_argument -s u -l update' -xa '(ghq list)'
 
 complete -c ghq -n '__fish_seen_subcommand_from list' -s e -l exact -d 'Perform an exact match'
 complete -c ghq -n '__fish_seen_subcommand_from list' -l vcs -d 'Specify vcs backend for matching'
@@ -56,6 +58,7 @@ complete -c ghq -n '__fish_seen_subcommand_from rm' -xa '(ghq list)'
 complete -c ghq -n '__fish_seen_subcommand_from root' -l all -d 'Show all roots'
 
 complete -c ghq -n '__fish_seen_subcommand_from create' -l vcs -d 'Specify vcs backend explicitly'
+complete -c ghq -n '__fish_seen_subcommand_from create' -l bare -d 'Create a bare repository'
 
 complete -c ghq -n '__fish_seen_subcommand_from migrate' -s y -d 'Skip confirmation prompt'
 complete -c ghq -n '__fish_seen_subcommand_from migrate' -l dry-run -d 'Show what would happen without moving'
