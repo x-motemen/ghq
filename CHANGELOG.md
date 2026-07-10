@@ -1,5 +1,33 @@
 # Changelog
 
+## [v1.10.2](https://github.com/x-motemen/ghq/compare/v1.10.1...v1.10.2) - 2026-07-10
+
+- feat(completion): improve bash completions. by @sciencesakura in https://github.com/x-motemen/ghq/pull/490
+- fix(test): exercise `ghq rm` in command tests by @nurazon59 in https://github.com/x-motemen/ghq/pull/489
+- chore(deps): bump golang.org/x/net from 0.52.0 to 0.53.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/485
+- chore(deps): bump github.com/mattn/go-isatty from 0.0.20 to 0.0.21 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/486
+- chore(deps): bump Songmu/tagpr from 1.18.1 to 1.18.2 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/484
+- chore(deps): bump github.com/urfave/cli/v3 from 3.7.0 to 3.8.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/487
+- chore(deps): bump github.com/mattn/go-isatty from 0.0.21 to 0.0.22 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/495
+- chore(deps): bump Songmu/tagpr from 1.18.2 to 1.19.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/498
+- chore(deps): bump crate-ci/typos from 1.45.0 to 1.46.1 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/501
+- chore(deps): bump golang.org/x/text from 0.36.0 to 0.37.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/500
+- chore(deps): bump golang.org/x/net from 0.53.0 to 0.54.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/499
+- feat(completion): update fish completions by @mochaaP in https://github.com/x-motemen/ghq/pull/508
+- docs: add nix by @ryoppippi in https://github.com/x-motemen/ghq/pull/525
+- fix: correct branch name by @hezhizhen in https://github.com/x-motemen/ghq/pull/514
+- feat(completion): update bash/zsh/fish completions by @hezhizhen in https://github.com/x-motemen/ghq/pull/526
+- chore(deps): bump github.com/urfave/cli/v3 from 3.8.0 to 3.10.1 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/524
+- chore(deps): bump reviewdog/action-staticcheck from 1.28.0 to 1.29.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/523
+- chore(deps): bump actions/checkout from 6.0.2 to 7.0.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/520
+- chore(deps): bump codecov/codecov-action from 6.0.0 to 7.0.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/512
+- chore(deps): bump Songmu/tagpr from 1.19.0 to 1.20.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/509
+- chore(deps): bump crate-ci/typos from 1.46.1 to 1.47.2 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/511
+- Group Dependabot updates for golang.org/x and actions by @Songmu in https://github.com/x-motemen/ghq/pull/528
+- chore(deps): bump the golang-x group with 3 updates by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/529
+- chore(deps): bump actions/setup-go from 6.4.0 to 6.5.0 in the actions group by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/530
+- chore(deps): bump crate-ci/typos from 1.47.2 to 1.48.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/531
+
 ## [v1.10.1](https://github.com/x-motemen/ghq/compare/v1.10.0...v1.10.1) - 2026-04-11
 - feat(rm): make ghq rm worktree-aware by @chris-monardo in https://github.com/x-motemen/ghq/pull/481
 
