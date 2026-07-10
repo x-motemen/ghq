@@ -15,13 +15,13 @@ function _ghq () {
     case $state in
         (args)
             case $words[1] in
-                (get)
+                (get|clone)
                     _arguments -C \
                         '(-u --update)'{-u,--update}'[Update local repository if cloned already]' \
                         '-p[Clone with SSH]' \
                         '--shallow[Do a shallow clone]' \
                         '(-l --look)'{-l,--look}'[Look after get]' \
-                        '--vcs[Specify vcs backend for cloning]' \
+                        '--vcs[Specify vcs backend for cloning]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar)' \
                         '(-s --silent)'{-s,--silent}'[Clone or update silently]' \
                         '--no-recursive[Prevent recursive fetching]' \
                         '--bare[Do a bare clone]' \
@@ -30,11 +30,14 @@ function _ghq () {
                         '--partial[Do a partial clone]: :(blobless treeless)' \
                         '(-)*:: :->null_state' \
                         && ret=0
+                    if (( ${words[(I)-u]} )) || (( ${words[(I)--update]} )); then
+                        __ghq_all_repositories && ret=0
+                    fi
                     ;;
                 (list)
                     _arguments -C \
                         '(-e --exact)'{-e,--exact}'[Perform an exact match]' \
-                        '--vcs[Specify vcs backend for matching]' \
+                        '--vcs[Specify vcs backend for matching]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar)' \
                         '(-p --full-path)'{-p,--full-path}'[Print full paths]' \
                         '--unique[Print unique subpaths]' \
                         '--bare[Query bare repositories]' \
@@ -49,7 +52,7 @@ function _ghq () {
                     ;;
                 (create)
                     _arguments -C \
-                        '--vcs[Specify vcs backend explicitly]' \
+                        '--vcs[Specify vcs backend explicitly]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar)' \
                         '--bare[Create a bare repository]' \
                         '(-)*:: :->null_state' \
                         && ret=0
@@ -94,12 +97,14 @@ __ghq_commands () {
     local -a _c
     _c=(
         'get:Clone/sync with a remote repository'
+        'clone:Clone/sync with a remote repository'
         'list:List local repositories'
         'rm:Remove local repository'
         'create:Create a new repository'
         'migrate:Migrate existing repository to ghq-managed directory'
         "root:Show repositories' root"
         'help:Show a list of commands or help for one command'
+        'h:Show a list of commands or help for one command'
     )
 
     _describe -t commands Commands _c
