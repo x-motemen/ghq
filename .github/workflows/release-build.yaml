@@ -1,0 +1,49 @@
+name: release build
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
+    - name: checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: setup go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: go.mod
+    - name: prepare release build
+      id: build
+      run: echo "revision=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+    - name: build release archives
+      id: goxz
+      uses: Songmu/goxz@b7b74d681760746882693f3db7c94a0888a4b714 # v0.13.0
+      with:
+        package-version: ${{ github.ref_name }}
+        os: linux,darwin,windows
+        arch: amd64,arm64
+        packages: .
+        include: misc/bash/_ghq,misc/zsh/_ghq
+        build-ldflags: -s -w -X main.revision=${{ steps.build.outputs.revision }}
+        static: true
+        checksum: true
+    - name: attest build provenance
+      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+      with:
+        subject-path: "${{ steps.goxz.outputs.output-dir }}/*"
+    - name: upload release artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: release-${{ github.ref_name }}
+        path: "${{ steps.goxz.outputs.output-dir }}/*"
+        if-no-files-found: error
+        retention-days: 1

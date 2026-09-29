@@ -4,14 +4,17 @@ on:
     branches:
     - "master"
   workflow_dispatch:
-permissions:
-  contents: write
-  pull-requests: write
-  issues: read
+
 jobs:
   tagpr:
-    timeout-minutes: 20
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+    outputs:
+      tag: ${{ steps.tagpr.outputs.tag }}
     steps:
     - name: checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -23,11 +26,20 @@ jobs:
         go-version-file: go.mod
     - name: tagpr
       id: tagpr
-      uses: Songmu/tagpr@d1b8138b7a31075141b6cd64103de9485ced7ac9 # v1.20.1
+      uses: Songmu/tagpr@2afc990a4a5a9a340665cc1a484c2102f7de332f # v1.21.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - uses: ./.github/actions/release
-      with:
-        tag: ${{ steps.tagpr.outputs.tag }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-      if: "steps.tagpr.outputs.tag != ''"
+
+  dispatch-release:
+    needs: tagpr
+    if: needs.tagpr.outputs.tag != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+    - name: dispatch release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ needs.tagpr.outputs.tag }}
+      run: gh workflow run release.yaml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
