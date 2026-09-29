@@ -24,10 +24,9 @@ jobs:
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version-file: go.mod
-    - uses: Songmu/gocredits@82ac47e5c3154f8bbdcaa72eb89cf1a4953282d9 # v1.0.1
     - name: tagpr
       id: tagpr
-      uses: Songmu/tagpr@967f2ab22be958948fb5bd439bfa3d404dd9dee8 # v1.21.1
+      uses: Songmu/tagpr@2afc990a4a5a9a340665cc1a484c2102f7de332f # v1.21.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
