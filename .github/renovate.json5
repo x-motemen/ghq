@@ -1,0 +1,55 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+  ],
+  enabledManagers: [
+    'gomod',
+  ],
+  packageRules: [
+    {
+      matchManagers: [
+        'gomod',
+      ],
+      matchDepTypes: [
+        'require',
+        'indirect',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      enabled: false,
+    },
+    {
+      matchManagers: [
+        'gomod',
+      ],
+      matchDepTypes: [
+        'require',
+      ],
+      matchUpdateTypes: [
+        'major',
+      ],
+      enabled: true,
+      postUpdateOptions: [
+        'gomodUpdateImportPaths',
+      ],
+      automerge: false,
+    },
+    {
+      matchManagers: [
+        'gomod',
+      ],
+      matchDepNames: [
+        'go',
+      ],
+      matchDepTypes: [
+        'golang',
+      ],
+      rangeStrategy: 'bump',
+      enabled: true,
+      automerge: false,
+    },
+  ],
+}

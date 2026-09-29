@@ -1,20 +1,46 @@
 name: release
+
 on:
-  push:
-    tags:
-    - "v[0-9]+.[0-9]+.[0-9]+"
-permissions:
-  contents: write
-  packages: write
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
-  release:
-    timeout-minutes: 20
+  build:
+    if: github.ref_type == 'tag'
+    permissions:
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/release-build.yaml
+
+  publish:
+    needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
     steps:
     - name: checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-    - uses: ./.github/actions/release
+    - name: download release artifacts
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        name: release-${{ github.ref_name }}
+        path: release
+    - name: publish GitHub release
+      uses: tcnksm/ghr@43083d3bbef04a78a967370c11cc760fe19badb6 # v0.18.5
+      with:
+        owner: ${{ github.repository_owner }}
+        repository: ${{ github.event.repository.name }}
+        tag: ${{ github.ref_name }}
+        token: ${{ github.token }}
+        path: release
+        generatenotes: true
+        replace: true

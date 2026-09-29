@@ -40,4 +40,5 @@
 	vPrefix = true
 	releaseBranch = master
 	versionFile = main.go
-    release = draft
+	release = draft
+	command = make prepare-release
