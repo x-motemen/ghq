@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.11.2](https://github.com/x-motemen/ghq/compare/v1.11.1...v1.11.2) - 2026-09-29
+
+- Restore release asset compatibility by @Songmu in https://github.com/x-motemen/ghq/pull/555
+
 ## [v1.11.1](https://github.com/x-motemen/ghq/compare/v1.11.0...v1.11.1) - 2026-09-29
 
 - Update release workflow by @Songmu in https://github.com/x-motemen/ghq/pull/550
