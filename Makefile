@@ -7,6 +7,10 @@ u := $(if $(update),-u)
 deps:
 	go get ${u}
 
+.PHONY: credits-deps
+credits-deps:
+	go install github.com/Songmu/gocredits/cmd/gocredits@v1.0.1
+
 .PHONY: devel-deps
 devel-deps:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
@@ -28,7 +32,10 @@ install:
 	go install $(VERBOSE_FLAG) -ldflags=$(BUILD_LDFLAGS)
 
 .PHONY: prepare-release
-prepare-release:
+prepare-release: credits-deps
 	go mod tidy
 	gocredits -w
 	git update-index --add --remove -- go.mod go.sum CREDITS
+
+CREDITS: go.sum credits-deps
+	gocredits -w
