@@ -28,14 +28,17 @@ jobs:
       id: goxz
       uses: Songmu/goxz@b7b74d681760746882693f3db7c94a0888a4b714 # v0.13.0
       with:
-        package-version: ${{ github.ref_name }}
         os: linux,darwin,windows
         arch: amd64,arm64
         packages: .
         include: misc/bash/_ghq,misc/zsh/_ghq
         build-ldflags: -s -w -X main.revision=${{ steps.build.outputs.revision }}
         static: true
-        checksum: true
+        zip: true
+        checksum: false
+    - name: generate checksums
+      working-directory: ${{ steps.goxz.outputs.output-dir }}
+      run: shasum ghq_* > SHASUMS
     - name: attest build provenance
       uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
       with:
