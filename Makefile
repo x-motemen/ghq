@@ -1,17 +1,18 @@
 CURRENT_REVISION = $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS = "-s -w -X main.revision=$(CURRENT_REVISION)"
 VERBOSE_FLAG = $(if $(VERBOSE),-v)
+u := $(if $(update),-u)
 
 .PHONY: deps
 deps:
-	go mod download
+	go get ${u}
 
 .PHONY: credits-deps
 credits-deps:
 	go install github.com/Songmu/gocredits/cmd/gocredits@v1.0.1
 
 .PHONY: devel-deps
-devel-deps: credits-deps
+devel-deps:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 .PHONY: test
