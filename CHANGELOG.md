@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.11.1](https://github.com/x-motemen/ghq/compare/v1.11.0...v1.11.1) - 2026-09-29
+
+- Update release workflow by @Songmu in https://github.com/x-motemen/ghq/pull/550
+- install gocredits with Songmu/gocredits GitHub Action by @Songmu in https://github.com/x-motemen/ghq/pull/552
+- Revert "install gocredits with Songmu/gocredits GitHub Action" by @Songmu in https://github.com/x-motemen/ghq/pull/553
+
 ## [v1.11.0](https://github.com/x-motemen/ghq/compare/v1.10.1...v1.11.0) - 2026-09-29
 
 - feat(completion): improve bash completions. by @sciencesakura in https://github.com/x-motemen/ghq/pull/490
