@@ -72,14 +72,47 @@ func LocalRepositoryFromFullPath(fullPath string, backend *VCSBackend) (*LocalRe
 	}, nil
 }
 
+// BareMode selects the on-disk layout of a bare-cloned repository.
+// It is used by LocalRepositoryFromURL to decide how (or whether) the
+// ".git" suffix appears in the resolved path. The illegal state
+// "bare with no known layout" is unrepresentable by construction.
+type BareMode int
+
+const (
+	// BareNone represents a normal (non-bare) clone. The on-disk path
+	// matches the repository name with no ".git" suffix
+	// (e.g. "<root>/host/user/repo").
+	BareNone BareMode = iota
+	// BareClassic represents the classic bare layout, where the on-disk
+	// directory name itself gets a ".git" suffix
+	// (e.g. "<root>/host/user/repo.git").
+	BareClassic
+	// BareClean represents the "clean bare" layout, where the bare gitdir
+	// lives as a ".git" subdirectory of an unsuffixed parent
+	// (e.g. "<root>/host/user/repo/.git"). From ghq's path-resolution
+	// perspective this is indistinguishable from BareNone; the ".git"
+	// subdirectory is created by the git backend at clone time.
+	BareClean
+)
+
+// bareModeFromClassicBool is a compatibility helper for commands that
+// expose only the classic --bare flag (list, rm, create, migrate).
+// It returns BareClassic when bare is true, otherwise BareNone.
+func bareModeFromClassicBool(bare bool) BareMode {
+	if bare {
+		return BareClassic
+	}
+	return BareNone
+}
+
 // LocalRepositoryFromURL resolve LocalRepository from URL
-func LocalRepositoryFromURL(remoteURL *url.URL, bare bool) (*LocalRepository, error) {
+func LocalRepositoryFromURL(remoteURL *url.URL, mode BareMode) (*LocalRepository, error) {
 	pathParts := append(
 		[]string{remoteURL.Hostname()}, strings.Split(remoteURL.Path, "/")...,
 	)
 	relPath := strings.TrimSuffix(filepath.Join(pathParts...), ".git")
 	pathParts[len(pathParts)-1] = strings.TrimSuffix(pathParts[len(pathParts)-1], ".git")
-	if bare {
+	if mode == BareClassic {
 		// Force to append ".git" even if remoteURL does not end with ".git".
 		relPath = relPath + ".git"
 		pathParts[len(pathParts)-1] = pathParts[len(pathParts)-1] + ".git"

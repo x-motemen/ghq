@@ -223,6 +223,70 @@ func TestCommandGet(t *testing.T) {
 			}
 		},
 	}, {
+		name: "clean-bare",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo", ".git")
+
+			app.Run(context.Background(), []string{"", "get", "--clean-bare", "motemen/ghq-test-repo"})
+
+			expect := "https://github.com/motemen/ghq-test-repo"
+			if cloneArgs.remote.String() != expect {
+				t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+			}
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+			// --clean-bare implies --bare at the git-invocation layer:
+			// the resulting repo must be a bare git repository.
+			if !cloneArgs.bare {
+				t.Errorf("cloneArgs.bare should be true (--clean-bare implies --bare)")
+			}
+		},
+	}, {
+		name: "bare and clean-bare together (clean-bare wins, warns on --bare)",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo", ".git")
+
+			// --clean-bare implies --bare; passing both should emit a
+			// warning and still perform a clean-bare clone. We do not
+			// assert on the warning text here because logger output is
+			// bound to the original os.Stderr at package init and does
+			// not follow the test's stderr redirection reliably.
+			app.Run(context.Background(), []string{"", "get", "--bare", "--clean-bare", "motemen/ghq-test-repo"})
+
+			expect := "https://github.com/motemen/ghq-test-repo"
+			if cloneArgs.remote.String() != expect {
+				t.Errorf("got: %s, expect: %s", cloneArgs.remote, expect)
+			}
+			// When both flags are set, --clean-bare must control the layout.
+			if filepath.ToSlash(cloneArgs.local) != filepath.ToSlash(localDir) {
+				t.Errorf("got: %s, expect: %s (clean-bare must win over bare)", filepath.ToSlash(cloneArgs.local), filepath.ToSlash(localDir))
+			}
+			if !cloneArgs.bare {
+				t.Errorf("cloneArgs.bare should be true")
+			}
+		},
+	}, {
+		name: "already cloned clean-bare with -update",
+		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
+			// Clean-bare layout: repo/ with a .git subdirectory that is
+			// itself a bare gitdir. Path resolution treats this as a
+			// normal-looking repo; the update path must still target the
+			// parent (not the .git subdir) and pass bare=true to the VCS
+			// backend so it invokes the bare-repo fetch codepath.
+			parentDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
+			os.MkdirAll(filepath.Join(parentDir, ".git"), 0755)
+
+			app.Run(context.Background(), []string{"", "get", "--clean-bare", "-update", "motemen/ghq-test-repo"})
+
+			if filepath.ToSlash(updateArgs.local) != filepath.ToSlash(parentDir) {
+				t.Errorf("updateArgs.local got: %s, expect: %s", filepath.ToSlash(updateArgs.local), filepath.ToSlash(parentDir))
+			}
+			if !updateArgs.bare {
+				t.Errorf("updateArgs.bare should be true (--clean-bare implies --bare)")
+			}
+		},
+	}, {
 		name: "silent mode",
 		scenario: func(t *testing.T, tmpRoot string, cloneArgs *_cloneArgs, updateArgs *_updateArgs) {
 			localDir := filepath.Join(tmpRoot, "github.com", "motemen", "ghq-test-repo")
@@ -437,13 +501,13 @@ func TestLook(t *testing.T) {
 			t.Errorf("lastCmd.Env[len(lastCmd.Env)-1]: got: %s, expect: %s", gotEnv, expectEnv)
 		}
 
-		err = look("github.com/motemen/_unknown", false)
+		err = look("github.com/motemen/_unknown", BareNone)
 		expect := "no repository found"
 		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
 			t.Errorf("error should has prefix %q, but: %s", expect, err)
 		}
 
-		err = look("gobump", false)
+		err = look("gobump", BareNone)
 		expect = "More than one repositories are found; Try more precise name"
 		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
 			t.Errorf("error should has prefix %q, but: %s", expect, err)
@@ -483,13 +547,13 @@ func TestBareLook(t *testing.T) {
 			t.Errorf("lastCmd.Env[len(lastCmd.Env)-1]: got: %s, expect: %s", gotEnv, expectEnv)
 		}
 
-		err = look("github.com/motemen/ghq", false)
+		err = look("github.com/motemen/ghq", BareNone)
 		expect := "no repository found"
 		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
 			t.Errorf("error should has prefix %q, but: %s", expect, err)
 		}
 
-		err = look("github.com/motemen/gobump.git", true)
+		err = look("github.com/motemen/gobump.git", BareClassic)
 		expect = "no repository found"
 		if !strings.HasPrefix(fmt.Sprintf("%s", err), expect) {
 			t.Errorf("error should has prefix %q, but: %s", expect, err)

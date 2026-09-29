@@ -72,7 +72,7 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Derive destination path
-	localRepo, err := LocalRepositoryFromURL(u, false)
+	localRepo, err := LocalRepositoryFromURL(u, BareNone)
 	if err != nil {
 		return fmt.Errorf("failed to derive destination path: %w", err)
 	}

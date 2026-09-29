@@ -28,7 +28,7 @@ func doList(ctx context.Context, cmd *cli.Command) error {
 	if query != "" {
 		if hasSchemePattern.MatchString(query) || scpLikeURLPattern.MatchString(query) {
 			if url, err := newURL(query, false, false); err == nil {
-				if repo, err := LocalRepositoryFromURL(url, bare); err == nil {
+				if repo, err := LocalRepositoryFromURL(url, bareModeFromClassicBool(bare)); err == nil {
 					query = filepath.ToSlash(repo.RelPath)
 				}
 			}

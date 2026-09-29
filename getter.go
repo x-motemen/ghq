@@ -25,8 +25,9 @@ type getInfo struct {
 }
 
 type getter struct {
-	update, shallow, silent, ssh, recursive, bare bool
-	vcs, branch, partial                          string
+	update, shallow, silent, ssh, recursive bool
+	bareMode                                BareMode
+	vcs, branch, partial                    string
 }
 
 func (g *getter) get(ctx context.Context, argURL string) (getInfo, error) {
@@ -51,7 +52,7 @@ func (g *getter) get(ctx context.Context, argURL string) (getInfo, error) {
 // If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
 func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepository, branch string) (getInfo, error) {
 	remoteURL := remote.URL()
-	local, err := LocalRepositoryFromURL(remoteURL, g.bare)
+	local, err := LocalRepositoryFromURL(remoteURL, g.bareMode)
 	if err != nil {
 		return getInfo{}, err
 	}
@@ -97,7 +98,19 @@ func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepositor
 			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
 		}
 
-		if g.bare {
+		// localRepoRoot at this point does NOT include the bare-mode
+		// suffix (detectLocalRepoRoot strips ".git" if present); the
+		// switch below adds it (either as a suffix on the leaf directory
+		// or as a ".git" subdirectory).
+		switch g.bareMode {
+		case BareClean:
+			// Clean-bare: the bare gitdir lives inside the leaf directory
+			// as ".git" (repo/.git), so we join rather than concatenate.
+			localRepoRoot = filepath.Join(localRepoRoot, ".git")
+		case BareClassic:
+			// Classic bare: the leaf directory itself is the bare gitdir
+			// (repo -> repo.git), so we suffix the leaf and deliberately
+			// do NOT use filepath.Join, which would create a new segment.
 			localRepoRoot = localRepoRoot + ".git"
 		}
 
@@ -113,7 +126,7 @@ func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepositor
 					silent:    g.silent,
 					branch:    branch,
 					recursive: g.recursive,
-					bare:      g.bare,
+					bare:      g.bareMode != BareNone,
 					partial:   g.partial,
 				})
 		}
@@ -134,7 +147,7 @@ func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepositor
 				dir:       localRepoRoot,
 				silent:    g.silent,
 				recursive: g.recursive,
-				bare:      g.bare,
+				bare:      g.bareMode != BareNone,
 			})
 		}
 		return info, nil

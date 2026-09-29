@@ -152,6 +152,13 @@ var GitBackend = &VCSBackend{
 	},
 	Init: func(dir string) error {
 		args := []string{"init"}
+		// TODO(clean-bare): this HasSuffix check coincidentally works for
+		// classic bare (dir ends with ".git") but would misfire for the
+		// clean-bare layout, where dir is <root>/host/user/repo and the
+		// bare gitdir needs to be created inside it as ".git". If ghq
+		// create ever grows a --clean-bare flag, this decision needs an
+		// explicit signal (e.g. a bare/mode argument through the Init
+		// signature) rather than reading it off the path shape.
 		if strings.HasSuffix(dir, ".git") {
 			args = append(args, "--bare")
 		}

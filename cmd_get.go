@@ -22,11 +22,26 @@ import (
 
 func doGet(ctx context.Context, cmd *cli.Command) error {
 	var (
-		args     = cmd.Args().Slice()
-		andLook  = cmd.Bool("look")
-		parallel = cmd.Bool("parallel")
-		silent   = cmd.Bool("silent")
+		args      = cmd.Args().Slice()
+		andLook   = cmd.Bool("look")
+		parallel  = cmd.Bool("parallel")
+		silent    = cmd.Bool("silent")
+		bare      = cmd.Bool("bare")
+		cleanBare = cmd.Bool("clean-bare")
 	)
+	// --clean-bare implies --bare. When both are set the intent is
+	// unambiguous but the classic --bare is redundant; emit a warning
+	// so users don't get silently different behavior than they typed.
+	if bare && cleanBare {
+		logger.Log("warning", "--bare is redundant when --clean-bare is set; ignoring --bare")
+	}
+	bareMode := BareNone
+	switch {
+	case cleanBare:
+		bareMode = BareClean
+	case bare:
+		bareMode = BareClassic
+	}
 	g := &getter{
 		update:    cmd.Bool("update"),
 		shallow:   cmd.Bool("shallow"),
@@ -35,7 +50,7 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 		silent:    silent,
 		branch:    cmd.String("branch"),
 		recursive: !cmd.Bool("no-recursive"),
-		bare:      cmd.Bool("bare"),
+		bareMode:  bareMode,
 		partial:   cmd.String("partial"),
 	}
 	if parallel {
@@ -104,7 +119,7 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 	}
 	if andLook {
 		if argCnt > 1 && firstArg != "" {
-			return look(firstArg, g.bare)
+			return look(firstArg, g.bareMode)
 		}
 		if argCnt == 1 && getInfo.localRepository != nil {
 			return lookByLocalRepository(getInfo.localRepository)
@@ -148,7 +163,7 @@ func detectShell() string {
 	return "/bin/sh"
 }
 
-func look(name string, bare bool) error {
+func look(name string, mode BareMode) error {
 	var (
 		reposFound []*LocalRepository
 		mu         sync.Mutex
@@ -165,7 +180,7 @@ func look(name string, bare bool) error {
 
 	if len(reposFound) == 0 {
 		if url, err := newURL(name, false, false); err == nil {
-			repo, err := LocalRepositoryFromURL(url, bare)
+			repo, err := LocalRepositoryFromURL(url, mode)
 			if err != nil {
 				return err
 			}

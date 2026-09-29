@@ -123,7 +123,7 @@ func TestNewLocalRepository(t *testing.T) {
 			defer func(orig string) { _home = orig }(_home)
 			_home = ""
 			homeOnce = &sync.Once{}
-			r, err := LocalRepositoryFromURL(mustParseURL(tc.url), false)
+			r, err := LocalRepositoryFromURL(mustParseURL(tc.url), BareNone)
 			if err != nil {
 				t.Errorf("error should be nil but: %s", err)
 			}
@@ -131,6 +131,77 @@ func TestNewLocalRepository(t *testing.T) {
 				t.Errorf("got: %s, expect: %s", r.FullPath, tc.expect)
 			}
 		})
+	}
+}
+
+func TestLocalRepositoryFromURL_BareMode(t *testing.T) {
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	tmproot := newTempDir(t)
+	_localRepositoryRoots = []string{tmproot}
+
+	testCases := []struct {
+		name    string
+		url     string
+		mode    BareMode
+		expect  string
+		relPath string
+	}{{
+		name:    "normal (BareNone)",
+		url:     "ssh://git@github.com/motemen/ghq.git",
+		mode:    BareNone,
+		expect:  filepath.Join(tmproot, "github.com/motemen/ghq"),
+		relPath: filepath.FromSlash("github.com/motemen/ghq"),
+	}, {
+		name:    "classic bare",
+		url:     "ssh://git@github.com/motemen/ghq.git",
+		mode:    BareClassic,
+		expect:  filepath.Join(tmproot, "github.com/motemen/ghq.git"),
+		relPath: filepath.FromSlash("github.com/motemen/ghq.git"),
+	}, {
+		name:    "classic bare with URL missing .git suffix",
+		url:     "ssh://git@github.com/motemen/ghq",
+		mode:    BareClassic,
+		expect:  filepath.Join(tmproot, "github.com/motemen/ghq.git"),
+		relPath: filepath.FromSlash("github.com/motemen/ghq.git"),
+	}, {
+		name:    "clean bare",
+		url:     "ssh://git@github.com/motemen/ghq.git",
+		mode:    BareClean,
+		expect:  filepath.Join(tmproot, "github.com/motemen/ghq"),
+		relPath: filepath.FromSlash("github.com/motemen/ghq"),
+	}, {
+		name:    "clean bare with URL missing .git suffix",
+		url:     "ssh://git@github.com/motemen/ghq",
+		mode:    BareClean,
+		expect:  filepath.Join(tmproot, "github.com/motemen/ghq"),
+		relPath: filepath.FromSlash("github.com/motemen/ghq"),
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defer func(orig string) { _home = orig }(_home)
+			_home = ""
+			homeOnce = &sync.Once{}
+			r, err := LocalRepositoryFromURL(mustParseURL(tc.url), tc.mode)
+			if err != nil {
+				t.Fatalf("error should be nil but: %s", err)
+			}
+			if r.FullPath != tc.expect {
+				t.Errorf("FullPath got: %s, expect: %s", r.FullPath, tc.expect)
+			}
+			if r.RelPath != tc.relPath {
+				t.Errorf("RelPath got: %s, expect: %s", r.RelPath, tc.relPath)
+			}
+		})
+	}
+}
+
+func TestBareModeFromClassicBool(t *testing.T) {
+	if bareModeFromClassicBool(true) != BareClassic {
+		t.Errorf("bareModeFromClassicBool(true) = %d, want BareClassic (%d)", bareModeFromClassicBool(true), BareClassic)
+	}
+	if bareModeFromClassicBool(false) != BareNone {
+		t.Errorf("bareModeFromClassicBool(false) = %d, want BareNone (%d)", bareModeFromClassicBool(false), BareNone)
 	}
 }
 

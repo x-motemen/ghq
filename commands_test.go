@@ -20,6 +20,7 @@ type _cloneArgs struct {
 
 type _updateArgs struct {
 	local string
+	bare  bool
 }
 
 func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs, *_updateArgs)) {
@@ -49,6 +50,7 @@ func withFakeGitBackend(t *testing.T, block func(*testing.T, string, *_cloneArgs
 		Update: func(vg *vcsGetOption) error {
 			updateArgs = _updateArgs{
 				local: vg.dir,
+				bare:  vg.bare,
 			}
 			return nil
 		},

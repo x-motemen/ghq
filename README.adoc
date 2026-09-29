@@ -16,7 +16,7 @@ You can also list local repositories (+ghq list+).
 == SYNOPSIS
 
 [verse]
-ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
+ghq get [-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch] [--no-recursive] [--bare] [--clean-bare] [--partial blobless|treeless] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq list [-p] [-e] [<query>]
 ghq create [--vcs <vcs>] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
 ghq rm [--dry-run] <repository URL>|<host>/<user>/<project>|<user>/<project>|<project>
@@ -45,7 +45,25 @@ get::
     The 'ghq' gets the git repository recursively by default. +
     We can prevent it with '--no-recursive' option.
     With '--bare' option, a "bare clone" will be performed (for Git
-    repositories only, 'git clone --bare ...' eg.). +
+    repositories only, 'git clone --bare ...' eg.). The on-disk directory
+    receives a '.git' suffix (e.g. '<root>/host/user/repo.git'). +
+    With '--clean-bare' option, a bare clone is performed but the bare
+    gitdir is placed as a '.git' subdirectory of an unsuffixed parent
+    (e.g. '<root>/host/user/repo/.git'). This layout keeps the repository
+    directory name clean and allows Git worktrees to live as sibling
+    subdirectories:
++
+....
+repo/
+├── .git/       # bare repository
+├── main/       # worktree
+├── feature/    # worktree
+└── bugfix/     # worktree
+....
++
+'--clean-bare' implies '--bare'. Passing both together is not an error:
+'--bare' is ignored (with a warning) and the clone follows the
+'--clean-bare' layout. +
     With '--partial' option, a "partial clone" will be performed (for Git
     repositories only, in 'blobless' mode, 'git clone --filter=blob:none ...',
     in 'treeless' mode, 'git clone --filter=tree:0 ...' eg.).

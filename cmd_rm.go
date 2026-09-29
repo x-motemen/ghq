@@ -28,7 +28,7 @@ func doRm(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	localRepo, err := LocalRepositoryFromURL(u, bare)
+	localRepo, err := LocalRepositoryFromURL(u, bareModeFromClassicBool(bare))
 	if err != nil {
 		return err
 	}
