@@ -118,6 +118,33 @@ func TestRmCommand(t *testing.T) {
 	}
 }
 
+func TestRmMultipleRepositories(t *testing.T) {
+	root := newTempDir(t)
+	t.Setenv(envGhqRoot, root)
+	names := []string{"motemen/ghq-first", "motemen/ghq-second"}
+	for _, name := range names {
+		if err := os.MkdirAll(filepath.Join(root, "github.com", filepath.FromSlash(name), ".git"), 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var runErr error
+	_, _, err := captureWithInput([]string{"y", "y"}, func() {
+		runErr = newApp().Run(context.Background(), append([]string{"ghq", "rm"}, names...))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runErr != nil {
+		t.Fatal(runErr)
+	}
+	for _, name := range names {
+		if _, err := os.Stat(filepath.Join(root, "github.com", filepath.FromSlash(name))); !os.IsNotExist(err) {
+			t.Errorf("repository %s was not removed: %v", name, err)
+		}
+	}
+}
+
 func TestRmDryRunCommand(t *testing.T) {
 	defer func(orig func(cmd *exec.Cmd) error) {
 		cmdutil.CommandRunner = orig
