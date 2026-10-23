@@ -12,8 +12,20 @@ import (
 )
 
 func doRm(ctx context.Context, cmd *cli.Command) error {
+	names := cmd.Args().Slice()
+	if len(names) == 0 {
+		return fmt.Errorf("repository name is required")
+	}
+	for _, name := range names {
+		if err := removeRepository(cmd, name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func removeRepository(cmd *cli.Command, name string) error {
 	var (
-		name = cmd.Args().First()
 		dry  = cmd.Bool("dry-run")
 		w    = cmd.Root().Writer
 		bare = cmd.Bool("bare")
