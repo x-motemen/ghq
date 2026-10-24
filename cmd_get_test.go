@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -613,4 +614,103 @@ func TestDoGet_bulk(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestDoGet_parallelErrors(t *testing.T) {
+	for _, fromStdin := range []bool{false, true} {
+		t.Run(fmt.Sprintf("stdin=%t", fromStdin), func(t *testing.T) {
+			withFakeGitBackend(t, func(t *testing.T, tmpRoot string, _ *_cloneArgs, _ *_updateArgs) {
+				var inputs, wantPaths, failures []string
+				// Exceed the parallel worker limit and mix successes with errors.
+				for i := range 12 {
+					if i%2 == 0 {
+						repo := fmt.Sprintf("github.com/ghq-test/parallel-%d", i)
+						localDir := filepath.Join(tmpRoot, repo)
+						if err := os.MkdirAll(filepath.Join(localDir, ".git"), 0755); err != nil {
+							t.Fatal(err)
+						}
+						inputs = append(inputs, repo)
+						wantPaths = append(wantPaths, localDir)
+					} else {
+						repo := fmt.Sprintf("https://[invalid-%d", i)
+						inputs = append(inputs, repo)
+						failures = append(failures, repo)
+					}
+				}
+
+				var logs bytes.Buffer
+				logger.SetOutput(&logs)
+				defer logger.SetOutput(os.Stderr)
+				args := []string{"", "get", "--parallel"}
+				if !fromStdin {
+					args = append(args, inputs...)
+				}
+				var runErr error
+				run := func() { runErr = newApp().Run(context.Background(), args) }
+				var out string
+				var err error
+				if fromStdin {
+					out, _, err = captureWithInput(inputs, run)
+				} else {
+					out, _, err = capture(run)
+				}
+				if err != nil {
+					t.Fatal(err)
+				}
+				if runErr != nil {
+					t.Fatalf("parallel get should log individual errors and continue: %v", runErr)
+				}
+				gotPaths := strings.Split(strings.TrimSpace(out), "\n")
+				slices.Sort(gotPaths)
+				slices.Sort(wantPaths)
+				if !reflect.DeepEqual(gotPaths, wantPaths) {
+					t.Errorf("printed paths = %q, want %q", gotPaths, wantPaths)
+				}
+				for _, repo := range failures {
+					message := fmt.Sprintf("failed to get %q:", repo)
+					if strings.Count(logs.String(), message) != 1 {
+						t.Errorf("expected one error for %q, got logs: %s", repo, &logs)
+					}
+				}
+			})
+		})
+	}
+}
+
+func TestDoGet_parallelLook(t *testing.T) {
+	for _, repoCount := range []int{1, 8} {
+		t.Run(fmt.Sprintf("repos=%d", repoCount), func(t *testing.T) {
+			withFakeGitBackend(t, func(t *testing.T, tmpRoot string, _ *_cloneArgs, _ *_updateArgs) {
+				args := []string{"", "get", "--parallel", "--look"}
+				for i := range repoCount {
+					repo := fmt.Sprintf("github.com/ghq-test/parallel-%d", i)
+					if err := os.MkdirAll(filepath.Join(tmpRoot, repo, ".git"), 0755); err != nil {
+						t.Fatal(err)
+					}
+					args = append(args, repo)
+				}
+
+				originalRunner := cmdutil.CommandRunner
+				defer func() { cmdutil.CommandRunner = originalRunner }()
+				var shellCmd *exec.Cmd
+				cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+					shellCmd = cmd
+					return nil
+				}
+				if err := newApp().Run(context.Background(), args); err != nil {
+					t.Fatal(err)
+				}
+				if shellCmd == nil {
+					t.Fatal("expected --look to start a shell")
+				}
+				wantDir := filepath.Join(tmpRoot, "github.com/ghq-test/parallel-0")
+				if shellCmd.Dir != wantDir {
+					t.Errorf("shell directory = %q, want %q", shellCmd.Dir, wantDir)
+				}
+				if !slices.Contains(shellCmd.Env, "GHQ_LOOK=github.com/ghq-test/parallel-0") {
+					t.Errorf("shell environment is missing GHQ_LOOK for the first repository")
+				}
+			})
+		})
+	}
 }
