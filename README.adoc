@@ -148,6 +148,29 @@ vcs = git
 root = ~/myproj
 ....
 
+The subsection URL selects remote URLs to which these settings apply; it is
+not a local path or a URL rewrite. In this example, repositories under
+`https://git.example.com/repos/` use Git and are cloned beneath `~/myproj`.
+For example, `ghq get https://git.example.com/repos/team/tool` creates a new
+clone at `~/myproj/git.example.com/repos/team/tool`. The hostname and repository
+path are preserved; `root` only changes the directory beneath which they are placed.
+See https://git-scm.com/docs/git-config#Documentation/git-config.txt---get-urlmatch[Git's URL matching rules]
+for details.
+
+HTTPS and SSH URLs are matched separately. To apply the same settings to
+`git@git.example.com:repos/team/tool`, which ghq normalizes to
+`ssh://git@git.example.com/repos/team/tool`, add an SSH subsection:
+
+....
+[ghq "ssh://git@git.example.com/repos/"]
+vcs = git
+root = ~/myproj
+....
+
+If the repository already exists under one of the configured roots, ghq reuses
+that clone rather than moving it to the URL-specific root. Setting `GHQ_ROOT`
+overrides both the common and URL-specific roots.
+
 == ENVIRONMENT VARIABLES
 
 GHQ_ROOT::
