@@ -34,7 +34,7 @@ var commandGet = &cli.Command{
 		&cli.BoolFlag{Name: "p", Usage: "Clone with SSH"},
 		&cli.BoolFlag{Name: "shallow", Usage: "Do a shallow clone"},
 		&cli.BoolFlag{Name: "look", Aliases: []string{"l"}, Usage: "Look after get"},
-		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend for cloning"},
+		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend for cloning", Action: validateVCSFlag},
 		&cli.BoolFlag{Name: "silent", Aliases: []string{"s"}, Usage: "clone or update silently"},
 		&cli.BoolFlag{Name: "no-recursive", Usage: "prevent recursive fetching"},
 		&cli.StringFlag{Name: "branch", Aliases: []string{"b"},
@@ -98,9 +98,18 @@ var commandCreate = &cli.Command{
 	Usage:  "Create a new repository",
 	Action: doCreate,
 	Flags: []cli.Flag{
-		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend explicitly"},
+		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend explicitly", Action: validateVCSFlag},
 		&cli.BoolFlag{Name: "bare", Usage: "Create a bare repository"},
 	},
+}
+
+func validateVCSFlag(_ context.Context, _ *cli.Command, vcs string) error {
+	if vcs != "" {
+		if _, ok := vcsRegistry[vcs]; !ok {
+			return fmt.Errorf("unknown VCS %q", vcs)
+		}
+	}
+	return nil
 }
 
 type commandDoc struct {
