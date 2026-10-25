@@ -345,6 +345,11 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 			if os.IsNotExist(err) {
 				continue
 			}
+			if os.IsPermission(err) {
+				logger.Log("warning", fmt.Sprintf("%s: Permission denied", root))
+				continue
+			}
+			return err
 		}
 		if fi.Mode()&0444 == 0 {
 			logger.Log("warning", fmt.Sprintf("%s: Permission denied", root))
