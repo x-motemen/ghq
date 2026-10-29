@@ -157,7 +157,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL, mode BareMode) (*LocalRepository
 func getRoot(u string) (string, error) {
 	prim := os.Getenv(envGhqRoot)
 	if prim != "" {
-		return prim, nil
+		return primaryLocalRepositoryRoot()
 	}
 	var err error
 	if !codecommitLikeURLPattern.MatchString(u) {
