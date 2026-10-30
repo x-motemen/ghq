@@ -146,6 +146,10 @@ var GitBackend = &VCSBackend{
 			return err
 		}
 		if vg.recursive {
+			err = runInDir(vg.silent)(vg.dir, "git", "submodule", "sync", "--recursive")
+			if err != nil {
+				return err
+			}
 			return runInDir(vg.silent)(vg.dir, "git", "submodule", "update", "--init", "--recursive")
 		}
 		return nil
