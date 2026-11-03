@@ -2,6 +2,8 @@ module github.com/x-motemen/ghq
 
 go 1.26.0
 
+toolchain go1.27.3
+
 require (
 	github.com/Songmu/gitconfig v0.2.2
 	github.com/mattn/go-isatty v0.0.24

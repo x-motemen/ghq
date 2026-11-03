@@ -8,11 +8,7 @@ updates:
       golang-x:
         patterns:
           - "golang.org/x/*"
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      actions:
-        patterns:
-          - "actions/*"
+    ignore:
+      - dependency-name: "github.com/urfave/cli*"
+        update-types:
+          - "version-update:semver-major"
