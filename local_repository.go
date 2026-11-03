@@ -107,15 +107,13 @@ func bareModeFromClassicBool(bare bool) BareMode {
 
 // LocalRepositoryFromURL resolve LocalRepository from URL
 func LocalRepositoryFromURL(remoteURL *url.URL, mode BareMode) (*LocalRepository, error) {
-	pathParts := append(
-		[]string{remoteURL.Hostname()}, strings.Split(remoteURL.Path, "/")...,
-	)
-	relPath := strings.TrimSuffix(filepath.Join(pathParts...), ".git")
-	pathParts[len(pathParts)-1] = strings.TrimSuffix(pathParts[len(pathParts)-1], ".git")
+	relPath, err := localRepositoryRelPathFromURL(remoteURL)
+	if err != nil {
+		return nil, err
+	}
 	if mode == BareClassic {
 		// Force to append ".git" even if remoteURL does not end with ".git".
 		relPath = relPath + ".git"
-		pathParts[len(pathParts)-1] = pathParts[len(pathParts)-1] + ".git"
 	}
 
 	var (
@@ -150,8 +148,39 @@ func LocalRepositoryFromURL(remoteURL *url.URL, mode BareMode) (*LocalRepository
 		FullPath:  filepath.Join(prim, relPath),
 		RelPath:   relPath,
 		RootPath:  prim,
-		PathParts: pathParts,
+		PathParts: strings.Split(relPath, "/"),
 	}, nil
+}
+
+// localRepositoryRelPathFromURL validates URL components before cleaning the
+// path, then returns a relative path with the repository's .git suffix removed.
+func localRepositoryRelPathFromURL(remoteURL *url.URL) (string, error) {
+	host := filepath.ToSlash(remoteURL.Hostname())
+	if strings.Contains(host, "/") {
+		return "", fmt.Errorf("invalid repository path in URL %q: path separators in hostname", remoteURL.String())
+	}
+	repoPath := strings.TrimRight(filepath.ToSlash(remoteURL.Path), "/")
+	pathParts := append([]string{host}, strings.Split(repoPath, "/")...)
+	last := len(pathParts) - 1
+	pathParts[last] = strings.TrimSuffix(pathParts[last], ".git")
+	if pathParts[last] == "" {
+		return "", fmt.Errorf("invalid repository path in URL %q: missing repository name", remoteURL.String())
+	}
+	for _, part := range pathParts {
+		if part == "." || part == ".." {
+			return "", fmt.Errorf("invalid repository path in URL %q: dot path components are not allowed", remoteURL.String())
+		}
+		// Windows normalization can remove trailing periods and spaces,
+		// making these names alias other directories.
+		if filepath.Separator == '\\' && strings.TrimRight(part, ". ") != part {
+			return "", fmt.Errorf("invalid repository path in URL %q: trailing periods or spaces are not allowed on Windows", remoteURL.String())
+		}
+	}
+	relPath := filepath.Join(pathParts...)
+	if !filepath.IsLocal(relPath) {
+		return "", fmt.Errorf("invalid repository path in URL %q: must be below ghq root", remoteURL.String())
+	}
+	return filepath.ToSlash(relPath), nil
 }
 
 func getRoot(u string) (string, error) {

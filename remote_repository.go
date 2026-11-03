@@ -17,7 +17,8 @@ type RemoteRepository interface {
 	URL() *url.URL
 	// IsValid checks if the URL is valid.
 	IsValid() bool
-	// VCS returns the VCS backend that hosts the repository.
+	// VCS returns the VCS backend and canonical repository URL.
+	// Callers must validate the returned URL before deriving a local path.
 	VCS() (*VCSBackend, *url.URL, error)
 }
 
@@ -45,6 +46,9 @@ func (repo *GitHubRepository) IsValid() bool {
 func (repo *GitHubRepository) VCS() (*VCSBackend, *url.URL, error) {
 	u := *repo.url
 	pathComponents := strings.Split(strings.Trim(strings.TrimSuffix(u.Path, ".git"), "/"), "/")
+	if len(pathComponents) < 2 || pathComponents[1] == "" {
+		return nil, nil, fmt.Errorf("invalid repository path in URL %q: missing GitHub repository name", repo.url.String())
+	}
 	path := "/" + strings.Join(pathComponents[0:2], "/")
 	if strings.HasSuffix(u.String(), ".git") {
 		path += ".git"
@@ -238,7 +242,7 @@ func NewRemoteRepository(u *url.URL) (RemoteRepository, error) {
 		if u.Scheme == "codecommit" {
 			return &CodeCommitRepository{u}
 		}
-		switch u.Host {
+		switch strings.TrimSuffix(strings.ToLower(u.Hostname()), ".") {
 		case "github.com":
 			return &GitHubRepository{u}
 		case "gist.github.com":

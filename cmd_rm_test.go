@@ -48,6 +48,15 @@ func TestRmCommand(t *testing.T) {
 			expectErr: false,
 		},
 		{
+			name:  "unknown host with one path component",
+			input: []string{"rm", "https://example.com/repo"},
+			setup: func(t *testing.T) {
+				if err := os.MkdirAll(filepath.Join(tmpd, "example.com", "repo", ".git"), 0755); err != nil {
+					t.Fatal(err)
+				}
+			},
+		},
+		{
 			name:  "empty directory",
 			input: []string{"rm", "motemen/ghqqq"},
 			setup: func(t *testing.T) {
@@ -372,4 +381,58 @@ func TestRmWorktree(t *testing.T) {
 			t.Error("main repo should be removed even with pre-deleted worktree")
 		}
 	})
+}
+
+func TestRmRepositoryPathCollapse(t *testing.T) {
+	type testCase struct {
+		ref, path string
+		bare      bool
+	}
+	cases := []testCase{
+		{ref: "https://github.com", path: "github.com"},
+		{ref: "https://example.com", path: "example.com"},
+		{ref: "https://github.com/owner", path: "github.com/owner"},
+		{ref: "https://github.com:443/owner", path: "github.com/owner"},
+		{ref: "https://GITHUB.COM/owner", path: "GITHUB.COM/owner"},
+		{ref: "https://github.com./owner", path: "github.com./owner"},
+		{ref: "https://github.com/.git", path: "github.com"},
+		{ref: "https://github.com/owner/.git", path: "github.com/owner.git", bare: true},
+		{ref: "https://github.com/../../outside", path: "../outside"},
+	}
+	if runtime.GOOS == "windows" {
+		cases = append(cases, testCase{ref: "https://github.com/%2e%2e%20/%2e%2e%20/outside", path: "../outside"})
+	}
+	for _, tc := range cases {
+		t.Run(tc.ref, func(t *testing.T) {
+			root := filepath.Join(newTempDir(t), "root")
+			setRepositoryPathTestRoot(t, root)
+			marker := filepath.Join(root, filepath.FromSlash(tc.path), "repo", "keep")
+			if err := os.MkdirAll(filepath.Dir(marker), 0755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(marker, []byte("keep"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			args := []string{"ghq", "rm"}
+			if tc.bare {
+				args = append(args, "--bare")
+			}
+			var runErr error
+			_, stderr, err := captureWithInput([]string{"y"}, func() {
+				runErr = newApp().Run(context.Background(), append(args, tc.ref))
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if runErr == nil || !strings.Contains(runErr.Error(), "repository") {
+				t.Errorf("expected repository rejection, got %v", runErr)
+			}
+			if strings.Contains(stderr, "[y/N]") {
+				t.Error("requested confirmation for a collapsed path")
+			}
+			if data, err := os.ReadFile(marker); err != nil || string(data) != "keep" {
+				t.Errorf("existing repository was changed: %q, %v", data, err)
+			}
+		})
+	}
 }

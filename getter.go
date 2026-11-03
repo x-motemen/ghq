@@ -94,8 +94,15 @@ func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepositor
 				return getInfo{}, err
 			}
 		}
-		if l := detectLocalRepoRoot(remoteURL.Path, repoURL.Path); l != "" {
-			localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
+		// A canonical URL without path components has no repository path
+		// to map; retain the already validated local path for go-import roots.
+		if strings.Trim(filepath.ToSlash(repoURL.Path), "/") != "" {
+			if _, err := localRepositoryRelPathFromURL(repoURL); err != nil {
+				return getInfo{}, fmt.Errorf("invalid canonical repository URL for %q: %w", remoteURL.String(), err)
+			}
+			if l := detectLocalRepoRoot(remoteURL.Path, repoURL.Path); l != "" {
+				localRepoRoot = filepath.Join(local.RootPath, remoteURL.Hostname(), l)
+			}
 		}
 
 		// localRepoRoot at this point does NOT include the bare-mode

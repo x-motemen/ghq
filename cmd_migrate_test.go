@@ -20,7 +20,7 @@ func initGitRepo(t *testing.T, dir, remoteURL string) string {
 		{"init"},
 		{"remote", "add", "origin", remoteURL},
 		{"-c", "user.name=test", "-c", "user.email=test@test.com",
-			"commit", "--allow-empty", "-m", "init"},
+			"-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", "init"},
 	} {
 		c := exec.Command("git", args...)
 		c.Dir = dir

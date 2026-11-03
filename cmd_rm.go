@@ -27,6 +27,10 @@ func doRm(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+	// Apply host-specific rules. Unknown hosts may use one path component.
+	if _, err := NewRemoteRepository(u); err != nil {
+		return err
+	}
 
 	localRepo, err := LocalRepositoryFromURL(u, bareModeFromClassicBool(bare))
 	if err != nil {

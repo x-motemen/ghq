@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"sync"
 	"testing"
 )
 
@@ -133,5 +134,15 @@ func setEnv(t *testing.T, key, val string) {
 		} else {
 			os.Unsetenv(key)
 		}
+	})
+}
+
+func setRepositoryPathTestRoot(t *testing.T, root string) {
+	t.Helper()
+	t.Setenv(envGhqRoot, root)
+	origRoots, origErr, origOnce := _localRepositoryRoots, _localRepoErr, localRepoOnce
+	_localRepositoryRoots, _localRepoErr, localRepoOnce = nil, nil, &sync.Once{}
+	t.Cleanup(func() {
+		_localRepositoryRoots, _localRepoErr, localRepoOnce = origRoots, origErr, origOnce
 	})
 }

@@ -150,31 +150,31 @@ func TestLocalRepositoryFromURL_BareMode(t *testing.T) {
 		url:     "ssh://git@github.com/motemen/ghq.git",
 		mode:    BareNone,
 		expect:  filepath.Join(tmproot, "github.com/motemen/ghq"),
-		relPath: filepath.FromSlash("github.com/motemen/ghq"),
+		relPath: "github.com/motemen/ghq",
 	}, {
 		name:    "classic bare",
 		url:     "ssh://git@github.com/motemen/ghq.git",
 		mode:    BareClassic,
 		expect:  filepath.Join(tmproot, "github.com/motemen/ghq.git"),
-		relPath: filepath.FromSlash("github.com/motemen/ghq.git"),
+		relPath: "github.com/motemen/ghq.git",
 	}, {
 		name:    "classic bare with URL missing .git suffix",
 		url:     "ssh://git@github.com/motemen/ghq",
 		mode:    BareClassic,
 		expect:  filepath.Join(tmproot, "github.com/motemen/ghq.git"),
-		relPath: filepath.FromSlash("github.com/motemen/ghq.git"),
+		relPath: "github.com/motemen/ghq.git",
 	}, {
 		name:    "clean bare",
 		url:     "ssh://git@github.com/motemen/ghq.git",
 		mode:    BareClean,
 		expect:  filepath.Join(tmproot, "github.com/motemen/ghq"),
-		relPath: filepath.FromSlash("github.com/motemen/ghq"),
+		relPath: "github.com/motemen/ghq",
 	}, {
 		name:    "clean bare with URL missing .git suffix",
 		url:     "ssh://git@github.com/motemen/ghq",
 		mode:    BareClean,
 		expect:  filepath.Join(tmproot, "github.com/motemen/ghq"),
-		relPath: filepath.FromSlash("github.com/motemen/ghq"),
+		relPath: "github.com/motemen/ghq",
 	}}
 
 	for _, tc := range testCases {
@@ -448,5 +448,65 @@ func TestLocalRepositoryRoots_URLMatchLocalRepositoryRoots(t *testing.T) {
 	}
 	if !reflect.DeepEqual(want, got) {
 		t.Errorf("localRepositoryRoots(true) = %+v, want: %+v", got, want)
+	}
+}
+
+func TestLocalRepositoryFromURLPathBoundary(t *testing.T) {
+	setRepositoryPathTestRoot(t, newTempDir(t))
+	refs := []string{
+		"https://example.com",
+		"https://github.com/../../outside",
+		"https://github.com/..%2f..%2foutside",
+		"https://github.com/owner/%2e/repo.git",
+		"https://github.com/owner/../repo.git",
+		"https://github.com/../owner/repo.git",
+		"https://github.com/.git",
+		"https://github.com/owner/..git",
+		"https://github.com/owner/...git",
+		"file:///",
+	}
+	if runtime.GOOS == "windows" {
+		refs = append(refs,
+			"https://github.com/owner/%5c..",
+			"file:///C:/outside",
+			"https://github.com/%2e%2e%20/%2e%2e%20/outside",
+			"https://github.com/owner/repo%20.git",
+			"https://github.com/owner/repo..git")
+	}
+	for _, ref := range refs {
+		t.Run(ref, func(t *testing.T) {
+			repo, err := LocalRepositoryFromURL(mustParseURL(ref), BareNone)
+			if err == nil || repo != nil {
+				t.Fatalf("unsafe URL returned repository %v, error %v", repo, err)
+			}
+			if !strings.Contains(err.Error(), ref) {
+				t.Errorf("error does not identify input URL: %v", err)
+			}
+		})
+	}
+}
+
+func TestLocalRepositoryFromURLValidPaths(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	for _, tc := range []struct {
+		ref   string
+		parts []string
+	}{
+		{"https://github.com//owner//repo.git/", []string{"github.com", "owner", "repo"}},
+		{"https://github.com/owner/..git.git", []string{"github.com", "owner", "..git"}},
+		{"https://example.com/repo.git", []string{"example.com", "repo"}},
+		{"file:///owner/repo.git", []string{"owner", "repo"}},
+	} {
+		t.Run(tc.ref, func(t *testing.T) {
+			repo, err := LocalRepositoryFromURL(mustParseURL(tc.ref), BareNone)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := strings.Join(tc.parts, "/")
+			if repo.RelPath != want || repo.FullPath != filepath.Join(root, filepath.FromSlash(want)) || !reflect.DeepEqual(repo.PathParts, tc.parts) {
+				t.Errorf("repository = %+v, want relative path %q and parts %q", repo, want, tc.parts)
+			}
+		})
 	}
 }
