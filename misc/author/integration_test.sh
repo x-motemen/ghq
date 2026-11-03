@@ -19,7 +19,7 @@ export GHQ_ROOT=$tmpdir
     ghq get www.mercurial-scm.org/repo/hello
     ghq get https://launchpad.net/shutter
     ghq get --vcs fossil https://www.sqlite.org/src
-    ghq get http://chiselapp.com/user/sti/repository/fossil-gui
+    ghq get https://chiselapp.com/user/sti/repository/fossil-gui
     ghq get --shallow --vcs=git-svn https://svn.apache.org/repos/asf/httpd/httpd
     ghq get https://svn.apache.org/repos/asf/subversion
     ghq get --shallow hub.darcs.net/byorgey/split
