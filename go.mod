@@ -11,7 +11,7 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/saracen/walker v0.1.4
 	github.com/urfave/cli/v3 v3.14.0
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 	golang.org/x/sync v0.24.0
 )
 
