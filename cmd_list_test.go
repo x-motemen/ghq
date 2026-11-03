@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -9,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/x-motemen/ghq/logger"
 )
 
 func TestCommandList(t *testing.T) {
@@ -211,6 +215,74 @@ func TestDoList_notPermittedRoot(t *testing.T) {
 	err := newApp().Run(context.Background(), []string{"ghq", "list"})
 	if err != nil {
 		t.Errorf("error should be nil, but: %+v", err)
+	}
+}
+
+func TestDoList_unsearchableRootParent(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix directory permissions")
+	}
+	parent := newTempDir(t)
+	root := filepath.Join(parent, "root")
+	if err := os.Mkdir(root, 0755); err != nil {
+		t.Fatal(err)
+	}
+	otherRoot := newTempDir(t)
+	if err := os.MkdirAll(filepath.Join(otherRoot, "github.com/motemen/ghq/.git"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(parent, 0600); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(parent, 0755)
+	if _, err := os.Stat(root); !os.IsPermission(err) {
+		t.Skipf("cannot reproduce permission-denied stat: %v", err)
+	}
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	t.Setenv(envGhqRoot, strings.Join([]string{root, otherRoot}, string(os.PathListSeparator)))
+	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
+
+	var out, logs bytes.Buffer
+	app := newApp()
+	app.Writer = &out
+	logger.SetOutput(&logs)
+	defer logger.SetOutput(os.Stderr)
+	if err := app.Run(context.Background(), []string{"ghq", "list"}); err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "github.com/motemen/ghq\n" {
+		t.Errorf("got: %q, expect repository from accessible root", out.String())
+	}
+	if !strings.Contains(logs.String(), root+": Permission denied") {
+		t.Errorf("missing permission warning for %s: %s", root, &logs)
+	}
+}
+
+func TestDoList_rootStatError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires symlinks")
+	}
+	root := filepath.Join(newTempDir(t), "loop")
+	if err := os.Symlink(root, root); err != nil {
+		t.Fatal(err)
+	}
+	_, statErr := os.Stat(root)
+	if statErr == nil || os.IsNotExist(statErr) || os.IsPermission(statErr) {
+		t.Fatalf("expected a non-permission stat error, got: %v", statErr)
+	}
+	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
+	t.Setenv(envGhqRoot, root)
+	_localRepositoryRoots = nil
+	localRepoOnce = &sync.Once{}
+
+	err := newApp().Run(context.Background(), []string{"ghq", "list"})
+	var pathErr *os.PathError
+	if !errors.As(err, &pathErr) {
+		t.Fatalf("expected stat error, got: %v", err)
+	}
+	if pathErr.Op != "stat" || pathErr.Path != root || !errors.Is(err, errors.Unwrap(statErr)) {
+		t.Errorf("expected original stat error for %s, got: %v", root, err)
 	}
 }
 
