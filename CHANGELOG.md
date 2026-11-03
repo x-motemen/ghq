@@ -1,5 +1,31 @@
 # Changelog
 
+## [v1.12.0](https://github.com/x-motemen/ghq/compare/v1.11.2...v1.12.0) - 2026-11-03
+
+- Reject unsafe repository URL paths by @hezhizhen in https://github.com/x-motemen/ghq/pull/557
+- fix(rm): process all repository arguments by @hezhizhen in https://github.com/x-motemen/ghq/pull/568
+- fix(get): avoid data races in parallel mode by @hezhizhen in https://github.com/x-motemen/ghq/pull/569
+- fix: avoid panics for inaccessible repository roots by @hezhizhen in https://github.com/x-motemen/ghq/pull/570
+- fix: reject unknown --vcs values by @hezhizhen in https://github.com/x-motemen/ghq/pull/571
+- docs: clarify URL-specific configuration by @dottex in https://github.com/x-motemen/ghq/pull/572
+- Fix paths with multiple GHQ_ROOT entries by @hezhizhen in https://github.com/x-motemen/ghq/pull/573
+- Sync submodule URLs before updating by @yoichi in https://github.com/x-motemen/ghq/pull/574
+- chore(deps): bump reviewdog/action-actionlint from 1.77.0 to 1.80.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/565
+- chore(deps): bump reviewdog/action-misspell from 1.30.1 to 1.30.2 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/563
+- chore(deps): bump crate-ci/typos from 1.50.3 to 1.51.1 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/562
+- chore(deps): bump the golang-x group with 3 updates by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/561
+- chore(deps): bump the actions group with 2 updates by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/560
+- chore(deps): bump Songmu/tagpr from 1.21.1 to 1.21.2 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/564
+- chore(deps): bump github.com/urfave/cli/v3 from 3.13.0 to 3.14.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/558
+- fix(git): synchronize submodule URLs before descending by @Songmu in https://github.com/x-motemen/ghq/pull/576
+- Add Actions lockfile and complementary Renovate updates by @Songmu in https://github.com/x-motemen/ghq/pull/577
+- chore(deps): bump golang.org/x/net from 0.61.0 to 0.62.0 in the golang-x group by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/578
+- Keep GitHub Actions updates with Dependabot by @Songmu in https://github.com/x-motemen/ghq/pull/579
+- chore(deps): bump Songmu/tagpr from 1.21.2 to 1.21.4 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/580
+- chore(deps): bump reviewdog/action-actionlint from 1.80.0 to 1.81.1 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/581
+- chore(deps): bump reviewdog/action-staticcheck from 1.32.1 to 1.33.0 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/583
+- chore(deps): bump reviewdog/action-misspell from 1.30.2 to 1.30.4 by @dependabot[bot] in https://github.com/x-motemen/ghq/pull/582
+
 ## [v1.11.2](https://github.com/x-motemen/ghq/compare/v1.11.1...v1.11.2) - 2026-09-29
 
 - Restore release asset compatibility by @Songmu in https://github.com/x-motemen/ghq/pull/555
