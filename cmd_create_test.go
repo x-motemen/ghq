@@ -110,6 +110,16 @@ func TestDoCreate(t *testing.T) {
 			os.MkdirAll(f, 0755)
 		},
 		errStr: "already exists and not empty",
+	}, {
+		name:  "multiple roots",
+		input: []string{"create", "--vcs=git", "motemen/ghq-multiple-roots"},
+		setup: func(t *testing.T) {
+			setEnv(t, envGhqRoot, tmpd+string(os.PathListSeparator)+filepath.Join(tmpd, "secondary"))
+			_localRepositoryRoots = nil
+			localRepoOnce = &sync.Once{}
+		},
+		want:    []string{"git", "init"},
+		wantDir: filepath.Join(tmpd, "github.com/motemen/ghq-multiple-roots"),
 	}}
 
 	for _, tc := range testCases {
