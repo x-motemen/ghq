@@ -31,7 +31,7 @@ jobs:
         with:
           persist-credentials: false
       - name: staticcheck
-        uses: reviewdog/action-staticcheck@v1.32.1
+        uses: reviewdog/action-staticcheck@v1.33.0
         with:
           reporter: github-pr-review
           level: warning

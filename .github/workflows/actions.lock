@@ -21,7 +21,7 @@ workflows:
         - 'crate-ci/typos@v1.51.1'
         - 'reviewdog/action-actionlint@v1.81.1'
         - 'reviewdog/action-misspell@v1.30.2'
-        - 'reviewdog/action-staticcheck@v1.32.1'
+        - 'reviewdog/action-staticcheck@v1.33.0'
     '.github/workflows/tagpr.yaml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-go@v7.0.0'
@@ -88,9 +88,9 @@ dependencies:
         commit: 'sha1-d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f'
         owner_id: 48765237
         repo_id: 286005511
-    'reviewdog/action-staticcheck@v1.32.1':
-        ref: 'v1.32.1'
-        commit: 'sha1-b2a168b3ea66e3b3d98cc693883d2bc18bc1bffc'
+    'reviewdog/action-staticcheck@v1.33.0':
+        ref: 'v1.33.0'
+        commit: 'sha1-c89a7974f4e093793ddc32bba79de7ac9345060f'
         owner_id: 48765237
         repo_id: 262723301
         uses:
