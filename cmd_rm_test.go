@@ -129,7 +129,7 @@ func TestRmCommand(t *testing.T) {
 
 func TestRmMultipleRepositories(t *testing.T) {
 	root := newTempDir(t)
-	t.Setenv(envGhqRoot, root)
+	setRepositoryPathTestRoot(t, root)
 	names := []string{"motemen/ghq-first", "motemen/ghq-second"}
 	for _, name := range names {
 		if err := os.MkdirAll(filepath.Join(root, "github.com", filepath.FromSlash(name), ".git"), 0755); err != nil {
