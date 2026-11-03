@@ -5,7 +5,6 @@
   ],
   enabledManagers: [
     'gomod',
-    'github-actions',
   ],
   packageRules: [
     {

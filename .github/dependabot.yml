@@ -12,3 +12,11 @@ updates:
       - dependency-name: "github.com/urfave/cli*"
         update-types:
           - "version-update:semver-major"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "actions/*"
