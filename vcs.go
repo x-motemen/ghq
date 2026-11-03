@@ -135,22 +135,28 @@ var GitBackend = &VCSBackend{
 		}
 		err := runInDir(true)(vg.dir, "git", "rev-parse", "@{upstream}")
 		if err != nil {
-			err := runInDir(vg.silent)(vg.dir, "git", "fetch")
+			err := runInDir(vg.silent)(vg.dir, "git", "fetch", "--no-recurse-submodules")
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		err = runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only")
+		err = runInDir(vg.silent)(vg.dir, "git", "pull", "--ff-only", "--no-recurse-submodules")
 		if err != nil {
 			return err
 		}
 		if vg.recursive {
-			err = runInDir(vg.silent)(vg.dir, "git", "submodule", "sync", "--recursive")
+			err = runInDir(vg.silent)(vg.dir, "git", "submodule", "sync")
 			if err != nil {
 				return err
 			}
-			return runInDir(vg.silent)(vg.dir, "git", "submodule", "update", "--init", "--recursive")
+			err = runInDir(vg.silent)(vg.dir, "git", "-c", "fetch.recurseSubmodules=false", "-c", "submodule.recurse=false", "submodule", "update", "--init")
+			if err != nil {
+				return err
+			}
+			// Update each level before descending so sync reads the new .gitmodules.
+			return runInDir(vg.silent)(vg.dir, "git", "submodule", "foreach", "--recursive",
+				"git submodule sync && git -c fetch.recurseSubmodules=false -c submodule.recurse=false submodule update --init")
 		}
 		return nil
 	},

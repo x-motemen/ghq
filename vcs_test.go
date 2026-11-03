@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/x-motemen/ghq/cmdutil"
@@ -84,7 +85,7 @@ func TestVCSBackend(t *testing.T) {
 				dir: localDir,
 			})
 		},
-		expect: []string{"git", "pull", "--ff-only"},
+		expect: []string{"git", "pull", "--ff-only", "--no-recurse-submodules"},
 		dir:    localDir,
 	}, {
 		name: "[git] fetch",
@@ -103,7 +104,7 @@ func TestVCSBackend(t *testing.T) {
 				dir: localDir,
 			})
 		},
-		expect: []string{"git", "fetch"},
+		expect: []string{"git", "fetch", "--no-recurse-submodules"},
 		dir:    localDir,
 	}, {
 		name: "[git] recursive",
@@ -123,8 +124,9 @@ func TestVCSBackend(t *testing.T) {
 				recursive: true,
 			})
 		},
-		expect: []string{"git", "submodule", "update", "--init", "--recursive"},
-		dir:    localDir,
+		expect: []string{"git", "submodule", "foreach", "--recursive",
+			"git submodule sync && git -c fetch.recurseSubmodules=false -c submodule.recurse=false submodule update --init"},
+		dir: localDir,
 	}, {
 		name: "[git] bare clone",
 		f: func() error {
@@ -446,6 +448,106 @@ func TestVCSBackend(t *testing.T) {
 			}
 			if c.Dir != tc.dir {
 				t.Errorf("got: %s, expect: %s", c.Dir, tc.dir)
+			}
+		})
+	}
+}
+
+func TestGitUpdateSubmoduleURLs(t *testing.T) {
+	t.Setenv("GIT_ALLOW_PROTOCOL", "file")
+	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+	// TestMain redirects git config; real repositories need their own config.
+	t.Setenv("GIT_CONFIG", os.Getenv("GIT_CONFIG"))
+	if err := os.Unsetenv("GIT_CONFIG"); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name      string
+		nested    bool
+		recursive bool
+		fetchMode string
+	}{
+		{name: "direct", recursive: true, fetchMode: "on-demand"},
+		{name: "nested", nested: true, recursive: true, fetchMode: "false"},
+		{name: "no-recursive", nested: true, fetchMode: "true"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := newTempDir(t)
+			git := func(dir string, args ...string) string {
+				t.Helper()
+				cmd := exec.Command("git", append([]string{
+					"-c", "user.name=test", "-c", "user.email=test@example.com",
+					"-c", "commit.gpgsign=false",
+				}, args...)...)
+				cmd.Dir = dir
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					t.Fatalf("git %v: %v\n%s", args, err, out)
+				}
+				return strings.TrimSpace(string(out))
+			}
+			initRepo := func(name string) string {
+				t.Helper()
+				dir := filepath.Join(root, name)
+				git(root, "init", "-b", "master", dir)
+				git(dir, "commit", "--allow-empty", "-m", "initial")
+				return dir
+			}
+
+			oldURL := filepath.ToSlash(initRepo("old"))
+			oldCommit := git(oldURL, "rev-parse", "HEAD")
+			newURL := filepath.ToSlash(filepath.Join(root, "new"))
+			git(root, "clone", oldURL, newURL)
+			git(newURL, "commit", "--allow-empty", "-m", "new-only commit")
+			newCommit := git(newURL, "rev-parse", "HEAD")
+
+			parent := initRepo("parent")
+			git(parent, "submodule", "add", oldURL, "child")
+			git(parent, "commit", "-am", "add child")
+			source := parent
+			if tc.nested {
+				source = initRepo("outer")
+				git(source, "submodule", "add", parent, "middle")
+				git(source, "commit", "-am", "add middle")
+			}
+			local := filepath.Join(root, "local")
+			git(root, "clone", "--recursive", source, local)
+			git(local, "config", "--local", "fetch.recurseSubmodules", tc.fetchMode)
+			if !tc.recursive {
+				git(local, "config", "--local", "submodule.recurse", "true")
+			}
+
+			git(filepath.Join(parent, "child"), "fetch", newURL, "master")
+			git(filepath.Join(parent, "child"), "checkout", "FETCH_HEAD")
+			git(parent, "config", "-f", ".gitmodules", "submodule.child.url", newURL)
+			git(parent, "commit", "-am", "change child URL and revision")
+			if tc.nested {
+				git(filepath.Join(source, "middle"), "fetch", "--no-recurse-submodules", parent, "master")
+				git(filepath.Join(source, "middle"), "checkout", "FETCH_HEAD")
+				git(source, "commit", "-am", "advance middle")
+			}
+
+			if err := GitBackend.Update(&vcsGetOption{dir: local, recursive: tc.recursive}); err != nil {
+				t.Fatal(err)
+			}
+			if got, want := git(local, "rev-parse", "HEAD"), git(source, "rev-parse", "HEAD"); got != want {
+				t.Errorf("parent HEAD = %s, want %s", got, want)
+			}
+			childParent := local
+			if tc.nested {
+				childParent = filepath.Join(local, "middle")
+			}
+			wantCommit, wantURL := newCommit, newURL
+			if !tc.recursive {
+				wantCommit, wantURL = oldCommit, oldURL
+			}
+			if got := git(filepath.Join(childParent, "child"), "rev-parse", "HEAD"); got != wantCommit {
+				t.Errorf("child HEAD = %s, want %s", got, wantCommit)
+			}
+			if got := git(childParent, "config", "--local", "--get", "submodule.child.url"); got != wantURL {
+				t.Errorf("child URL = %s, want %s", got, wantURL)
 			}
 		})
 	}
