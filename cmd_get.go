@@ -66,7 +66,6 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 		argCnt   int
 		getInfo  getInfo // For fetching and looking a single repo
 		scr      scanner
-		err      error
 	)
 	if len(args) > 0 {
 		scr = &sliceScanner{slice: args}
@@ -87,11 +86,15 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 		}
 		argCnt += 1
 		if parallel {
+			isFirst := argCnt == 1
 			sem <- struct{}{}
 			eg.Go(func() error {
 				defer func() { <-sem }()
 				info, getErr := g.get(ctx, target)
-				getInfo, err = info, getErr
+				// Only one worker saves the result, read after eg.Wait below.
+				if isFirst {
+					getInfo = info
+				}
 				if getErr != nil {
 					logger.Logf("error", "failed to get %q: %s", target, getErr)
 				} else if info.localRepository != nil {
@@ -100,6 +103,7 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 				return nil
 			})
 		} else {
+			var err error
 			if getInfo, err = g.get(ctx, target); err != nil {
 				return fmt.Errorf("failed to get %q: %w", target, err)
 			}
@@ -111,10 +115,10 @@ func doGet(ctx context.Context, cmd *cli.Command) error {
 			}
 		}
 	}
-	if err = scr.Err(); err != nil {
+	if err := scr.Err(); err != nil {
 		return fmt.Errorf("error occurred while reading input: %w", err)
 	}
-	if err = eg.Wait(); err != nil {
+	if err := eg.Wait(); err != nil {
 		return err
 	}
 	if andLook {
