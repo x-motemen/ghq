@@ -14,11 +14,11 @@ jobs:
       id-token: write
     steps:
     - name: checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      uses: actions/checkout@v7.0.1
       with:
         persist-credentials: false
     - name: setup go
-      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      uses: actions/setup-go@v7.0.0
       with:
         go-version-file: go.mod
     - name: prepare release build
@@ -26,7 +26,7 @@ jobs:
       run: echo "revision=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
     - name: build release archives
       id: goxz
-      uses: Songmu/goxz@b7b74d681760746882693f3db7c94a0888a4b714 # v0.13.0
+      uses: Songmu/goxz@v0.13.0
       with:
         os: linux,darwin,windows
         arch: amd64,arm64
@@ -40,11 +40,11 @@ jobs:
       working-directory: ${{ steps.goxz.outputs.output-dir }}
       run: shasum ghq_* > SHASUMS
     - name: attest build provenance
-      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+      uses: actions/attest@v4.2.2
       with:
         subject-path: "${{ steps.goxz.outputs.output-dir }}/*"
     - name: upload release artifacts
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      uses: actions/upload-artifact@v7.0.2
       with:
         name: release-${{ github.ref_name }}
         path: "${{ steps.goxz.outputs.output-dir }}/*"

@@ -5,6 +5,7 @@
   ],
   enabledManagers: [
     'gomod',
+    'github-actions',
   ],
   packageRules: [
     {
@@ -15,10 +16,6 @@
         'require',
         'indirect',
       ],
-      matchUpdateTypes: [
-        'minor',
-        'patch',
-      ],
       enabled: false,
     },
     {
@@ -27,6 +24,9 @@
       ],
       matchDepTypes: [
         'require',
+      ],
+      matchPackageNames: [
+        '/^github\\.com/urfave/cli(?:/v\\d+)?$/',
       ],
       matchUpdateTypes: [
         'major',
@@ -46,6 +46,7 @@
       ],
       matchDepTypes: [
         'golang',
+        'toolchain',
       ],
       rangeStrategy: 'bump',
       enabled: true,
