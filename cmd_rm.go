@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli/v3"
@@ -44,6 +45,16 @@ func removeRepository(cmd *cli.Command, name string) error {
 		return err
 	}
 
+	// Local names from completion include the on-disk .git suffix.
+	// Preserve it instead of treating it as a remote URL suffix.
+	isURL := hasSchemePattern.MatchString(name) || scpLikeURLPattern.MatchString(name)
+	if !isURL && strings.HasSuffix(strings.TrimRight(u.Path, "/"), ".git") {
+		if cmd.IsSet("bare") && !bare {
+			return fmt.Errorf("repository name %q conflicts with --bare=false: use a name without the .git suffix for the ordinary clone", name)
+		}
+		bare = true
+	}
+
 	localRepo, err := LocalRepositoryFromURL(u, bareModeFromClassicBool(bare))
 	if err != nil {
 		return err
@@ -56,6 +67,25 @@ func removeRepository(cmd *cli.Command, name string) error {
 	}
 	if ok {
 		return fmt.Errorf("directory %q does not exist", p)
+	}
+
+	// A remote URL identifies the project, not which clone layout to remove.
+	if isURL && !cmd.IsSet("bare") {
+		roots, err := localRepositoryRoots(true)
+		if err != nil {
+			return err
+		}
+		// An empty match in one root must not hide a clone in another root.
+		for _, root := range roots {
+			barePath := filepath.Join(root, filepath.FromSlash(localRepo.RelPath)+".git")
+			empty, err := isNotExistOrEmpty(barePath)
+			if err != nil {
+				return err
+			}
+			if !empty {
+				return fmt.Errorf("repository URL %q is ambiguous: both %q and %q exist; use a local repository name, --bare, or --bare=false", name, p, barePath)
+			}
+		}
 	}
 
 	// Scenario A: Is this path itself a linked worktree?

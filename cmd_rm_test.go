@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/urfave/cli/v3"
 	"github.com/x-motemen/ghq/cmdutil"
 )
 
@@ -151,6 +153,269 @@ func TestRmMultipleRepositories(t *testing.T) {
 		if _, err := os.Stat(filepath.Join(root, "github.com", filepath.FromSlash(name))); !os.IsNotExist(err) {
 			t.Errorf("repository %s was not removed: %v", name, err)
 		}
+	}
+}
+
+func TestRmLocalGitSuffix(t *testing.T) {
+	for _, tc := range []struct{ ref, bareFlag, want, only string }{
+		{ref: "github.com/alice/proj.git", want: "proj.git"},
+		{ref: "github.com/alice/proj.git/", want: "proj.git"},
+		{ref: "alice/proj.git", want: "proj.git"},
+		{ref: "github.com/alice/proj.git", want: "proj.git", only: "proj.git"},
+		{ref: "github.com/alice/proj", want: "proj"},
+		{ref: "github.com/alice/proj", bareFlag: "true", want: "proj.git"},
+		{ref: "github.com/alice/proj.git", bareFlag: "true", want: "proj.git"},
+		{ref: "https://github.com/alice/proj.git", bareFlag: "false", want: "proj"},
+		{ref: "ssh://git@github.com/alice/proj.git", bareFlag: "false", want: "proj"},
+		{ref: "git@github.com:alice/proj.git", bareFlag: "false", want: "proj"},
+		{ref: "https://github.com/alice/proj.git", bareFlag: "true", want: "proj.git"},
+		{ref: "ssh://git@github.com/alice/proj.git", bareFlag: "true", want: "proj.git"},
+		{ref: "git@github.com:alice/proj.git", bareFlag: "true", want: "proj.git"},
+		{ref: "https://github.com/alice/proj.git", want: "proj", only: "proj"},
+		{ref: "https://github.com/alice/proj.git", bareFlag: "true", want: "proj.git", only: "proj.git"},
+	} {
+		t.Run(tc.ref+"/"+tc.bareFlag+"/"+tc.only, func(t *testing.T) {
+			root := newTempDir(t)
+			setRepositoryPathTestRoot(t, root)
+			parent := filepath.Join(root, "github.com", "alice")
+			names := []string{"proj", "proj.git"}
+			if tc.only != "" {
+				names = []string{tc.only}
+			}
+			for _, name := range names {
+				initRmRepository(t, filepath.Join(parent, name), name == "proj.git")
+			}
+			args := []string{"--dry-run"}
+			if tc.bareFlag != "" {
+				args = append(args, "--bare="+tc.bareFlag)
+			}
+			target := filepath.Join(parent, tc.want)
+			out, stderr, err := runRmTest(t, "y", append(args, tc.ref)...)
+			if err != nil || out != "Would remove "+target+"\n" || strings.Contains(stderr, "[y/N]") {
+				t.Errorf("dry-run: output %q, stderr %q, error %v; want target %q without confirmation", out, stderr, err, target)
+			}
+			for _, name := range names {
+				assertRmRepositoryKept(t, filepath.Join(parent, name))
+			}
+		})
+	}
+}
+
+func TestRmMissingLayout(t *testing.T) {
+	for _, tc := range []struct{ ref, existing, missing string }{
+		{ref: "example.com/alice/proj.git", existing: "proj", missing: "proj.git"},
+		{ref: "https://example.com/alice/proj.git", existing: "proj.git", missing: "proj"},
+	} {
+		t.Run(tc.ref, func(t *testing.T) {
+			root := newTempDir(t)
+			setRepositoryPathTestRoot(t, root)
+			parent := filepath.Join(root, "example.com", "alice")
+			existing := filepath.Join(parent, tc.existing)
+			initRmRepository(t, existing, tc.existing == "proj.git")
+			wantErr := fmt.Sprintf("directory %q does not exist", filepath.Join(parent, tc.missing))
+			for _, args := range [][]string{{"--dry-run", tc.ref}, {tc.ref}} {
+				out, stderr, err := runRmTest(t, "y", args...)
+				if err == nil || err.Error() != wantErr || out != "" || strings.Contains(stderr, "[y/N]") {
+					t.Errorf("args %v: output %q, stderr %q, error %v; want %q before confirmation", args, out, stderr, err, wantErr)
+				}
+				assertRmRepositoryKept(t, existing)
+			}
+		})
+	}
+}
+
+func TestRmLocalGitSuffixRemoval(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	normalPath := filepath.Join(root, "example.com", "alice", "proj")
+	barePath := normalPath + ".git"
+	initRmRepository(t, normalPath, false)
+	initRmRepository(t, barePath, true)
+	for _, response := range []string{"n", "y"} {
+		out, stderr, err := runRmTest(t, response, "example.com/alice/proj.git")
+		if !strings.Contains(stderr, "Remove "+barePath+"? [y/N]") {
+			t.Errorf("confirmation = %q; want target %q", stderr, barePath)
+		}
+		if response == "n" {
+			if err == nil || err.Error() != "aborted" || out != "" {
+				t.Errorf("cancellation: output %q, error %v", out, err)
+			}
+			assertRmRepositoryKept(t, barePath)
+		} else {
+			if err != nil || out != "Removed "+barePath+"\n" {
+				t.Errorf("removal: output %q, error %v; want target %q", out, err, barePath)
+			}
+			if _, err := os.Stat(barePath); !os.IsNotExist(err) {
+				t.Errorf("target was not removed: %v", err)
+			}
+		}
+		assertRmRepositoryKept(t, normalPath)
+	}
+}
+
+func TestRmRelativePath(t *testing.T) {
+	for _, layout := range []string{"normal", "bare"} {
+		for _, ref := range []string{".", "./"} {
+			t.Run(layout+"/"+ref, func(t *testing.T) {
+				root := newTempDir(t)
+				setRepositoryPathTestRoot(t, root)
+				normalPath := filepath.Join(root, "example.com", "alice", "proj")
+				barePath := normalPath + ".git"
+				initRmRepository(t, normalPath, false)
+				initRmRepository(t, barePath, true)
+				target := normalPath
+				if layout == "bare" {
+					target = barePath
+				}
+				t.Chdir(target)
+				out, stderr, err := runRmTest(t, "y", "--dry-run", ref)
+				if err != nil || out != "Would remove "+target+"\n" || strings.Contains(stderr, "[y/N]") {
+					t.Errorf("dry-run: output %q, stderr %q, error %v; want target %q without confirmation", out, stderr, err, target)
+				}
+				for _, path := range []string{normalPath, barePath} {
+					assertRmRepositoryKept(t, path)
+					if out, err := exec.Command("git", "-C", path, "rev-parse", "--git-dir").CombinedOutput(); err != nil {
+						t.Errorf("repository %q is no longer usable: %v\n%s", path, err, out)
+					}
+				}
+			})
+		}
+	}
+}
+
+func runRmTest(t *testing.T, response string, args ...string) (string, string, error) {
+	t.Helper()
+	var runErr error
+	out, stderr, err := captureWithInput([]string{response}, func() {
+		// IsSet persists on reused flags, so each run needs a fresh command.
+		app := newApp()
+		app.Commands = []*cli.Command{newRmCommand()}
+		runErr = app.Run(context.Background(), append([]string{"ghq", "rm"}, args...))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out, stderr, runErr
+}
+
+func initRmRepository(t *testing.T, path string, bare bool) {
+	t.Helper()
+	args := []string{"init", "--quiet", "--template="}
+	if bare {
+		args = append(args, "--bare")
+	}
+	if out, err := exec.Command("git", append(args, path)...).CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, out)
+	}
+	if err := os.WriteFile(filepath.Join(path, "keep"), []byte("keep"), 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func assertRmRepositoryKept(t *testing.T, path string) {
+	t.Helper()
+	if data, err := os.ReadFile(filepath.Join(path, "keep")); err != nil || string(data) != "keep" {
+		t.Errorf("repository %q was changed: %q, %v", path, data, err)
+	}
+}
+
+func TestRmAmbiguousURL(t *testing.T) {
+	for _, tc := range []struct{ ref, layout string }{
+		{ref: "https://example.com/alice/proj.git", layout: "same root"},
+		{ref: "https://example.com/alice/proj", layout: "same root"},
+		{ref: "https://example.com/alice/proj.git/", layout: "same root"},
+		{ref: "ssh://git@example.com/alice/proj.git", layout: "same root"},
+		{ref: "ssh://git@example.com/alice/proj", layout: "same root"},
+		{ref: "git@example.com:alice/proj.git", layout: "same root"},
+		{ref: "git@example.com:alice/proj", layout: "same root"},
+		{ref: "https://example.com/alice/proj.git", layout: "different roots"},
+		{ref: "https://example.com/alice/proj.git", layout: "empty last root"},
+		{ref: "https://example.com/alice/proj.git", layout: "empty first root"},
+	} {
+		t.Run(tc.ref+"/"+tc.layout, func(t *testing.T) {
+			base := newTempDir(t)
+			normalRoot, bareRoot := filepath.Join(base, "normal"), filepath.Join(base, "normal")
+			roots := []string{normalRoot}
+			if tc.layout == "different roots" {
+				bareRoot = filepath.Join(base, "bare")
+				roots = append(roots, bareRoot)
+			}
+			var emptyPath string
+			if tc.layout == "empty last root" || tc.layout == "empty first root" {
+				emptyRoot := filepath.Join(base, "empty")
+				emptyPath = filepath.Join(emptyRoot, "example.com", "alice", "proj.git")
+				if err := os.MkdirAll(emptyPath, 0755); err != nil {
+					t.Fatal(err)
+				}
+				if tc.layout == "empty last root" {
+					roots = append(roots, emptyRoot)
+				} else {
+					roots = append([]string{emptyRoot}, roots...)
+				}
+			}
+			setRepositoryPathTestRoot(t, strings.Join(roots, string(os.PathListSeparator)))
+			normalPath := filepath.Join(normalRoot, "example.com", "alice", "proj")
+			barePath := filepath.Join(bareRoot, "example.com", "alice", "proj.git")
+			initRmRepository(t, normalPath, false)
+			initRmRepository(t, barePath, true)
+			for _, args := range [][]string{{"--dry-run", tc.ref}, {tc.ref}} {
+				out, stderr, err := runRmTest(t, "y", args...)
+				if err == nil || !strings.Contains(err.Error(), "ambiguous") {
+					t.Errorf("args %v: expected ambiguity error, got output %q, error %v", args, out, err)
+				} else {
+					for _, fragment := range []string{fmt.Sprintf("%q", normalPath), fmt.Sprintf("%q", barePath), "--bare", "--bare=false"} {
+						if !strings.Contains(err.Error(), fragment) {
+							t.Errorf("ambiguity error %q does not include %q", err, fragment)
+						}
+					}
+				}
+				if out != "" || strings.Contains(stderr, "[y/N]") {
+					t.Errorf("ambiguous URL reached output or confirmation: %q, %q", out, stderr)
+				}
+				assertRmRepositoryKept(t, normalPath)
+				assertRmRepositoryKept(t, barePath)
+				if emptyPath != "" {
+					if fi, err := os.Stat(emptyPath); err != nil || !fi.IsDir() {
+						t.Errorf("empty directory was changed: %v", err)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestRmConflictingBareFlag(t *testing.T) {
+	for _, tc := range []struct{ ref, only string }{
+		{ref: "github.com/alice/proj.git"},
+		{ref: "github.com/alice/proj.git/"},
+		{ref: "alice/proj.git"},
+		{ref: "github.com/alice/proj.git", only: "proj"},
+		{ref: "github.com/alice/proj.git", only: "proj.git"},
+	} {
+		t.Run(tc.ref+"/"+tc.only, func(t *testing.T) {
+			root := newTempDir(t)
+			setRepositoryPathTestRoot(t, root)
+			parent := filepath.Join(root, "github.com", "alice")
+			names := []string{"proj", "proj.git"}
+			if tc.only != "" {
+				names = []string{tc.only}
+			}
+			for _, name := range names {
+				initRmRepository(t, filepath.Join(parent, name), name == "proj.git")
+			}
+			for _, args := range [][]string{{"--bare=false", "--dry-run", tc.ref}, {"--bare=false", tc.ref}} {
+				out, stderr, err := runRmTest(t, "y", args...)
+				if err == nil || !strings.Contains(err.Error(), "conflict") || !strings.Contains(err.Error(), "--bare=false") {
+					t.Errorf("args %v: expected conflicting-option error, got %v", args, err)
+				}
+				if out != "" || strings.Contains(stderr, "[y/N]") {
+					t.Errorf("conflicting request reached output or confirmation: %q, %q", out, stderr)
+				}
+				for _, name := range names {
+					assertRmRepositoryKept(t, filepath.Join(parent, name))
+				}
+			}
+		})
 	}
 }
 
