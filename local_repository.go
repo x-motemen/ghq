@@ -107,9 +107,16 @@ func bareModeFromClassicBool(bare bool) BareMode {
 
 // LocalRepositoryFromURL resolve LocalRepository from URL
 func LocalRepositoryFromURL(remoteURL *url.URL, mode BareMode) (*LocalRepository, error) {
+	repo, _, err := resolveLocalRepository(remoteURL, mode)
+	return repo, err
+}
+
+// resolveLocalRepository distinguishes discovered repositories from fallback
+// destinations, which may already contain unrelated entries.
+func resolveLocalRepository(remoteURL *url.URL, mode BareMode) (*LocalRepository, bool, error) {
 	relPath, err := localRepositoryRelPathFromURL(remoteURL)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if mode == BareClassic {
 		// Force to append ".git" even if remoteURL does not end with ".git".
@@ -128,11 +135,11 @@ func LocalRepositoryFromURL(remoteURL *url.URL, mode BareMode) (*LocalRepository
 			mu.Unlock()
 		}
 	}); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if localRepository != nil {
-		return localRepository, nil
+		return localRepository, true, nil
 	}
 	var remoteURLStr = remoteURL.String()
 	if remoteURL.Scheme == "codecommit" {
@@ -140,7 +147,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL, mode BareMode) (*LocalRepository
 	}
 	prim, err := getRoot(remoteURLStr)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// No local repository found, returning new one
@@ -149,7 +156,7 @@ func LocalRepositoryFromURL(remoteURL *url.URL, mode BareMode) (*LocalRepository
 		RelPath:   relPath,
 		RootPath:  prim,
 		PathParts: strings.Split(relPath, "/"),
-	}, nil
+	}, false, nil
 }
 
 // localRepositoryRelPathFromURL validates URL components before cleaning the
@@ -321,6 +328,18 @@ func walkAllLocalRepositories(callback func(*LocalRepository)) error {
 	return walkLocalRepositories("", callback)
 }
 
+// ModeIrregular also describes non-link reparse files; Readlink distinguishes junctions.
+func isLinkEntry(path string, fi os.FileInfo) bool {
+	if fi.Mode()&os.ModeSymlink != 0 {
+		return true
+	}
+	if !fi.IsDir() && fi.Mode()&os.ModeIrregular != 0 {
+		_, err := os.Readlink(path)
+		return err == nil
+	}
+	return false
+}
+
 func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 	roots, err := localRepositoryRoots(true)
 	if err != nil {
@@ -328,14 +347,17 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 	}
 
 	walkFn := func(fpath string, fi os.FileInfo) error {
-		isSymlink := false
-		if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
-			isSymlink = true
-			realpath, err := filepath.EvalSymlinks(fpath)
-			if err != nil {
-				return nil
+		isLink := isLinkEntry(fpath, fi)
+		if isLink {
+			var err error
+			targetPath := fpath
+			if fi.Mode()&os.ModeSymlink != 0 {
+				targetPath, err = filepath.EvalSymlinks(fpath)
+				if err != nil {
+					return nil
+				}
 			}
-			fi, err = os.Stat(realpath)
+			fi, err = os.Stat(targetPath)
 			if err != nil {
 				return nil
 			}
@@ -354,7 +376,7 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 		}
 		callback(repo)
 
-		if isSymlink {
+		if isLink {
 			return nil
 		}
 		return filepath.SkipDir

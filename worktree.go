@@ -62,14 +62,9 @@ func isWorktreeGitDir(gitdirTarget string) bool {
 	return strings.Contains(filepath.ToSlash(gitdirTarget), ".git/worktrees/")
 }
 
-// hasLinkedWorktrees reports whether the Git repository at dir has any linked
-// worktrees (entries under .git/worktrees/).
-//
-// Known limitation: bare repos store worktrees in <bare-repo>/worktrees/
-// (no .git/ prefix). This check only looks at .git/worktrees/ and would
-// miss bare repo worktrees.
-func hasLinkedWorktrees(dir string) (bool, error) {
-	worktreesDir := filepath.Join(dir, ".git", "worktrees")
+// hasLinkedWorktrees reports whether gitDir contains linked worktree entries.
+func hasLinkedWorktrees(gitDir string) (bool, error) {
+	worktreesDir := filepath.Join(gitDir, "worktrees")
 	entries, err := os.ReadDir(worktreesDir)
 	if err != nil {
 		if os.IsNotExist(err) || isNotADirectory(err) {
@@ -85,10 +80,10 @@ func hasLinkedWorktrees(dir string) (bool, error) {
 	return false, nil
 }
 
-// listLinkedWorktreePaths reads .git/worktrees/*/gitdir in dir and returns
+// listLinkedWorktreePaths reads worktrees/*/gitdir below gitDir and returns
 // the worktree working-directory paths.
-func listLinkedWorktreePaths(dir string) ([]string, error) {
-	worktreesDir := filepath.Join(dir, ".git", "worktrees")
+func listLinkedWorktreePaths(gitDir string) ([]string, error) {
+	worktreesDir := filepath.Join(gitDir, "worktrees")
 	entries, err := os.ReadDir(worktreesDir)
 	if err != nil {
 		if os.IsNotExist(err) || isNotADirectory(err) {

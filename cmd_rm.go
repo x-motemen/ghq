@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli/v3"
@@ -44,37 +46,39 @@ func removeRepository(cmd *cli.Command, name string) error {
 		return err
 	}
 
-	localRepo, err := LocalRepositoryFromURL(u, bareModeFromClassicBool(bare))
+	p, isAlias, err := resolveRemovalEntry(u, bareModeFromClassicBool(bare))
 	if err != nil {
 		return err
-	}
-
-	p := localRepo.FullPath
-	ok, err := isNotExistOrEmpty(p)
-	if err != nil {
-		return err
-	}
-	if ok {
-		return fmt.Errorf("directory %q does not exist", p)
 	}
 
 	// Scenario A: Is this path itself a linked worktree?
 	isWorktree := false
 	var gitdirTarget string
-	if linked, target, linkErr := isLinkedGitDir(p); linkErr != nil {
-		return fmt.Errorf("failed to check worktree status: %w", linkErr)
-	} else if linked && isWorktreeGitDir(target) {
-		isWorktree = true
-		gitdirTarget = target
+	if !isAlias {
+		if linked, target, linkErr := isLinkedGitDir(p); linkErr != nil {
+			return fmt.Errorf("failed to check worktree status: %w", linkErr)
+		} else if linked && isWorktreeGitDir(target) {
+			isWorktree = true
+			gitdirTarget = target
+		}
 	}
 
 	// Scenario B: Does this repo have linked worktrees?
 	var worktreePaths []string
-	if !isWorktree {
-		if hasWt, wtErr := hasLinkedWorktrees(p); wtErr != nil {
+	gitDir := filepath.Join(p, ".git")
+	if !isWorktree && !isAlias {
+		if bare {
+			// --bare selects a path suffix, not the repository's Git layout.
+			if _, statErr := os.Stat(gitDir); os.IsNotExist(statErr) {
+				gitDir = p
+			} else if statErr != nil {
+				return fmt.Errorf("failed to check git directory: %w", statErr)
+			}
+		}
+		if hasWt, wtErr := hasLinkedWorktrees(gitDir); wtErr != nil {
 			return fmt.Errorf("failed to check for linked worktrees: %w", wtErr)
 		} else if hasWt {
-			worktreePaths, err = listLinkedWorktreePaths(p)
+			worktreePaths, err = listLinkedWorktreePaths(gitDir)
 			if err != nil {
 				return fmt.Errorf("failed to list linked worktrees: %w", err)
 			}
@@ -107,7 +111,7 @@ func removeRepository(cmd *cli.Command, name string) error {
 		confirmMsg = fmt.Sprintf("Remove %s?", p)
 	}
 
-	ok, err = confirm(confirmMsg)
+	ok, err := confirm(confirmMsg)
 	if err != nil {
 		return err
 	}
@@ -116,7 +120,11 @@ func removeRepository(cmd *cli.Command, name string) error {
 	}
 
 	// Removal
-	if isWorktree {
+	if isAlias {
+		if err := os.Remove(p); err != nil {
+			return err
+		}
+	} else if isWorktree {
 		// Use git worktree remove to properly unregister from parent repo.
 		// Resolve the main repo directory so we don't run git from inside
 		// the directory being deleted.
@@ -148,7 +156,7 @@ func removeRepository(cmd *cli.Command, name string) error {
 			if _, statErr := os.Stat(wt); os.IsNotExist(statErr) {
 				continue // already gone
 			}
-			gitCmd := exec.Command("git", "worktree", "remove", "--force", wt)
+			gitCmd := exec.Command("git", "--git-dir", gitDir, "worktree", "remove", "--force", wt)
 			gitCmd.Dir = p
 			if out, gitErr := gitCmd.CombinedOutput(); gitErr != nil {
 				return fmt.Errorf("failed to remove worktree %s: %w\n%s", wt, gitErr, out)
@@ -161,6 +169,52 @@ func removeRepository(cmd *cli.Command, name string) error {
 
 	fmt.Fprintf(w, "Removed %s\n", p)
 	return nil
+}
+
+func resolveRemovalEntry(u *url.URL, mode BareMode) (string, bool, error) {
+	repo, found, err := resolveLocalRepository(u, mode)
+	if err != nil {
+		return "", false, err
+	}
+	p := repo.FullPath
+	fi, err := os.Lstat(p)
+	isAlias := err == nil && isLinkEntry(p, fi)
+	if !found && !isAlias {
+		roots, rootsErr := localRepositoryRoots(true)
+		if rootsErr != nil {
+			return "", false, rootsErr
+		}
+		for _, root := range roots {
+			candidate := filepath.Join(root, repo.RelPath)
+			entry, statErr := os.Lstat(candidate)
+			if os.IsNotExist(statErr) || os.IsPermission(statErr) || isNotADirectory(statErr) {
+				continue
+			}
+			if statErr != nil {
+				return "", false, statErr
+			}
+			if isLinkEntry(candidate, entry) {
+				return candidate, true, nil
+			}
+		}
+	}
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", false, fmt.Errorf("directory %q does not exist", p)
+		}
+		return "", false, err
+	}
+	if isAlias {
+		return p, true, nil
+	}
+	empty, err := isNotExistOrEmpty(p)
+	if err != nil {
+		return "", false, err
+	}
+	if empty {
+		return "", false, fmt.Errorf("directory %q does not exist", p)
+	}
+	return p, false, nil
 }
 
 func confirm(message string) (bool, error) {

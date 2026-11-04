@@ -94,7 +94,7 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 	// Check for linked worktrees before dry-run return so we can report them
 	var hasWorktrees bool
 	if vcsBackend == GitBackend {
-		hasWorktrees, err = hasLinkedWorktrees(absDir)
+		hasWorktrees, err = hasLinkedWorktrees(filepath.Join(absDir, ".git"))
 		if err != nil {
 			return fmt.Errorf("failed to check for linked worktrees: %w", err)
 		}
