@@ -40,6 +40,16 @@ func TestNewRemoteRepository(t *testing.T) {
 		valid:      true,
 		vcsBackend: PijulBackend,
 	}, {
+		url:        "http://chiselapp.com/user/sti/repository/fossil-gui",
+		valid:      true,
+		vcsBackend: FossilBackend,
+		repoURL:    "http://chiselapp.com/user/sti/repository/fossil-gui",
+	}, {
+		url:        "https://chiselapp.com/user/sti/repository/fossil-gui",
+		valid:      true,
+		vcsBackend: FossilBackend,
+		repoURL:    "https://chiselapp.com/user/sti/repository/fossil-gui",
+	}, {
 		url:        "svn+ssh://example.com/proj/repo",
 		valid:      true,
 		vcsBackend: SubversionBackend,
