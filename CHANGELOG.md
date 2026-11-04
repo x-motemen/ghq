@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.12.1](https://github.com/x-motemen/ghq/compare/v1.12.0...v1.12.1) - 2026-11-04
+
+- Stabilize integration tests with smaller public repositories by @Songmu in https://github.com/x-motemen/ghq/pull/591
+
 ## [v1.12.0](https://github.com/x-motemen/ghq/compare/v1.11.2...v1.12.0) - 2026-11-03
 
 - Reject unsafe repository URL paths by @hezhizhen in https://github.com/x-motemen/ghq/pull/557
