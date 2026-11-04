@@ -5,9 +5,21 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 )
+
+func symlinkForTest(t testing.TB, target, path string) {
+	t.Helper()
+	if err := os.Symlink(filepath.FromSlash(target), path); err != nil {
+		if runtime.GOOS == "windows" {
+			t.Skipf("symbolic links unavailable: %v", err)
+		}
+		t.Fatal(err)
+	}
+}
 
 func mustParseURL(urlString string) *url.URL {
 	u, err := url.Parse(urlString)
