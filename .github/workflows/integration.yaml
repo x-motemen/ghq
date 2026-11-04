@@ -1,8 +1,14 @@
 name: integration
 on:
+  pull_request:
+    paths:
+    - .github/workflows/integration.yaml
+    - .github/workflows/integration-label.yaml
+    - misc/author/integration_test.sh
   push:
     branches:
     - master
+  workflow_call:
 permissions:
   contents: read
 jobs:
