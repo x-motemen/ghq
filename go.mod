@@ -1,8 +1,6 @@
 module github.com/x-motemen/ghq
 
-go 1.26.0
-
-toolchain go1.27.3
+go 1.27.3
 
 require (
 	github.com/Songmu/gitconfig v0.2.2
@@ -13,19 +11,16 @@ require (
 	github.com/urfave/cli/v3 v3.14.0
 	golang.org/x/net v0.62.0
 	golang.org/x/sync v0.24.0
+	golang.org/x/text v0.43.0
 )
 
 require (
 	github.com/cli/go-gh/v2 v2.13.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
-	github.com/otiai10/mint v1.6.3 // indirect
-)
-
-require (
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
+	github.com/kr/text v0.2.0 // indirect
+	github.com/otiai10/mint v1.6.3 // indirect
 	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/text v0.43.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
