@@ -1,9 +1,8 @@
 name: integration
 on:
   pull_request:
-    paths:
-    - .github/workflows/integration.yaml
-    - misc/author/integration_test.sh
+    types:
+    - labeled
   push:
     branches:
     - master
@@ -11,6 +10,7 @@ permissions:
   contents: read
 jobs:
   test:
+    if: github.event_name == 'push' || github.event.label.name == 'integration'
     timeout-minutes: 20
     runs-on: macos-latest
     steps:
