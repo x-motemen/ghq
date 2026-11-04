@@ -26,8 +26,8 @@ var (
 )
 
 func newURL(ref string, ssh, forceMe bool) (*url.URL, error) {
-	// If argURL is a "./foo" or "../bar" form,
-	// find repository name trailing after github.com/USER/.
+	// Resolve "./foo" and "../bar" within a ghq root to a remote host/path,
+	// retaining the host instead of applying the default host or username.
 	ref = filepath.ToSlash(ref)
 	parts := strings.Split(ref, "/")
 	if parts[0] == "." || parts[0] == ".." {

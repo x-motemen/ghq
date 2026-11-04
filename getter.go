@@ -47,9 +47,9 @@ func (g *getter) get(ctx context.Context, argURL string) (getInfo, error) {
 	return g.getRemoteRepository(ctx, remote, branch)
 }
 
-// getRemoteRepository clones or updates a remote repository remote.
-// If doUpdate is true, updates the locally cloned repository. Otherwise does nothing.
-// If isShallow is true, does shallow cloning. (no effect if already cloned or the VCS is Mercurial and git-svn)
+// getRemoteRepository clones remote if it is not already present locally.
+// Existing repositories are updated only when g.update is set; clone-only
+// options such as shallow and branch are not applied to updates.
 func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepository, branch string) (getInfo, error) {
 	remoteURL := remote.URL()
 	local, err := LocalRepositoryFromURL(remoteURL, g.bareMode)
@@ -105,10 +105,6 @@ func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepositor
 			}
 		}
 
-		// localRepoRoot at this point does NOT include the bare-mode
-		// suffix (detectLocalRepoRoot strips ".git" if present); the
-		// switch below adds it (either as a suffix on the leaf directory
-		// or as a ".git" subdirectory).
 		switch g.bareMode {
 		case BareClean:
 			// Clean-bare: the bare gitdir lives inside the leaf directory

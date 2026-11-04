@@ -14,7 +14,7 @@ _ghq() {
 
   case "${words[1]}" in
     get|clone)
-      local opts="--update -u -p --shallow --look -l --vcs --silent -s --no-recursive --branch -b --parallel -P --bare --partial"
+      local opts="--update -u -p --shallow --look -l --vcs --silent -s --no-recursive --branch -b --parallel -P --bare --clean-bare --partial"
       if [[ $cur = -* ]]; then
         COMPREPLY=( $(compgen -W "$opts $global_opts" -- "$cur") )
         return 0

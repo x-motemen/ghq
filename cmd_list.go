@@ -80,7 +80,6 @@ func doList(ctx context.Context, cmd *cli.Command) error {
 		subpathCount := map[string]int{} // Count duplicated subpaths (ex. foo/dotfiles and bar/dotfiles)
 		reposCount := map[string]int{}   // Check duplicated repositories among roots
 
-		// Primary first
 		for _, repo := range repos {
 			if reposCount[repo.RelPath] == 0 {
 				for _, p := range repo.Subpaths() {

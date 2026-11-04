@@ -82,7 +82,7 @@ type DarksHubRepository struct {
 	url *url.URL
 }
 
-// URL returns URL of darks repository
+// URL returns URL of the DarcsHub repository
 func (repo *DarksHubRepository) URL() *url.URL {
 	return repo.url
 }
@@ -184,7 +184,7 @@ var (
 
 // VCS detects VCSBackend of the OtherRepository
 func (repo *OtherRepository) VCS() (*VCSBackend, *url.URL, error) {
-	// Respect 'ghq.url.https://ghe.example.com/.vcs' config variable
+	// Respect 'ghq.https://ghe.example.com/.vcs' config variable
 	// (in gitconfig:)
 	//     [ghq "https://ghe.example.com/"]
 	//     vcs = github
