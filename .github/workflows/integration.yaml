@@ -1,5 +1,9 @@
 name: integration
 on:
+  pull_request:
+    paths:
+    - .github/workflows/integration.yaml
+    - misc/author/integration_test.sh
   push:
     branches:
     - master
