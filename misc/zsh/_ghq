@@ -25,6 +25,7 @@ function _ghq () {
                         '(-s --silent)'{-s,--silent}'[Clone or update silently]' \
                         '--no-recursive[Prevent recursive fetching]' \
                         '--bare[Do a bare clone]' \
+                        '--clean-bare[Clone a bare Git repository into a .git subdirectory]' \
                         '(-b --branch)'{-b,--branch}'[Specify branch name]' \
                         '(-P --parallel)'{-P,--parallel}'[Import parallelly]' \
                         '--partial[Do a partial clone]: :(blobless treeless)' \
@@ -40,7 +41,7 @@ function _ghq () {
                         '--vcs[Specify vcs backend for matching]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar)' \
                         '(-p --full-path)'{-p,--full-path}'[Print full paths]' \
                         '--unique[Print unique subpaths]' \
-                        '--bare[Query bare repositories]' \
+                        '--bare[Interpret repository URL queries using the classic bare layout]' \
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;
@@ -53,14 +54,14 @@ function _ghq () {
                 (create)
                     _arguments -C \
                         '--vcs[Specify vcs backend explicitly]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar)' \
-                        '--bare[Create a bare repository]' \
+                        '--bare[Create a classic bare Git repository (repo.git)]' \
                         '(-)*:: :->null_state' \
                         && ret=0
                     ;;
                 (rm)
                     _arguments -C \
                         '--dry-run[Do not remove actually]' \
-                        '--bare[Remove a bare repository]' \
+                        '--bare[Remove a classic bare repository (repo.git)]' \
                         '(-)*: :__ghq_all_repositories' \
                         && ret=0
                     ;;

@@ -36,7 +36,8 @@ type VCSBackend struct {
 	// Updates a cloned local repository.
 	Update func(*vcsGetOption) error
 	Init   func(dir string) error
-	// Returns VCS specific files
+	// Contents lists marker paths used to recognize this backend when --vcs is set.
+	// Unfiltered detection uses vcsContents instead.
 	Contents []string
 	// Returns the remote URL of the repository at the given directory.
 	// If nil, the VCS backend does not support retrieving remote URLs.
@@ -96,7 +97,6 @@ func getGitRemoteURL(dir string) (string, error) {
 
 // GitBackend is the VCSBackend of git
 var GitBackend = &VCSBackend{
-	// support submodules?
 	Clone: func(vg *vcsGetOption) error {
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
@@ -339,7 +339,7 @@ var GitsvnBackend = &VCSBackend{
 
 // MercurialBackend is the VCSBackend for mercurial
 var MercurialBackend = &VCSBackend{
-	// Mercurial seems not supporting shallow clone currently.
+	// This backend ignores the shallow option.
 	Clone: func(vg *vcsGetOption) error {
 		dir, _ := filepath.Split(vg.dir)
 		err := os.MkdirAll(dir, 0755)
@@ -524,7 +524,7 @@ var FossilBackend = &VCSBackend{
 
 // BazaarBackend is the VCSBackend for bazaar
 var BazaarBackend = &VCSBackend{
-	// bazaar seems not supporting shallow clone currently.
+	// This backend ignores the shallow option.
 	Clone: func(vg *vcsGetOption) error {
 		if vg.branch != "" {
 			return errors.New("--branch option is unavailable for Bazaar since branch is included in remote URL")

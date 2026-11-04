@@ -29,7 +29,7 @@ func isLinkedGitDir(dir string) (bool, string, error) {
 		return false, "", err
 	}
 
-	// .git is a directory → regular repo, safe to migrate
+	// A .git directory is local metadata rather than a link to another gitdir.
 	if fi.IsDir() {
 		return false, "", nil
 	}
@@ -65,7 +65,7 @@ func isWorktreeGitDir(gitdirTarget string) bool {
 // hasLinkedWorktrees reports whether the Git repository at dir has any linked
 // worktrees (entries under .git/worktrees/).
 //
-// Known limitation: bare repos store worktrees in <bare-repo>/worktrees/
+// Known limitation: classic bare repos store worktrees in <bare-repo>/worktrees/
 // (no .git/ prefix). This check only looks at .git/worktrees/ and would
 // miss bare repo worktrees.
 func hasLinkedWorktrees(dir string) (bool, error) {
@@ -127,9 +127,10 @@ func listLinkedWorktreePaths(dir string) ([]string, error) {
 	return paths, nil
 }
 
-// resolveMainRepoDir resolves the main repository working directory from a
-// worktree's gitdir target path (e.g., /path/to/main/.git/worktrees/<name>).
-// It reads the commondir file to find the shared .git directory.
+// resolveMainRepoDir resolves the main repository directory for the .git
+// subdirectory layout from a worktree's gitdir target path
+// (e.g., /path/to/main/.git/worktrees/<name>). It reads commondir to find
+// the shared .git directory and returns its parent.
 func resolveMainRepoDir(gitdirTarget string) (string, error) {
 	commondirFile := filepath.Join(gitdirTarget, "commondir")
 	content, err := os.ReadFile(commondirFile)

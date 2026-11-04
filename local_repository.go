@@ -90,13 +90,13 @@ const (
 	// BareClean represents the "clean bare" layout, where the bare gitdir
 	// lives as a ".git" subdirectory of an unsuffixed parent
 	// (e.g. "<root>/host/user/repo/.git"). From ghq's path-resolution
-	// perspective this is indistinguishable from BareNone; the ".git"
-	// subdirectory is created by the git backend at clone time.
+	// perspective this is indistinguishable from BareNone. The getter
+	// appends ".git" to the clone destination.
 	BareClean
 )
 
 // bareModeFromClassicBool is a compatibility helper for commands that
-// expose only the classic --bare flag (list, rm, create, migrate).
+// expose only the classic --bare flag (list, rm, create).
 // It returns BareClassic when bare is true, otherwise BareNone.
 func bareModeFromClassicBool(bare bool) BareMode {
 	if bare {
@@ -221,10 +221,8 @@ func (repo *LocalRepository) NonHostPath() string {
 	return strings.Join(repo.PathParts[1:], "/")
 }
 
-// list as bellow
-// - "$GHQ_ROOT/github.com/motemen/ghq/cmdutil" // repo.FullPath
-// - "$GHQ_ROOT/github.com/motemen/ghq"
-// - "$GHQ_ROOT/github.com/motemen
+// repoRootCandidates includes ancestors below the host directory because
+// FullPath may refer to a subdirectory within a repository.
 func (repo *LocalRepository) repoRootCandidates() []string {
 	hostRoot := filepath.Join(repo.RootPath, repo.PathParts[0])
 	nonHostParts := repo.PathParts[1:]
@@ -250,7 +248,7 @@ func (repo *LocalRepository) Matches(pathQuery string) bool {
 	return slices.Contains(repo.Subpaths(), pathQuery)
 }
 
-// VCS returns VCSBackend of the repository
+// VCS returns the repository's VCS backend and root directory.
 func (repo *LocalRepository) VCS() (*VCSBackend, string) {
 	if repo.vcsBackend == nil {
 		for _, dir := range repo.repoRootCandidates() {
@@ -410,14 +408,17 @@ var (
 	localRepoOnce         = &sync.Once{}
 )
 
-// localRepositoryRoots returns locally cloned repositories' root directories.
-// The root dirs are determined as following:
+// localRepositoryRoots returns root directories with the primary root first.
+// The result is cached on the first call. Subsequent calls ignore the all argument.
+// Roots are initialized as follows:
 //
-//   - If GHQ_ROOT environment variable is nonempty, use it as the only root dir.
-//   - Otherwise, use the result of `git config --get-all ghq.root` as the dirs.
-//   - Otherwise, fallback to the default root, `~/.ghq`.
-//   - When GHQ_ROOT is empty, specific root dirs are added from the result of
-//     `git config --path --get-regexp '^ghq\..+\.root$`
+//   - A nonempty GHQ_ROOT is split as an OS-specific path list, with its first
+//     entry as the primary root.
+//   - Otherwise, ghq.root values are read as paths in reverse configuration
+//     order, so the last configured value is primary.
+//   - If neither supplies roots, the default is ~/ghq.
+//   - When all is true and GHQ_ROOT is empty, URL-specific ghq.<url>.root
+//     directories are appended.
 func localRepositoryRoots(all bool) ([]string, error) {
 	localRepoOnce.Do(func() {
 		var roots []string

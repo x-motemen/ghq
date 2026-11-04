@@ -134,7 +134,7 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 	// Repair linked worktrees so their .git files reference the new location.
 	//
 	// For each worktree, two pointers exist:
-	//   back-pointer:    .git/worktrees/<name>/gitdir  → worktree working dir
+	//   back-pointer:    .git/worktrees/<name>/gitdir  → <worktree>/.git
 	//   forward ref:     <worktree>/.git               → main repo's .git/worktrees/<name>
 	//
 	// External worktrees (outside the repo) didn't move, so only the forward

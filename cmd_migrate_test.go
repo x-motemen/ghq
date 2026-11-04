@@ -377,11 +377,8 @@ func TestMoveDir(t *testing.T) {
 		}
 	})
 
-	// Note: moveDir also has a cross-device (EXDEV) fallback path which is
-	// difficult to exercise reliably in unit tests because it depends on
-	// running across different filesystems. That behavior is validated in
-	// higher-level integration tests / environments that provide multiple
-	// mounts, rather than in this unit test.
+	// The EXDEV copy fallback requires different filesystems and is not
+	// exercised by these same-filesystem fixtures.
 }
 
 func TestIsLinkedGitDir(t *testing.T) {

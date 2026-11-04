@@ -23,9 +23,13 @@ var commandGet = &cli.Command{
 	Aliases: []string{"clone"},
 	Usage:   "Clone/sync with a remote repository",
 	Description: `
-    Clone a repository under ghq root directory. If the repository is
+    Clone one or more repositories under ghq root directory. With no arguments,
+    read repository specifications from standard input, one per line.
+    If the repository is
     already cloned to local, nothing will happen unless '-u' ('--update')
-    flag is supplied, in which case 'git remote update' is executed.
+    flag is supplied. Regular Git checkouts with an upstream branch run
+    'git pull --ff-only --no-recurse-submodules'; otherwise they run
+    'git fetch --no-recurse-submodules'.
     When you use '-p' option, the repository is cloned via SSH.`,
 	Action: doGet,
 	Flags: []cli.Flag{
@@ -62,7 +66,10 @@ var commandList = &cli.Command{
     List locally cloned repositories. If a query argument is given, only
     repositories whose names contain that query text are listed.
     '-e' ('--exact') forces the match to be an exact one (i.e. the query equals to
-    project or user/project) If '-p' ('--full-path') is given, the full paths
+    project, user/project, or host/user/project). Exact matches are case-sensitive;
+    plain path queries ignore case when the query contains no uppercase letters.
+    Host prefixes are matched exactly.
+    If '-p' ('--full-path') is given, the full paths
     to the repository root are printed instead of relative ones.`,
 	Action: doList,
 	Flags: []cli.Flag{
@@ -70,7 +77,7 @@ var commandList = &cli.Command{
 		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend for matching"},
 		&cli.BoolFlag{Name: "full-path", Aliases: []string{"p"}, Usage: "Print full paths"},
 		&cli.BoolFlag{Name: "unique", Usage: "Print unique subpaths"},
-		&cli.BoolFlag{Name: "bare", Usage: "Query bare repositories"},
+		&cli.BoolFlag{Name: "bare", Usage: "Interpret repository URL queries using the classic bare layout"},
 	},
 }
 
@@ -80,7 +87,7 @@ var commandRm = &cli.Command{
 	Action: doRm,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{Name: "dry-run", Usage: "Do not remove actually"},
-		&cli.BoolFlag{Name: "bare", Usage: "Remove a bare repository"},
+		&cli.BoolFlag{Name: "bare", Usage: "Remove a classic bare repository (repo.git)"},
 	},
 }
 
@@ -99,7 +106,7 @@ var commandCreate = &cli.Command{
 	Action: doCreate,
 	Flags: []cli.Flag{
 		&cli.StringFlag{Name: "vcs", Usage: "Specify `vcs` backend explicitly", Action: validateVCSFlag},
-		&cli.BoolFlag{Name: "bare", Usage: "Create a bare repository"},
+		&cli.BoolFlag{Name: "bare", Usage: "Create a classic bare Git repository (repo.git)"},
 	},
 }
 
@@ -118,11 +125,11 @@ type commandDoc struct {
 }
 
 var commandDocs = map[string]commandDoc{
-	"get":     {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--bare] [--partial blobless|treeless] <repository URL>|<project>|<user>/<project>|<host>/<user>/<project>"},
-	"list":    {"", "[-p] [-e] [<query>]"},
-	"create":  {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
-	"rm":      {"", "<project>|<user>/<project>|<host>/<user>/<project>"},
-	"root":    {"", "[-all]"},
+	"get":     {"", "[-u] [-p] [--shallow] [--vcs <vcs>] [--look] [--silent] [--branch <branch>] [--no-recursive] [--parallel] [--bare] [--clean-bare] [--partial blobless|treeless] [<repository>...]"},
+	"list":    {"", "[-p] [-e] [--vcs <vcs>] [--unique] [--bare] [<query>]"},
+	"create":  {"", "[--vcs <vcs>] [--bare] <repository>"},
+	"rm":      {"", "[--dry-run] [--bare] <repository>..."},
+	"root":    {"", "[--all]"},
 	"migrate": {"", "[-y] [--dry-run] <repository-directory>"},
 }
 

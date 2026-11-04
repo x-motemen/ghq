@@ -37,6 +37,7 @@ complete -c ghq -n '__fish_seen_subcommand_from get clone' -l no-recursive -d 'P
 complete -c ghq -n '__fish_seen_subcommand_from get clone' -s b -l branch -d 'Specify branch name. This flag implies --single-branch on Git'
 complete -c ghq -n '__fish_seen_subcommand_from get clone' -s P -l parallel -d 'Import parallelly'
 complete -c ghq -n '__fish_seen_subcommand_from get clone' -l bare -d 'Do a bare clone'
+complete -c ghq -n '__fish_seen_subcommand_from get clone' -l clean-bare -d 'Clone a bare Git repository into a .git subdirectory'
 function __complete_get_partial
     printf '%s\t%s\n' 'blobless' 'Do a blobless clone'
     printf '%s\t%s\n' 'treeless' 'Do a treeless clone'
@@ -49,16 +50,16 @@ complete -c ghq -n '__fish_seen_subcommand_from list' -s e -l exact -d 'Perform 
 complete -c ghq -n '__fish_seen_subcommand_from list' -l vcs -d 'Specify vcs backend for matching'
 complete -c ghq -n '__fish_seen_subcommand_from list' -s p -l full-path -d 'Print full paths'
 complete -c ghq -n '__fish_seen_subcommand_from list' -l unique -d 'Print unique subpaths'
-complete -c ghq -n '__fish_seen_subcommand_from list' -l bare -d 'Query bare repositories'
+complete -c ghq -n '__fish_seen_subcommand_from list' -l bare -d 'Interpret repository URL queries using the classic bare layout'
 
 complete -c ghq -n '__fish_seen_subcommand_from rm' -l dry-run -d 'Do not remove actually'
-complete -c ghq -n '__fish_seen_subcommand_from rm' -l bare -d 'Remove a bare repository'
+complete -c ghq -n '__fish_seen_subcommand_from rm' -l bare -d 'Remove a classic bare repository (repo.git)'
 complete -c ghq -n '__fish_seen_subcommand_from rm' -xa '(ghq list)'
 
 complete -c ghq -n '__fish_seen_subcommand_from root' -l all -d 'Show all roots'
 
 complete -c ghq -n '__fish_seen_subcommand_from create' -l vcs -d 'Specify vcs backend explicitly'
-complete -c ghq -n '__fish_seen_subcommand_from create' -l bare -d 'Create a bare repository'
+complete -c ghq -n '__fish_seen_subcommand_from create' -l bare -d 'Create a classic bare Git repository (repo.git)'
 
 complete -c ghq -n '__fish_seen_subcommand_from migrate' -s y -d 'Skip confirmation prompt'
 complete -c ghq -n '__fish_seen_subcommand_from migrate' -l dry-run -d 'Show what would happen without moving'
