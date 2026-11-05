@@ -74,14 +74,18 @@ var commandList = &cli.Command{
 	},
 }
 
-var commandRm = &cli.Command{
-	Name:   "rm",
-	Usage:  "Remove local repository",
-	Action: doRm,
-	Flags: []cli.Flag{
-		&cli.BoolFlag{Name: "dry-run", Usage: "Do not remove actually"},
-		&cli.BoolFlag{Name: "bare", Usage: "Remove a bare repository"},
-	},
+var commandRm = newRmCommand()
+
+func newRmCommand() *cli.Command {
+	return &cli.Command{
+		Name:   "rm",
+		Usage:  "Remove local repository",
+		Action: doRm,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{Name: "dry-run", Usage: "Do not remove actually"},
+			&cli.BoolFlag{Name: "bare", Usage: "Remove a bare repository"},
+		},
+	}
 }
 
 var commandRoot = &cli.Command{

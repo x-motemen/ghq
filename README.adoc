@@ -82,6 +82,14 @@ root::
 
 rm::
     Remove local repository. If '--dry-run' option is given, the repository is not actually removed but the path to it is printed.
+    Local repository names ending in '.git', including names from shell completion,
+    select the suffixed directory without requiring '--bare'.
+    Combining such a name with an explicit '--bare=false' is rejected.
+    Remote URLs are ambiguous when both the unsuffixed and suffixed repositories
+    exist, including under different configured roots. Empty matching directories
+    do not hide existing clones in other roots. Removal then fails before
+    confirmation, including with '--dry-run'. Use an exact local repository name,
+    '--bare' for the suffixed directory, or '--bare=false' for the unsuffixed one.
 
 create::
     Creates new repository.

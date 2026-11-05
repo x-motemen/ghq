@@ -249,11 +249,8 @@ func TestList_Symlink(t *testing.T) {
 		t.SkipNow()
 	}
 	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
 	symDir := newTempDir(t)
-
-	origLocalRepositoryRoots := _localRepositoryRoots
-	_localRepositoryRoots = []string{root}
-	defer func() { _localRepositoryRoots = origLocalRepositoryRoots }()
 
 	if err := os.MkdirAll(filepath.Join(root, "github.com", "atom", "atom", ".git"), 0777); err != nil {
 		t.Fatal(err)
@@ -267,8 +264,11 @@ func TestList_Symlink(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var mu sync.Mutex
 	var paths []string
 	walkAllLocalRepositories(func(repo *LocalRepository) {
+		mu.Lock()
+		defer mu.Unlock()
 		paths = append(paths, repo.RelPath)
 	})
 
