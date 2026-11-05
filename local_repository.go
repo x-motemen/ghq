@@ -318,10 +318,10 @@ func findVCSBackend(fpath, vcs string) *VCSBackend {
 }
 
 func walkAllLocalRepositories(callback func(*LocalRepository)) error {
-	return walkLocalRepositories("", callback)
+	return walkLocalRepositories("", func(repo *LocalRepository, _ os.FileInfo, _ bool) { callback(repo) })
 }
 
-func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
+func walkLocalRepositories(vcs string, callback func(*LocalRepository, os.FileInfo, bool)) error {
 	roots, err := localRepositoryRoots(true)
 	if err != nil {
 		return err
@@ -352,7 +352,7 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 		if err != nil || repo == nil {
 			return nil
 		}
-		callback(repo)
+		callback(repo, fi, isSymlink)
 
 		if isSymlink {
 			return nil

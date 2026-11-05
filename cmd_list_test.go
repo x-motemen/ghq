@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -12,6 +15,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/x-motemen/ghq/cmdutil"
 	"github.com/x-motemen/ghq/logger"
 )
 
@@ -187,6 +191,434 @@ func TestDoList_unique(t *testing.T) {
 	}
 }
 
+func TestDoList_symlinkAliases(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	owner := filepath.Join(root, "github.com", "companywithverylongname")
+	projects := []string{"projectawithverylongname", "projectbwithverylongname"}
+	for i, project := range projects {
+		if err := os.MkdirAll(filepath.Join(owner, project, ".git"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		alias := []string{"a", "b"}[i]
+		symlinkForTest(t, project, filepath.Join(owner, alias))
+	}
+	symlinkForTest(t, "companywithverylongname", filepath.Join(root, "github.com", "c"))
+	symlinkForTest(t, "a", filepath.Join(owner, "another-alias"))
+	paths := []string{
+		"github.com/companywithverylongname/" + projects[0],
+		"github.com/companywithverylongname/" + projects[1],
+	}
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{name: "relative paths", want: strings.Join(paths, "\n") + "\n"},
+		{name: "full paths", args: []string{"--full-path"}, want: filepath.Join(root, filepath.FromSlash(paths[0])) + "\n" + filepath.Join(root, filepath.FromSlash(paths[1])) + "\n"},
+		{name: "unique paths", args: []string{"--unique"}, want: strings.Join(projects, "\n") + "\n"},
+		{name: "VCS filter", args: []string{"--vcs=git"}, want: strings.Join(paths, "\n") + "\n"},
+		{name: "canonical query", args: []string{"--exact", projects[0]}, want: paths[0] + "\n"},
+		{name: "alias query", args: []string{"--exact", "a"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var out bytes.Buffer
+			app := newApp()
+			app.Writer = &out
+			if err := app.Run(context.Background(), append([]string{"ghq", "list"}, tc.args...)); err != nil {
+				t.Fatal(err)
+			}
+			if out.String() != tc.want {
+				t.Errorf("got:\n%s\nwant:\n%s", &out, tc.want)
+			}
+		})
+	}
+}
+
+func TestDoList_symlinkTargetInAnotherRoot(t *testing.T) {
+	for _, includeTarget := range []bool{false, true} {
+		name := "external target"
+		if includeTarget {
+			name = "target in another configured root"
+		}
+		t.Run(name, func(t *testing.T) {
+			base := newTempDir(t)
+			root := filepath.Join(base, "root")
+			targetRoot := root + "-other"
+			if includeTarget {
+				targetRoot = filepath.Join(base, "other-root")
+			}
+			target := filepath.Join(targetRoot, "github.com", "owner", "project")
+			if err := os.MkdirAll(filepath.Join(target, ".git"), 0755); err != nil {
+				t.Fatal(err)
+			}
+			owner := filepath.Join(root, "github.com", "owner")
+			if err := os.MkdirAll(filepath.Join(owner, "z-neighbor", ".git"), 0755); err != nil {
+				t.Fatal(err)
+			}
+			symlinkForTest(t, target, filepath.Join(owner, "alias"))
+			roots := []string{root}
+			want := "github.com/owner/alias\ngithub.com/owner/z-neighbor\n"
+			if includeTarget {
+				roots = append(roots, targetRoot)
+				want = "github.com/owner/project\ngithub.com/owner/z-neighbor\n"
+			}
+			setRepositoryPathTestRoot(t, strings.Join(roots, string(os.PathListSeparator)))
+			var out bytes.Buffer
+			app := newApp()
+			app.Writer = &out
+			if err := app.Run(context.Background(), []string{"ghq", "list"}); err != nil {
+				t.Fatal(err)
+			}
+			if out.String() != want {
+				t.Errorf("got:\n%s\nwant:\n%s", &out, want)
+			}
+		})
+	}
+}
+
+func TestDoList_symlinkChainOutsideRoot(t *testing.T) {
+	base := newTempDir(t)
+	root := filepath.Join(base, "root")
+	owner := filepath.Join(root, "github.com", "owner")
+	target := filepath.Join(owner, "project")
+	if err := os.MkdirAll(filepath.Join(target, ".git"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	intermediate := filepath.Join(base, "intermediate")
+	symlinkForTest(t, target, intermediate)
+	symlinkForTest(t, intermediate, filepath.Join(owner, "alias"))
+	setRepositoryPathTestRoot(t, root)
+	var out bytes.Buffer
+	app := newApp()
+	app.Writer = &out
+	if err := app.Run(context.Background(), []string{"ghq", "list"}); err != nil {
+		t.Fatal(err)
+	}
+	if want := "github.com/owner/project\n"; out.String() != want {
+		t.Errorf("got:\n%s\nwant:\n%s", &out, want)
+	}
+}
+
+func TestDoList_symlinkCaseInsensitiveTarget(t *testing.T) {
+	root := newTempDir(t)
+	owner := filepath.Join(root, "github.com", "owner")
+	target := filepath.Join(owner, "Project")
+	if err := os.MkdirAll(filepath.Join(target, ".git"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	lowercaseTarget := filepath.Join(owner, "project")
+	if _, err := os.Stat(lowercaseTarget); os.IsNotExist(err) {
+		t.Skip("requires a case-insensitive filesystem")
+	} else if err != nil {
+		t.Fatal(err)
+	}
+	symlinkForTest(t, lowercaseTarget, filepath.Join(owner, "alias"))
+	setRepositoryPathTestRoot(t, root)
+	var out bytes.Buffer
+	app := newApp()
+	app.Writer = &out
+	if err := app.Run(context.Background(), []string{"ghq", "list"}); err != nil {
+		t.Fatal(err)
+	}
+	if want := "github.com/owner/Project\n"; out.String() != want {
+		t.Errorf("got:\n%s\nwant:\n%s", &out, want)
+	}
+}
+
+func TestDoList_symlinkUniqueWithoutPrimaryEntry(t *testing.T) {
+	for _, primaryAlias := range []bool{false, true} {
+		t.Run(fmt.Sprintf("primaryAlias=%t", primaryAlias), func(t *testing.T) {
+			base := newTempDir(t)
+			roots := []string{filepath.Join(base, "primary"), filepath.Join(base, "secondary"), filepath.Join(base, "third")}
+			if err := os.MkdirAll(filepath.Join(roots[0], "github.com", "owner"), 0755); err != nil {
+				t.Fatal(err)
+			}
+			for _, root := range roots[1:] {
+				if err := os.MkdirAll(filepath.Join(root, "github.com", "owner", "project", ".git"), 0755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if primaryAlias {
+				target := filepath.Join(roots[1], "github.com", "owner", "project")
+				alias := filepath.Join(roots[0], "github.com", "owner", "project")
+				symlinkForTest(t, target, alias)
+			}
+			setRepositoryPathTestRoot(t, strings.Join(roots, string(os.PathListSeparator)))
+			var out bytes.Buffer
+			app := newApp()
+			app.Writer = &out
+			if err := app.Run(context.Background(), []string{"ghq", "list", "--unique"}); err != nil {
+				t.Fatal(err)
+			}
+			want := ""
+			if primaryAlias {
+				want = "project\n"
+			}
+			if out.String() != want {
+				t.Errorf("got:\n%s\nwant:\n%s", &out, want)
+			}
+		})
+	}
+}
+
+func TestDirectoryIdentityMatchesSameFile(t *testing.T) {
+	base := newTempDir(t)
+	target := filepath.Join(base, "target")
+	other := filepath.Join(base, strings.Repeat("long-path/", 30), "other")
+	for _, path := range []string{target, other} {
+		if err := os.MkdirAll(path, 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	info, err := os.Stat(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, ok := identifyDirectory(target, info)
+	if !ok {
+		t.Fatal("could not identify target directory")
+	}
+	check := func(t *testing.T, path string) {
+		t.Helper()
+		info2, err := os.Stat(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		id2, ok := identifyDirectory(path, info2)
+		if !ok {
+			t.Fatalf("could not identify %s", path)
+		}
+		if (id == id2) != os.SameFile(info, info2) {
+			t.Errorf("identity comparison disagrees with SameFile for %s", path)
+		}
+	}
+	t.Run("directories", func(t *testing.T) {
+		check(t, target)
+		check(t, other)
+	})
+	t.Run("symlinks", func(t *testing.T) {
+		alias := filepath.Join(base, "alias")
+		symlinkForTest(t, target, alias)
+		chained := filepath.Join(base, "chained")
+		symlinkForTest(t, alias, chained)
+		check(t, alias)
+		check(t, chained)
+	})
+}
+
+func TestDoList_uniqueNamesRemainUsableByLook(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	for _, repo := range []string{"alice/original", "bob/foo"} {
+		if err := os.MkdirAll(filepath.Join(root, "github.com", repo, ".git"), 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	symlinkForTest(t, "original", filepath.Join(root, "github.com", "alice", "foo"))
+	var out bytes.Buffer
+	app := newApp()
+	app.Writer = &out
+	if err := app.Run(context.Background(), []string{"ghq", "list", "--unique"}); err != nil {
+		t.Fatal(err)
+	}
+	if want := "bob/foo\noriginal\n"; out.String() != want {
+		t.Errorf("got: %q, want: %q", &out, want)
+	}
+	originalRunner := cmdutil.CommandRunner
+	t.Cleanup(func() { cmdutil.CommandRunner = originalRunner })
+	cmdutil.CommandRunner = func(*exec.Cmd) error { return nil }
+	for _, name := range strings.Fields(out.String()) {
+		if err := look(name, BareNone); err != nil {
+			t.Errorf("listed name %q is not usable by look: %v", name, err)
+		}
+	}
+}
+
+func TestDoList_uniqueQueryScope(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		repos   map[string]string
+		aliases map[string]string
+		args    []string
+		want    string
+	}{
+		{name: "canonical suffix blocked by nested alias", repos: map[string]string{"foo": ".git"}, aliases: map[string]string{"group/foo": "../foo"}, want: "group/foo\n"},
+		{name: "deterministic fallback alias", repos: map[string]string{"foo": ".git"}, aliases: map[string]string{"group/foo": "../foo", "long/path/foo": "../../foo"}, want: "group/foo\n"},
+		{name: "alias-only query remains empty", repos: map[string]string{"github.com/alice/original": ".git"}, aliases: map[string]string{"github.com/alice/a": "original"}, args: []string{"--exact", "a"}},
+		{name: "query excludes alias", repos: map[string]string{"github.com/alice/original": ".git", "github.com/bob/foo": ".git"}, aliases: map[string]string{"github.com/alice/foo": "original"}, args: []string{"bob"}, want: "foo\n"},
+		{name: "query excludes ordinary repository", repos: map[string]string{"github.com/alice/foo": ".git", "github.com/bob/foo": ".git"}, args: []string{"bob"}, want: "foo\n"},
+		{name: "VCS excludes alias", repos: map[string]string{"github.com/alice/original": ".svn", "github.com/bob/foo": ".git"}, aliases: map[string]string{"github.com/alice/foo": "original"}, args: []string{"--vcs=git"}, want: "foo\n"},
+		{name: "VCS excludes ordinary repository", repos: map[string]string{"github.com/alice/foo": ".svn", "github.com/bob/foo": ".git"}, args: []string{"--vcs=git"}, want: "foo\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := newTempDir(t)
+			setRepositoryPathTestRoot(t, root)
+			for repo, marker := range tc.repos {
+				if err := os.MkdirAll(filepath.Join(root, filepath.FromSlash(repo), marker), 0755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			for name, target := range tc.aliases {
+				path := filepath.Join(root, filepath.FromSlash(name))
+				if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+					t.Fatal(err)
+				}
+				symlinkForTest(t, target, path)
+			}
+			var out bytes.Buffer
+			app := newApp()
+			app.Writer = &out
+			if err := app.Run(context.Background(), append([]string{"ghq", "list", "--unique"}, tc.args...)); err != nil {
+				t.Fatal(err)
+			}
+			if out.String() != tc.want {
+				t.Errorf("got: %q, want: %q", &out, tc.want)
+			}
+		})
+	}
+}
+
+func TestDoList_uniqueVCSFilter(t *testing.T) {
+	for _, redirect := range []bool{false, true} {
+		for _, backup := range []bool{false, true} {
+			t.Run(fmt.Sprintf("redirect=%t/backup=%t", redirect, backup), func(t *testing.T) {
+				base := newTempDir(t)
+				roots := []string{filepath.Join(base, "first"), filepath.Join(base, "last")}
+				rel := filepath.Join("github.com", "owner", "project")
+				target := filepath.Join(roots[0], rel)
+				if err := os.MkdirAll(filepath.Join(target, ".git"), 0755); err != nil {
+					t.Fatal(err)
+				}
+				preferred := filepath.Join(roots[1], rel)
+				if redirect {
+					other := filepath.Join(roots[1], "github.com", "owner", "other")
+					if err := os.MkdirAll(filepath.Join(other, ".hg"), 0755); err != nil {
+						t.Fatal(err)
+					}
+					symlinkForTest(t, other, preferred)
+				} else if err := os.MkdirAll(filepath.Join(preferred, ".hg"), 0755); err != nil {
+					t.Fatal(err)
+				}
+				want := "project\n"
+				if backup {
+					symlinkForTest(t, target, filepath.Join(roots[0], "github.com", "owner", "backup"))
+				}
+				setRepositoryPathTestRoot(t, strings.Join(roots, string(os.PathListSeparator)))
+				var out bytes.Buffer
+				app := newApp()
+				app.Writer = &out
+				if err := app.Run(context.Background(), []string{"ghq", "list", "--unique", "--vcs=git"}); err != nil {
+					t.Fatal(err)
+				}
+				if out.String() != want {
+					t.Errorf("got: %q, want: %q", &out, want)
+				}
+			})
+		}
+	}
+}
+
+func TestDoList_uniqueFallbackKeepsDistinctDirectories(t *testing.T) {
+	for _, canonicalName := range []bool{false, true} {
+		t.Run(fmt.Sprint(canonicalName), func(t *testing.T) {
+			base := newTempDir(t)
+			roots := []string{filepath.Join(base, "first"), filepath.Join(base, "last")}
+			rel := "foo"
+			aliases := []string{"group/foo", "other/foo"}
+			want := "group/foo\nother/foo\n"
+			if canonicalName {
+				rel = "github.com/owner/project"
+				aliases = []string{"github.com/aliases/backup", "github.com/aliases/redundant"}
+				want = "project\nredundant\n"
+			}
+			for i, root := range roots {
+				target := filepath.Join(root, filepath.FromSlash(rel))
+				if err := os.MkdirAll(filepath.Join(target, ".git"), 0755); err != nil {
+					t.Fatal(err)
+				}
+				alias := filepath.Join(root, filepath.FromSlash(aliases[i]))
+				if err := os.MkdirAll(filepath.Dir(alias), 0755); err != nil {
+					t.Fatal(err)
+				}
+				symlinkForTest(t, target, alias)
+			}
+			setRepositoryPathTestRoot(t, strings.Join(roots, string(os.PathListSeparator)))
+			var out bytes.Buffer
+			app := newApp()
+			app.Writer = &out
+			if err := app.Run(context.Background(), []string{"ghq", "list", "--unique"}); err != nil {
+				t.Fatal(err)
+			}
+			if out.String() != want {
+				t.Errorf("got: %q, want: %q", &out, want)
+			}
+		})
+	}
+}
+
+func TestDoList_vcsTraversalRetained(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	parent := filepath.Join(root, "github.com", "owner", "parent")
+	if err := os.MkdirAll(filepath.Join(parent, ".svn"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(parent, "nested", ".git"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	for _, unique := range []bool{false, true} {
+		t.Run(fmt.Sprint(unique), func(t *testing.T) {
+			var out bytes.Buffer
+			app := newApp()
+			app.Writer = &out
+			args := []string{"ghq", "list", "--vcs=git"}
+			want := "github.com/owner/parent/nested\n"
+			if unique {
+				args = append(args, "--unique")
+				want = "nested\n"
+			}
+			if err := app.Run(context.Background(), args); err != nil {
+				t.Fatal(err)
+			}
+			if out.String() != want {
+				t.Errorf("got: %q, want: %q", &out, want)
+			}
+		})
+	}
+}
+
+func BenchmarkDoListAliases(b *testing.B) {
+	for _, size := range []int{100, 1000} {
+		b.Run(fmt.Sprint(size), func(b *testing.B) {
+			base := b.TempDir()
+			root := filepath.Join(base, "root")
+			for i := range size {
+				if err := os.MkdirAll(filepath.Join(root, fmt.Sprintf("repo-%d", i), ".git"), 0755); err != nil {
+					b.Fatal(err)
+				}
+				target := filepath.Join(base, fmt.Sprintf("outside-%d", i))
+				if err := os.MkdirAll(filepath.Join(target, ".git"), 0755); err != nil {
+					b.Fatal(err)
+				}
+				symlinkForTest(b, target, filepath.Join(root, fmt.Sprintf("alias-%d", i)))
+			}
+			roots, rootErr, once := _localRepositoryRoots, _localRepoErr, localRepoOnce
+			_localRepositoryRoots, _localRepoErr, localRepoOnce = nil, nil, &sync.Once{}
+			b.Setenv(envGhqRoot, root)
+			b.Cleanup(func() { _localRepositoryRoots, _localRepoErr, localRepoOnce = roots, rootErr, once })
+			b.ResetTimer()
+			for b.Loop() {
+				app := newApp()
+				app.Writer = io.Discard
+				if err := app.Run(context.Background(), []string{"ghq", "list"}); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 func TestDoList_unknownRoot(t *testing.T) {
 	defer func(orig []string) { _localRepositoryRoots = orig }(_localRepositoryRoots)
 	setEnv(t, envGhqRoot, "/path/to/unknown-ghq")
@@ -264,9 +696,7 @@ func TestDoList_rootStatError(t *testing.T) {
 		t.Skip("requires symlinks")
 	}
 	root := filepath.Join(newTempDir(t), "loop")
-	if err := os.Symlink(root, root); err != nil {
-		t.Fatal(err)
-	}
+	symlinkForTest(t, root, root)
 	_, statErr := os.Stat(root)
 	if statErr == nil || os.IsNotExist(statErr) || os.IsPermission(statErr) {
 		t.Fatalf("expected a non-permission stat error, got: %v", statErr)
