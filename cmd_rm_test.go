@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +12,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/Songmu/gitconfig"
 	"github.com/x-motemen/ghq/cmdutil"
 )
 
@@ -408,6 +411,494 @@ func TestRmWorktree(t *testing.T) {
 			t.Error("main repo should be removed even with pre-deleted worktree")
 		}
 	})
+}
+
+func TestRmBareWorktrees(t *testing.T) {
+	for _, layout := range []string{"classic", "clean", "normal.git", "clean.git"} {
+		t.Run(layout, func(t *testing.T) {
+			tmp := newTempDir(t)
+			root := filepath.Join(tmp, "root")
+			setRepositoryPathTestRoot(t, root)
+			t.Setenv("GIT_TEMPLATE_DIR", t.TempDir())
+			seed := initGitRepo(t, filepath.Join(tmp, "seed"), "https://github.com/bare-rm/repo.git")
+			repoDir := filepath.Join(root, "github.com", "bare-rm", "repo")
+			args := []string{"bare-rm/repo"}
+			if layout != "clean" {
+				repoDir += ".git"
+				args = append([]string{"--bare"}, args...)
+			}
+			cloneDir, cloneArgs := filepath.Join(repoDir, ".git"), []string{"clone", "--bare"}
+			switch layout {
+			case "classic":
+				cloneDir = repoDir
+			case "normal.git":
+				cloneDir, cloneArgs = repoDir, []string{"clone"}
+			}
+			if out, err := exec.Command("git", append(cloneArgs, seed, cloneDir)...).CombinedOutput(); err != nil {
+				t.Fatalf("git clone: %v\n%s", err, out)
+			}
+			worktrees := []string{filepath.Join(tmp, "external-one"), filepath.Join(tmp, "external two")}
+			addWorktree(t, repoDir, worktrees[0], "first")
+			addWorktree(t, repoDir, worktrees[1], "second")
+			t.Setenv("GIT_CONFIG_COUNT", "1")
+			t.Setenv("GIT_CONFIG_KEY_0", "safe.bareRepository")
+			t.Setenv("GIT_CONFIG_VALUE_0", "explicit")
+			out, _, err := runRm(t, "", append([]string{"--dry-run"}, args...)...)
+			if err != nil || !strings.Contains(out, "2 linked worktree(s)") {
+				t.Fatalf("dry-run: %v, %q", err, out)
+			}
+			for _, wt := range worktrees {
+				if !strings.Contains(out, wt) {
+					t.Errorf("dry-run omitted %s: %s", wt, out)
+				}
+				if _, err := os.Stat(wt); err != nil {
+					t.Fatal(err)
+				}
+			}
+			_, prompt, err := runRm(t, "n", args...)
+			if err == nil || err.Error() != "aborted" || !strings.Contains(prompt, "2 linked worktree(s)") {
+				t.Fatalf("cancellation: %v, %q", err, prompt)
+			}
+			for _, wt := range worktrees {
+				if !strings.Contains(prompt, wt) {
+					t.Errorf("confirmation omitted %s: %s", wt, prompt)
+				}
+				if out, err := exec.Command("git", "-C", wt, "status", "--porcelain").CombinedOutput(); err != nil {
+					t.Fatalf("cancelled removal damaged %s: %v\n%s", wt, err, out)
+				}
+			}
+			if _, _, err := runRm(t, "y", args...); err != nil {
+				t.Fatal(err)
+			}
+			for _, path := range append(worktrees, repoDir) {
+				if _, err := os.Stat(path); !os.IsNotExist(err) {
+					t.Errorf("confirmed removal left %s: %v", path, err)
+				}
+			}
+		})
+	}
+}
+
+func TestRmSymlinkPreservesTargetWorktrees(t *testing.T) {
+	testRmAliasPreservesTargetWorktrees(t, makeSymlink)
+}
+
+func testRmAliasPreservesTargetWorktrees(t *testing.T, makeAlias func(t *testing.T, target, alias string)) {
+	t.Helper()
+	for _, layout := range []string{"classic", "clean", "normal", "linked"} {
+		t.Run(layout, func(t *testing.T) {
+			tmp := newTempDir(t)
+			primary, root := filepath.Join(tmp, "primary"), filepath.Join(tmp, "secondary")
+			if err := os.Mkdir(primary, 0755); err != nil {
+				t.Fatal(err)
+			}
+			setRepositoryPathTestRoot(t, primary+string(os.PathListSeparator)+root)
+			t.Setenv("GIT_TEMPLATE_DIR", t.TempDir())
+			seed := initGitRepo(t, filepath.Join(tmp, "seed"), "https://github.com/alias-rm/repo.git")
+			repoDir, target := seed, seed
+			alias := filepath.Join(root, "github.com", "alias-rm", "repo")
+			args := []string{"alias-rm/repo"}
+			if layout == "classic" || layout == "clean" {
+				repoDir = filepath.Join(tmp, "target")
+				gitDir := filepath.Join(repoDir, ".git")
+				if layout == "classic" {
+					repoDir += ".git"
+					gitDir, alias = repoDir, alias+".git"
+					args = append([]string{"--bare"}, args...)
+				}
+				target = repoDir
+				if out, err := exec.Command("git", "clone", "--bare", seed, gitDir).CombinedOutput(); err != nil {
+					t.Fatalf("git clone --bare: %v\n%s", err, out)
+				}
+			}
+			wt := filepath.Join(tmp, "worktree with spaces")
+			addWorktree(t, repoDir, wt, "first")
+			if layout == "linked" {
+				target = wt
+			}
+			if err := os.MkdirAll(filepath.Dir(alias), 0755); err != nil {
+				t.Fatal(err)
+			}
+			makeAlias(t, target, alias)
+			discovered, err := LocalRepositoryFromURL(mustParseURL("https://github.com/alias-rm/repo"), bareModeFromClassicBool(layout == "classic"))
+			if err != nil || discovered.FullPath != alias {
+				t.Fatalf("secondary-root alias not discovered: %v, %v", discovered, err)
+			}
+			marker := filepath.Join(wt, "keep")
+			if err := os.WriteFile(marker, []byte("keep"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			registered, err := exec.Command("git", "-C", repoDir, "worktree", "list", "--porcelain").CombinedOutput()
+			if err != nil {
+				t.Fatalf("git worktree list: %v\n%s", err, registered)
+			}
+			checkRmAlias(t, alias, args, func() {
+				if data, err := os.ReadFile(marker); err != nil || string(data) != "keep" {
+					t.Errorf("worktree contents changed: %v", err)
+				}
+				if out, err := exec.Command("git", "-C", wt, "status", "--porcelain").CombinedOutput(); err != nil {
+					t.Errorf("worktree no longer usable: %v\n%s", err, out)
+				}
+				out, err := exec.Command("git", "-C", repoDir, "worktree", "list", "--porcelain").CombinedOutput()
+				if err != nil || string(out) != string(registered) {
+					t.Errorf("worktree registrations changed: %v\n%s", err, out)
+				}
+			})
+		})
+	}
+}
+
+func TestRmSymlinkWithoutReadableTarget(t *testing.T) {
+	testRmAliasWithoutReadableTarget(t, makeSymlink)
+}
+
+func testRmAliasWithoutReadableTarget(t *testing.T, makeAlias func(t *testing.T, target, alias string)) {
+	t.Helper()
+	for _, state := range []string{"dangling", "empty", "unreadable"} {
+		t.Run(state, func(t *testing.T) {
+			if state == "unreadable" && runtime.GOOS == "windows" {
+				t.Skip("chmod does not enforce directory read permissions on Windows")
+			}
+			tmp := newTempDir(t)
+			root, target := filepath.Join(tmp, "root"), filepath.Join(tmp, "target")
+			setRepositoryPathTestRoot(t, root)
+			if err := os.Mkdir(target, 0755); err != nil {
+				t.Fatal(err)
+			}
+			alias := filepath.Join(root, "github.com", "alias-rm", "repo")
+			if err := os.MkdirAll(filepath.Dir(alias), 0755); err != nil {
+				t.Fatal(err)
+			}
+			makeAlias(t, target, alias)
+			switch state {
+			case "dangling":
+				if err := os.Remove(target); err != nil {
+					t.Fatal(err)
+				}
+			case "unreadable":
+				if err := os.Chmod(target, 0000); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { os.Chmod(target, 0755) })
+				if _, err := os.ReadDir(target); !os.IsPermission(err) {
+					t.Skipf("cannot enforce unreadable target: %v", err)
+				}
+			}
+			before, err := os.Lstat(target)
+			if state != "dangling" && err != nil {
+				t.Fatal(err)
+			}
+			checkRmAlias(t, alias, []string{"alias-rm/repo"}, func() {
+				after, err := os.Lstat(target)
+				if state == "dangling" {
+					if !os.IsNotExist(err) {
+						t.Errorf("dangling target changed: %v", err)
+					}
+				} else if err != nil || !os.SameFile(before, after) || before.Mode() != after.Mode() {
+					t.Errorf("target changed: %v", err)
+				}
+			})
+		})
+	}
+}
+
+func TestRmSymlinkRootLookup(t *testing.T) {
+	testRmAliasRootLookup(t, makeSymlink)
+}
+
+func TestRmDiscoveredRepository(t *testing.T) {
+	tmp := newTempDir(t)
+	primary, secondary := filepath.Join(tmp, "primary"), filepath.Join(tmp, "secondary")
+	setRepositoryPathTestRoot(t, primary+string(os.PathListSeparator)+secondary)
+	t.Setenv("GIT_TEMPLATE_DIR", t.TempDir())
+	rel := filepath.Join("github.com", "alias-rm", "repo")
+	repo := initGitRepo(t, filepath.Join(secondary, rel), "https://github.com/alias-rm/repo.git")
+	alias := filepath.Join(primary, rel)
+	if err := os.MkdirAll(filepath.Dir(alias), 0755); err != nil {
+		t.Fatal(err)
+	}
+	makeSymlink(t, filepath.Join(tmp, "missing"), alias)
+	out, _, err := runRm(t, "", "--dry-run", "alias-rm/repo")
+	if err != nil || out != "Would remove "+repo+"\n" {
+		t.Fatalf("discovered repository was replaced by an alias: %v, %q", err, out)
+	}
+}
+
+func testRmAliasRootLookup(t *testing.T, makeAlias func(t *testing.T, target, alias string)) {
+	t.Helper()
+	for _, tc := range []struct {
+		name, entry  string
+		middle, bare bool
+	}{
+		{"empty-primary", "empty", false, false},
+		{"nonempty-primary", "nonempty", false, false},
+		{"file-primary", "file", false, false},
+		{"file-middle-bare", "file", true, true},
+		{"unreadable-primary", "unreadable", false, false},
+		{"unreadable-middle", "unreadable", true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.entry == "unreadable" && runtime.GOOS == "windows" {
+				t.Skip("chmod does not enforce directory read permissions on Windows")
+			}
+			tmp := newTempDir(t)
+			primary, secondary := filepath.Join(tmp, "primary"), filepath.Join(tmp, "secondary")
+			roots, obstacle := []string{primary, secondary}, primary
+			if tc.middle {
+				obstacle = filepath.Join(tmp, "middle")
+				roots = []string{primary, obstacle, secondary}
+			}
+			if tc.entry == "empty" || tc.entry == "nonempty" {
+				obstacle = filepath.Join(primary, "github.com", "alias-rm", "repo")
+			}
+			if err := os.MkdirAll(obstacle, 0755); err != nil {
+				t.Fatal(err)
+			}
+			marker := ""
+			switch tc.entry {
+			case "nonempty":
+				marker = filepath.Join(obstacle, "keep")
+			case "file":
+				obstacle = filepath.Join(obstacle, "github.com")
+				marker = obstacle
+			case "unreadable":
+				if err := os.Chmod(obstacle, 0000); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { os.Chmod(obstacle, 0755) })
+				if _, err := os.Lstat(filepath.Join(obstacle, "github.com")); !os.IsPermission(err) {
+					t.Skipf("cannot enforce inaccessible root: %v", err)
+				}
+			}
+			if marker != "" {
+				if err := os.WriteFile(marker, []byte("keep"), 0644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			before, err := os.Lstat(obstacle)
+			if err != nil {
+				t.Fatal(err)
+			}
+			setRepositoryPathTestRoot(t, strings.Join(roots, string(os.PathListSeparator)))
+			alias := filepath.Join(secondary, "github.com", "alias-rm", "repo")
+			args := []string{"alias-rm/repo"}
+			if tc.bare {
+				alias += ".git"
+				args = append([]string{"--bare"}, args...)
+			}
+			if err := os.MkdirAll(filepath.Dir(alias), 0755); err != nil {
+				t.Fatal(err)
+			}
+			target := filepath.Join(tmp, "target")
+			if err := os.Mkdir(target, 0755); err != nil {
+				t.Fatal(err)
+			}
+			makeAlias(t, target, alias)
+			if err := os.Remove(target); err != nil {
+				t.Fatal(err)
+			}
+			selected, isAlias, err := resolveRemovalEntry(mustParseURL("https://github.com/alias-rm/repo"), bareModeFromClassicBool(tc.bare))
+			if err != nil || !isAlias || selected != alias {
+				t.Fatalf("alias lookup: path=%q, alias=%v, err=%v", selected, isAlias, err)
+			}
+			if _, _, err := runRm(t, "y", args...); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.Lstat(alias); !os.IsNotExist(err) {
+				t.Errorf("alias was not removed: %v", err)
+			}
+			if after, err := os.Lstat(obstacle); err != nil || !os.SameFile(before, after) || before.Mode() != after.Mode() {
+				t.Errorf("unrelated root entry changed: %v", err)
+			}
+			if marker != "" {
+				if data, err := os.ReadFile(marker); err != nil || string(data) != "keep" {
+					t.Errorf("unrelated contents changed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func makeSymlink(t *testing.T, target, alias string) {
+	t.Helper()
+	if err := os.Symlink(target, alias); err != nil {
+		if runtime.GOOS == "windows" {
+			t.Skipf("symlink creation unavailable: %v", err)
+		}
+		t.Fatal(err)
+	}
+}
+
+func TestRmSymlinkReplacedDuringConfirmation(t *testing.T) {
+	testRmAliasReplacedDuringConfirmation(t, makeSymlink)
+}
+
+func TestRmSymlinkURLRoot(t *testing.T) {
+	testRmAliasURLRoot(t, makeSymlink)
+}
+
+func testRmAliasURLRoot(t *testing.T, makeAlias func(t *testing.T, target, alias string)) {
+	t.Helper()
+	tmp := newTempDir(t)
+	primary, specific := filepath.Join(tmp, "primary"), filepath.Join(tmp, "specific")
+	setRepositoryPathTestRoot(t, "")
+	t.Cleanup(gitconfig.WithConfig(t, fmt.Sprintf("[ghq]\nroot = %q\n[ghq \"https://github.com/alias-rm/repo\"]\nroot = %q\n", primary, specific)))
+	args := []string{"--bare", "https://github.com/alias-rm/repo"}
+	rel := filepath.Join("github.com", "alias-rm", "repo.git")
+	target := filepath.Join(tmp, "target")
+	if err := os.Mkdir(target, 0755); err != nil {
+		t.Fatal(err)
+	}
+	for _, root := range []string{primary, specific} {
+		alias := filepath.Join(root, rel)
+		if err := os.MkdirAll(filepath.Dir(alias), 0755); err != nil {
+			t.Fatal(err)
+		}
+		makeAlias(t, target, alias)
+	}
+	if err := os.Remove(target); err != nil {
+		t.Fatal(err)
+	}
+	out, _, err := runRm(t, "", append([]string{"--dry-run"}, args...)...)
+	if err != nil || out != "Would remove "+filepath.Join(specific, rel)+"\n" {
+		t.Fatalf("URL root was not preserved: %v, %q", err, out)
+	}
+	if _, _, err := runRm(t, "y", args...); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Lstat(filepath.Join(primary, rel)); err != nil {
+		t.Errorf("primary alias changed: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(specific, rel)); !os.IsNotExist(err) {
+		t.Errorf("URL-specific alias was not removed: %v", err)
+	}
+}
+
+func testRmAliasReplacedDuringConfirmation(t *testing.T, makeAlias func(t *testing.T, target, alias string)) {
+	t.Helper()
+	tmp := newTempDir(t)
+	root, target := filepath.Join(tmp, "root"), filepath.Join(tmp, "target")
+	setRepositoryPathTestRoot(t, root)
+	if err := os.Mkdir(target, 0755); err != nil {
+		t.Fatal(err)
+	}
+	alias := filepath.Join(root, "github.com", "alias-rm", "repo")
+	if err := os.MkdirAll(filepath.Dir(alias), 0755); err != nil {
+		t.Fatal(err)
+	}
+	makeAlias(t, target, alias)
+	if err := os.Remove(target); err != nil {
+		t.Fatal(err)
+	}
+	input, answer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer input.Close()
+	defer answer.Close()
+	promptReader, promptWriter, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer promptReader.Close()
+	defer promptWriter.Close()
+	stdin, stderr := os.Stdin, os.Stderr
+	os.Stdin, os.Stderr = input, promptWriter
+	defer func() { os.Stdin, os.Stderr = stdin, stderr }()
+	app := newApp()
+	app.Writer = io.Discard
+	done := make(chan error, 1)
+	go func() {
+		runErr := app.Run(context.Background(), []string{"ghq", "rm", "alias-rm/repo"})
+		promptWriter.Close()
+		done <- runErr
+	}()
+	expectedPrompt := "Remove " + alias + "? [y/N]: "
+	prompt := make([]byte, len(expectedPrompt))
+	_, promptErr := io.ReadFull(promptReader, prompt)
+	marker := filepath.Join(alias, "keep")
+	if promptErr == nil {
+		if err := os.Remove(alias); err != nil {
+			t.Error(err)
+		} else if err := os.Mkdir(alias, 0755); err != nil {
+			t.Error(err)
+		} else if err := os.WriteFile(marker, []byte("keep"), 0644); err != nil {
+			t.Error(err)
+		}
+	}
+	if _, err := fmt.Fprintln(answer, "y"); err != nil {
+		t.Error(err)
+	}
+	answer.Close()
+	runErr := <-done
+	if promptErr != nil || string(prompt) != expectedPrompt {
+		t.Errorf("confirmation: %v, got %q", promptErr, prompt)
+	}
+	if runErr == nil {
+		t.Error("removal accepted a nonempty replacement directory")
+	}
+	if data, err := os.ReadFile(marker); err != nil || string(data) != "keep" {
+		t.Errorf("replacement contents were deleted: %v", err)
+	}
+	if _, err := os.Stat(target); !os.IsNotExist(err) {
+		t.Errorf("dangling target changed: %v", err)
+	}
+}
+
+func TestRmRegularFilePreserved(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	path := filepath.Join(root, "github.com", "file-rm", "repo")
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("keep"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	_, prompt, err := runRm(t, "y", "file-rm/repo")
+	if err == nil || strings.Contains(prompt, "[y/N]") {
+		t.Errorf("regular file not rejected before confirmation: %v, %q", err, prompt)
+	}
+	if data, err := os.ReadFile(path); err != nil || string(data) != "keep" {
+		t.Errorf("regular file changed: %v", err)
+	}
+}
+
+func runRm(t *testing.T, answer string, args ...string) (string, string, error) {
+	t.Helper()
+	var runErr error
+	out, prompt, err := captureWithInput([]string{answer}, func() {
+		runErr = newApp().Run(context.Background(), append([]string{"ghq", "rm"}, args...))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out, prompt, runErr
+}
+
+func checkRmAlias(t *testing.T, alias string, args []string, checkTarget func()) {
+	t.Helper()
+	out, _, err := runRm(t, "", append([]string{"--dry-run"}, args...)...)
+	if err != nil || out != "Would remove "+alias+"\n" {
+		t.Fatalf("dry-run: %v, %q", err, out)
+	}
+	checkTarget()
+	_, prompt, err := runRm(t, "n", args...)
+	if err == nil || err.Error() != "aborted" || prompt != "Remove "+alias+"? [y/N]: " {
+		t.Errorf("cancellation: %v, %q", err, prompt)
+	}
+	if _, err := os.Readlink(alias); err != nil {
+		t.Errorf("cancellation changed alias: %v", err)
+	}
+	checkTarget()
+	out, prompt, err = runRm(t, "y", args...)
+	if err != nil || out != "Removed "+alias+"\n" || prompt != "Remove "+alias+"? [y/N]: " {
+		t.Errorf("removal: %v, %q", err, prompt)
+	}
+	if _, err := os.Lstat(alias); !os.IsNotExist(err) {
+		t.Errorf("alias was not removed: %v", err)
+	}
+	checkTarget()
 }
 
 func TestRmRepositoryPathCollapse(t *testing.T) {

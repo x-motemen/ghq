@@ -251,9 +251,7 @@ func TestList_Symlink(t *testing.T) {
 	root := newTempDir(t)
 	symDir := newTempDir(t)
 
-	origLocalRepositoryRoots := _localRepositoryRoots
-	_localRepositoryRoots = []string{root}
-	defer func() { _localRepositoryRoots = origLocalRepositoryRoots }()
+	setRepositoryPathTestRoot(t, root)
 
 	if err := os.MkdirAll(filepath.Join(root, "github.com", "atom", "atom", ".git"), 0777); err != nil {
 		t.Fatal(err)
@@ -268,7 +266,10 @@ func TestList_Symlink(t *testing.T) {
 	}
 
 	var paths []string
+	var mu sync.Mutex
 	walkAllLocalRepositories(func(repo *LocalRepository) {
+		mu.Lock()
+		defer mu.Unlock()
 		paths = append(paths, repo.RelPath)
 	})
 
@@ -284,9 +285,7 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 	root := newTempDir(t)
 	symDir := newTempDir(t)
 
-	origLocalRepositoryRoots := _localRepositoryRoots
-	_localRepositoryRoots = []string{root}
-	defer func() { _localRepositoryRoots = origLocalRepositoryRoots }()
+	setRepositoryPathTestRoot(t, root)
 
 	if err := os.MkdirAll(filepath.Join(root, "github.com", "root-user", "a-repository", ".git"), 0777); err != nil {
 		t.Fatal(err)
@@ -305,7 +304,10 @@ func TestList_Symlink_In_Same_Directory(t *testing.T) {
 	}
 
 	var paths []string
+	var mu sync.Mutex
 	walkAllLocalRepositories(func(repo *LocalRepository) {
+		mu.Lock()
+		defer mu.Unlock()
 		paths = append(paths, repo.RelPath)
 	})
 
