@@ -18,7 +18,7 @@ workflows:
         - 'tcnksm/ghr@v0.18.5'
     '.github/workflows/reviewdog.yaml':
         - 'actions/checkout@v7.0.1'
-        - 'crate-ci/typos@v1.51.1'
+        - 'crate-ci/typos@v1.52.0'
         - 'reviewdog/action-actionlint@v1.81.1'
         - 'reviewdog/action-misspell@v1.30.4'
         - 'reviewdog/action-staticcheck@v1.33.0'
@@ -68,9 +68,9 @@ dependencies:
         repo_id: 200299178
         uses:
             - 'actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd'
-    'crate-ci/typos@v1.51.1':
-        ref: 'v1.51.1'
-        commit: 'sha1-7f9d0819ca1c008ade73f4b41fa9d258d48f605b'
+    'crate-ci/typos@v1.52.0':
+        ref: 'v1.52.0'
+        commit: 'sha1-4c8b7f51ca60df14e3c5ca82770dfbbe6c3dae85'
         owner_id: 36412122
         repo_id: 181782286
     'reviewdog/action-actionlint@v1.81.1':
