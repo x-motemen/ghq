@@ -20,7 +20,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'crate-ci/typos@v1.51.1'
         - 'reviewdog/action-actionlint@v1.81.1'
-        - 'reviewdog/action-misspell@v1.30.4'
+        - 'reviewdog/action-misspell@v1.30.5'
         - 'reviewdog/action-staticcheck@v1.33.0'
     '.github/workflows/tagpr.yaml':
         - 'actions/checkout@v7.0.1'
@@ -78,9 +78,9 @@ dependencies:
         commit: 'sha1-619a81ec64ff8c0211cd6146eb2b21e8f1d7f440'
         owner_id: 48765237
         repo_id: 385059686
-    'reviewdog/action-misspell@v1.30.4':
-        ref: 'v1.30.4'
-        commit: 'sha1-840bfbe9f804da9afb0bd739dc4689012f3fdd2d'
+    'reviewdog/action-misspell@v1.30.5':
+        ref: 'v1.30.5'
+        commit: 'sha1-f424fed50ff8c448c1100c2d35d5d72a8ad08e49'
         owner_id: 48765237
         repo_id: 208637003
     'reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f':
