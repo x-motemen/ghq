@@ -809,3 +809,30 @@ func TestDoGet_p4Revision(t *testing.T) {
 		}
 	}
 }
+
+func TestDoGet_p4UpdateRevision(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	calls := fakeP4(t, newP4FakeServer().respond)
+	dir := filepath.Join(root, "p4.example.com", "depot", "proj")
+	run := func(args ...string) error {
+		var err error
+		capture(func() { err = newApp().Run(context.Background(), append([]string{"ghq"}, args...)) })
+		return err
+	}
+	if err := run("get", "p4://p4.example.com/depot/proj"); err != nil {
+		t.Fatal(err)
+	}
+	for _, u := range []string{"p4://p4.example.com/depot/proj@123", "p4://p4.example.com/depot/proj%40123"} {
+		*calls = nil
+		seen.Delete(dir)
+		if err := run("get", "-u", u); err == nil {
+			t.Errorf("%s: error should be occurred, but nil", u)
+		}
+		for _, c := range *calls {
+			if slices.Contains(c.args, "sync") {
+				t.Errorf("%s: should not sync: %v", u, c.args)
+			}
+		}
+	}
+}

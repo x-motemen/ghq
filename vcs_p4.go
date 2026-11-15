@@ -37,6 +37,11 @@ const (
 	p4DefaultPort = "1666"
 )
 
+var (
+	errP4Branch        = errors.New("--branch option (or @<revision> in the URL) is unavailable for Perforce; specify the depot path of the branch in the URL")
+	errP4RootUnchanged = errors.New("the root of the p4 client was not changed")
+)
+
 // p4Config holds the connection settings recorded in a workspace's .p4config.
 type p4Config struct {
 	port, user, client string
@@ -464,23 +469,56 @@ func p4WorkspaceClient(cfg *p4Config, root string) (string, error) {
 	return spec, nil
 }
 
-// p4UpdateClientRoot points the client recorded in dir/.p4config, which
-// must be rooted at oldRoot, at dir after "ghq migrate" moved the workspace.
-func p4UpdateClientRoot(oldRoot, dir string) error {
+// p4RootMove repoints the client of a workspace moved by "ghq migrate".
+type p4RootMove struct {
+	cfg  *p4Config
+	root string // as recorded on the server before the move
+}
+
+// p4PrepareRootMove checks, before dir is moved, that dir is the root of
+// the client named in its .p4config.
+func p4PrepareRootMove(dir string) (*p4RootMove, error) {
 	cfg, err := readP4Config(dir)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	spec, err := p4WorkspaceClient(cfg, oldRoot)
+	spec, err := p4WorkspaceClient(cfg, dir)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return p4SaveClient(cfg, p4SetSpecField(spec, "Root", false, dir), true)
+	return &p4RootMove{cfg: cfg, root: p4SpecRoot(spec)}, nil
+}
+
+// apply sets the root of the client to newRoot. Errors wrap
+// errP4RootUnchanged when the server is known to keep the old root.
+func (m *p4RootMove) apply(newRoot string) error {
+	spec, exists, err := p4ExistingClient(m.cfg)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errP4RootUnchanged, err)
+	}
+	if !exists || p4SpecRoot(spec) != m.root {
+		return fmt.Errorf("%w: p4 client %q was changed or deleted meanwhile", errP4RootUnchanged, m.cfg.client)
+	}
+	saveErr := p4SaveClient(m.cfg, p4SetSpecField(spec, "Root", false, newRoot), true)
+	if saveErr == nil {
+		return nil
+	}
+	// p4 may fail after the server saved the spec, e.g. if its reply is lost.
+	spec, exists, err = p4ExistingClient(m.cfg)
+	switch {
+	case err != nil:
+		return fmt.Errorf("%w (checking the client afterwards failed: %v)", saveErr, err)
+	case exists && p4SpecRoot(spec) == newRoot:
+		return nil
+	case exists && p4SpecRoot(spec) == m.root:
+		return fmt.Errorf("%w: %w", errP4RootUnchanged, saveErr)
+	}
+	return saveErr
 }
 
 func p4Clone(vg *vcsGetOption) (err error) {
 	if vg.branch != "" {
-		return errors.New("--branch option (or @<branch> in the URL) is unavailable for Perforce; specify the depot path of the branch in the URL")
+		return errP4Branch
 	}
 	if vg.bare {
 		return errors.New("bare checkouts are unavailable for Perforce")
@@ -496,7 +534,9 @@ func p4Clone(vg *vcsGetOption) (err error) {
 	cfg.client = p4ClientName(p4LocalUser(vg.url), hostname, cfg.port, depotPath, vg.dir)
 
 	// Claim the workspace directory: a concurrent "ghq get" of the same
-	// path fails here, and a failure below removes only what we created.
+	// path fails here. Until the sync starts, the directory holds at most
+	// our .p4config, so a failure removes just that and the directory if it
+	// is still empty, keeping e.g. a nested checkout made meanwhile.
 	if err := os.MkdirAll(filepath.Dir(vg.dir), 0755); err != nil {
 		return err
 	}
@@ -506,9 +546,11 @@ func p4Clone(vg *vcsGetOption) (err error) {
 		}
 		return err
 	}
+	syncing := false
 	defer func() {
-		if err != nil {
-			os.RemoveAll(vg.dir)
+		if err != nil && !syncing {
+			os.Remove(filepath.Join(vg.dir, p4ConfigName))
+			os.Remove(vg.dir)
 		}
 	}()
 
@@ -536,8 +578,10 @@ func p4Clone(vg *vcsGetOption) (err error) {
 		// The have list of a reused client describes files that are gone.
 		syncArgs = append(syncArgs, "-f")
 	}
+	syncing = true
 	if err := runInDir(vg.silent)(vg.dir, "p4", cfg.args(syncArgs...)...); err != nil {
-		return err
+		// Keep what was synced; the client and .p4config are in place.
+		return fmt.Errorf("%w; run 'ghq get -u' to resume syncing %s", err, vg.dir)
 	}
 	if entries, err := os.ReadDir(vg.dir); err == nil && len(entries) == 1 {
 		logger.Log("warning", fmt.Sprintf("no files found in %s/...; the workspace is empty", depotPath))
@@ -551,14 +595,20 @@ var PerforceBackend = &VCSBackend{
 	// only the synced revisions anyway.
 	Clone: p4Clone,
 	Update: func(vg *vcsGetOption) error {
+		if vg.branch != "" {
+			return errP4Branch
+		}
 		cfg, err := readP4Config(vg.dir)
 		if err != nil {
 			return err
 		}
-		// ghq paths omit the port, so p4:// URLs of different servers can
-		// resolve to this workspace. (Other schemes come from "ghq list".)
+		// ghq paths omit the port and a trailing ".git", so p4:// URLs of
+		// other servers or depot paths can resolve to this workspace.
+		// (Other schemes come from "ghq list" and carry no p4 identity.)
+		var depotPath string
 		if vg.url != nil && (vg.url.Scheme == "p4" || vg.url.Scheme == "p4+ssl") {
-			want, _, err := p4ConfigFromURL(vg.url)
+			var want *p4Config
+			want, depotPath, err = p4ConfigFromURL(vg.url)
 			if err != nil {
 				return err
 			}
@@ -566,8 +616,14 @@ var PerforceBackend = &VCSBackend{
 				return fmt.Errorf("%s is a workspace of P4PORT=%s P4USER=%s, not of %s", vg.dir, cfg.port, cfg.user, vg.url.Redacted())
 			}
 		}
-		if _, err := p4WorkspaceClient(cfg, vg.dir); err != nil {
+		spec, err := p4WorkspaceClient(cfg, vg.dir)
+		if err != nil {
 			return err
+		}
+		if depotPath != "" {
+			if got, _ := p4ViewDepotPath(p4SpecField(spec, "View")); got != depotPath {
+				return fmt.Errorf("p4 client %q of %s maps %q, not %q", cfg.client, vg.dir, got, depotPath)
+			}
 		}
 		return runInDir(vg.silent)(vg.dir, "p4", cfg.args("sync")...)
 	},

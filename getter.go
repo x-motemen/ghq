@@ -152,6 +152,7 @@ func (g *getter) getRemoteRepository(ctx context.Context, remote RemoteRepositor
 			return info, vcs.Update(&vcsGetOption{
 				url:       repoURL,
 				dir:       localRepoRoot,
+				branch:    branch,
 				silent:    g.silent,
 				recursive: g.recursive,
 				bare:      g.bareMode != BareNone,

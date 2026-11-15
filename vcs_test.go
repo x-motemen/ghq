@@ -819,6 +819,7 @@ func TestPerforceBackend_Clone(t *testing.T) {
 		branch  string
 		bare    bool
 		mkdir   bool
+		kept    bool // a failed sync keeps the workspace
 		respond func(client, dir string) func(sub string, cmd *exec.Cmd) error
 		errStr  string
 		calls   int
@@ -871,8 +872,9 @@ func TestPerforceBackend_Clone(t *testing.T) {
 				return nil
 			}
 		},
-		errStr: "exit status 1",
+		errStr: "run 'ghq get -u' to resume",
 		calls:  3,
+		kept:   true,
 	}, {
 		name:   "existing directory",
 		url:    "p4://p4.example.com/depot/proj/main",
@@ -967,9 +969,9 @@ func TestPerforceBackend_Clone(t *testing.T) {
 				t.Errorf("got %d commands, expect %d: %+v", len(*calls), tc.calls, *calls)
 			}
 			_, statErr := os.Stat(dir)
-			if tc.mkdir {
+			if tc.mkdir || tc.kept {
 				if statErr != nil {
-					t.Errorf("existing directory should be kept: %v", statErr)
+					t.Errorf("directory should be kept: %v", statErr)
 				}
 			} else if !os.IsNotExist(statErr) {
 				t.Errorf("directory should not be left behind: %v", statErr)
@@ -1101,27 +1103,39 @@ func TestPerforceBackend_RemoteURL(t *testing.T) {
 	}
 }
 
-func TestP4UpdateClientRoot(t *testing.T) {
+func TestP4RootMove(t *testing.T) {
 	dir := newTempDir(t)
 	if err := writeP4Config(dir, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
 		t.Fatal(err)
 	}
-	calls := fakeP4(t, func(sub string, cmd *exec.Cmd) error {
-		if sub == "client -o ws" {
-			fmt.Fprint(cmd.Stdout, p4TestSpec("ws", "/old/root", true, "//depot/proj/... //ws/..."))
-		}
-		return nil
-	})
-	if err := p4UpdateClientRoot("/old/root", dir); err != nil {
+	srv := newP4FakeServer()
+	srv.clients["ws"] = p4TestSpec("ws", dir, true, "//depot/proj/... //ws/...")
+	fakeP4(t, srv.respond)
+	m, err := p4PrepareRootMove(dir)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if len(*calls) != 2 {
-		t.Fatalf("unexpected commands: %+v", *calls)
+	if err := m.apply("/new/root"); err != nil {
+		t.Fatal(err)
 	}
-	spec := (*calls)[1].stdin
-	if !strings.Contains(spec, "\nRoot:\t"+dir+"\n") || strings.Contains(spec, "/old/root") ||
-		!strings.Contains(spec, "\n\t//depot/proj/... //ws/...\n") {
+	spec := srv.clients["ws"]
+	if p4SpecRoot(spec) != "/new/root" || !strings.Contains(spec, "\n\t//depot/proj/... //ws/...\n") {
 		t.Errorf("unexpected client spec:\n%s", spec)
+	}
+
+	// changed on the server between prepare and apply
+	srv.clients["ws"] = p4TestSpec("ws", "/someone/else", true, "//depot/proj/... //ws/...")
+	if err := m.apply("/new/root"); !errors.Is(err, errP4RootUnchanged) {
+		t.Errorf("error should wrap errP4RootUnchanged, but: %v", err)
+	}
+	// rejected save
+	srv.clients["ws"] = p4TestSpec("ws", "/new/root", true, "//depot/proj/... //ws/...")
+	srv.fail["client -i"] = "Locked client"
+	if err := m.apply("/newer/root"); !errors.Is(err, errP4RootUnchanged) {
+		t.Errorf("error should wrap errP4RootUnchanged, but: %v", err)
+	}
+	if _, err := p4PrepareRootMove(newTempDir(t)); err == nil {
+		t.Error("error should be occurred for a directory without .p4config")
 	}
 }
 
@@ -1288,6 +1302,11 @@ func TestP4Spec(t *testing.T) {
 type p4FakeServer struct {
 	clients map[string]string // name -> spec
 	fail    map[string]string // subcommand -> error message
+	// lostReply makes "client -i" save the spec but fail as if its reply was
+	// lost; offlineAfterSave fails "client -i" and every command after it.
+	lostReply, offlineAfterSave, offline bool
+	// onClientO runs before "client -o" replies, e.g. to race with it.
+	onClientO func()
 }
 
 func newP4FakeServer() *p4FakeServer {
@@ -1295,9 +1314,21 @@ func newP4FakeServer() *p4FakeServer {
 }
 
 func (s *p4FakeServer) respond(sub string, cmd *exec.Cmd) error {
+	if s.offline {
+		fmt.Fprintln(cmd.Stderr, "Connect to server failed; check $P4PORT.")
+		return errors.New("exit status 1")
+	}
+	if sub == "client -i" && s.offlineAfterSave {
+		s.offline = true // the connection drops during the save
+		fmt.Fprintln(cmd.Stderr, "TCP receive failed.")
+		return errors.New("exit status 1")
+	}
 	if msg, ok := s.fail[sub]; ok {
 		fmt.Fprintln(cmd.Stderr, msg)
 		return errors.New("exit status 1")
+	}
+	if strings.HasPrefix(sub, "client -o ") && s.onClientO != nil {
+		s.onClientO()
 	}
 	switch {
 	case strings.HasPrefix(sub, "client -o "):
@@ -1317,6 +1348,10 @@ func (s *p4FakeServer) respond(sub string, cmd *exec.Cmd) error {
 			spec = strings.Replace(spec, "\nOwner:", "\nAccess:\t2026/01/02 03:04:05\n\nOwner:", 1)
 		}
 		s.clients[p4SpecField(spec, "Client")[0]] = spec
+		if s.lostReply {
+			fmt.Fprintln(cmd.Stderr, "TCP receive failed.")
+			return errors.New("exit status 1")
+		}
 	case sub == "sync" || sub == "sync -f":
 		return os.WriteFile(filepath.Join(cmd.Dir, "README"), []byte("hello\n"), 0644)
 	}
@@ -1452,6 +1487,78 @@ func TestPerforceBackend_Review1(t *testing.T) {
 			if a == b {
 				t.Errorf("client names should differ for %q: %s", pair, a)
 			}
+		}
+	})
+}
+
+// Regression tests for the second adversarial review round.
+func TestPerforceBackend_Review2(t *testing.T) {
+	const port = "p4.example.com:1666"
+
+	t.Run("failed clone keeps a nested checkout created meanwhile", func(t *testing.T) {
+		dir := filepath.Join(newTempDir(t), "p4.example.com", "depot", "proj")
+		srv := newP4FakeServer()
+		srv.fail["client -i"] = "Error in client specification."
+		srv.onClientO = func() { // another ghq get of //depot/proj/child
+			os.MkdirAll(filepath.Join(dir, "child"), 0755)
+			writeP4Config(filepath.Join(dir, "child"), &p4Config{port: port, client: "child"})
+		}
+		fakeP4(t, srv.respond)
+		if err := PerforceBackend.Clone(&vcsGetOption{url: mustParseURL("p4://p4.example.com/depot/proj"), dir: dir}); err == nil {
+			t.Error("error should be occurred, but nil")
+		}
+		if _, err := os.Stat(filepath.Join(dir, "child", p4ConfigName)); err != nil {
+			t.Errorf("the nested checkout should be kept: %v", err)
+		}
+		if _, err := os.Stat(filepath.Join(dir, p4ConfigName)); !os.IsNotExist(err) {
+			t.Errorf(".p4config of the failed clone should be removed: %v", err)
+		}
+	})
+
+	t.Run("failed sync keeps the workspace for get -u", func(t *testing.T) {
+		dir := filepath.Join(newTempDir(t), "p4.example.com", "depot", "proj")
+		srv := newP4FakeServer()
+		srv.fail["sync"] = "TCP receive failed."
+		fakeP4(t, srv.respond)
+		err := PerforceBackend.Clone(&vcsGetOption{url: mustParseURL("p4://p4.example.com/depot/proj"), dir: dir})
+		if err == nil || !strings.Contains(err.Error(), "ghq get -u") {
+			t.Errorf("error should suggest ghq get -u, but: %v", err)
+		}
+		if !isP4Workspace(dir) {
+			t.Error("the workspace should be kept")
+		}
+	})
+
+	t.Run("get -u of another depot path mapped to the same directory", func(t *testing.T) {
+		dir := newTempDir(t)
+		writeP4Config(dir, &p4Config{port: port, client: "ws"})
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", dir, true, `"//depot/app/..." "//ws/..."`, `"-//depot/app/.p4config" "//ws/.p4config"`)
+		calls := fakeP4(t, srv.respond)
+		if err := PerforceBackend.Update(&vcsGetOption{dir: dir, url: mustParseURL("p4://p4.example.com/depot/app.git")}); err == nil {
+			t.Error("error should be occurred, but nil")
+		}
+		for _, c := range *calls {
+			if slices.Contains(c.args, "sync") {
+				t.Errorf("should not sync: %v", c.args)
+			}
+		}
+		if err := PerforceBackend.Update(&vcsGetOption{dir: dir, url: mustParseURL("p4://p4.example.com/depot/app/")}); err != nil {
+			t.Error(err)
+		}
+	})
+
+	t.Run("get -u with a revision", func(t *testing.T) {
+		dir := newTempDir(t)
+		writeP4Config(dir, &p4Config{port: port, client: "ws"})
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", dir, true, "//depot/app/... //ws/...")
+		calls := fakeP4(t, srv.respond)
+		if err := PerforceBackend.Update(&vcsGetOption{dir: dir, branch: "123"}); err == nil {
+			t.Error("error should be occurred, but nil")
+		}
+		if len(*calls) != 0 {
+			t.Errorf("p4 should not be run: %+v", *calls)
 		}
 	})
 }

@@ -91,6 +91,14 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to check destination directory: %w", err)
 	}
 
+	// A p4 client records its root on the server; check that it is absDir.
+	var p4Move *p4RootMove
+	if vcsBackend == PerforceBackend {
+		if p4Move, err = p4PrepareRootMove(absDir); err != nil {
+			return err
+		}
+	}
+
 	// Check for linked worktrees before dry-run return so we can report them
 	var hasWorktrees bool
 	if vcsBackend == GitBackend {
@@ -158,10 +166,12 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	// A p4 client records its root on the server, and the workspace is
-	// unusable until it points at the new location.
-	if vcsBackend == PerforceBackend {
-		if err := p4UpdateClientRoot(absDir, destPath); err != nil {
+	// The workspace is unusable until its client points at the new location.
+	if p4Move != nil {
+		if err := p4Move.apply(destPath); err != nil {
+			if !errors.Is(err, errP4RootUnchanged) {
+				return fmt.Errorf("could not confirm that the root of the p4 client was updated, the workspace is at %s: %w", destPath, err)
+			}
 			if mvErr := moveDir(destPath, absDir); mvErr != nil {
 				return fmt.Errorf("failed to update the root of the p4 client: %w; the workspace is at %s (moving it back failed: %v)", err, destPath, mvErr)
 			}

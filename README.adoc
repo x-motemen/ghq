@@ -210,7 +210,9 @@ The client is named `<user>_<hostname>_<depot path>_<hash>` and its root is the 
 directory. ghq writes the server and the client to `.p4config` in the workspace, which
 `ghq get -u` and `ghq list` use; set `P4CONFIG=.p4config` to let `p4` pick it up as well.
 Log in with `p4 login` beforehand. A user in the URL (`p4://alice@p4.example.com/...`)
-is passed to `p4` with `-u` and recorded in `.p4config`.
+is passed to `p4` with `-u` and recorded in `.p4config`. If `p4 sync` fails, the workspace
+is kept and `ghq get -u` resumes it; `ghq get -u` refuses to sync a client that no longer
+has the workspace as its root.
 
 `--branch`, `--bare` and `ghq create` are not supported for Perforce, and `--shallow`,
 `--partial` and `--no-recursive` have no effect. `ghq migrate` updates the root of the
