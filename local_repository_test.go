@@ -116,6 +116,14 @@ func TestNewLocalRepository(t *testing.T) {
 		name:   "bitbucket host with port",
 		url:    "https://bitbucket.local:8888/motemen/ghq.git",
 		expect: filepath.Join(tmproot, "bitbucket.local/motemen/ghq"),
+	}, {
+		name:   "p4 with port",
+		url:    "p4://p4.example.com:1666/depot/proj/main",
+		expect: filepath.Join(tmproot, "p4.example.com/depot/proj/main"),
+	}, {
+		name:   "p4 ssl with user",
+		url:    "p4+ssl://alice@p4.example.com/depot/proj/main/",
+		expect: filepath.Join(tmproot, "p4.example.com/depot/proj/main"),
 	}}
 
 	for _, tc := range testCases {
@@ -360,6 +368,31 @@ func TestFindVCSBackend(t *testing.T) {
 			return dir, "mercurial"
 		},
 		expect: nil,
+	}, {
+		name: "p4",
+		setup: func(t *testing.T) (string, string) {
+			dir := newTempDir(t)
+			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+			return dir, ""
+		},
+		expect: PerforceBackend,
+	}, {
+		name: "p4 with matched vcs",
+		setup: func(t *testing.T) (string, string) {
+			dir := newTempDir(t)
+			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+			return dir, "p4"
+		},
+		expect: PerforceBackend,
+	}, {
+		name: "git with .p4config",
+		setup: func(t *testing.T) (string, string) {
+			dir := newTempDir(t)
+			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
+			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+			return dir, ""
+		},
+		expect: GitBackend,
 	}}
 
 	for _, tc := range testCases {

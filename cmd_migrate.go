@@ -106,6 +106,9 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 		if hasWorktrees {
 			fmt.Fprintf(w, "Would run 'git worktree repair' to update linked worktrees\n")
 		}
+		if vcsBackend == PerforceBackend {
+			fmt.Fprintf(w, "Would update the root of the p4 client\n")
+		}
 		return nil
 	}
 
@@ -152,6 +155,13 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 			if out, err := cmd.CombinedOutput(); err != nil {
 				logger.Log("warning", fmt.Sprintf("git worktree repair failed: %v\n%s", err, out))
 			}
+		}
+	}
+
+	// A p4 client spec records its workspace root on the server.
+	if vcsBackend == PerforceBackend {
+		if err := p4UpdateClientRoot(destPath); err != nil {
+			logger.Log("warning", fmt.Sprintf("failed to update the root of the p4 client to %s: %v", destPath, err))
 		}
 	}
 

@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -454,6 +457,59 @@ func TestIsLinkedGitDir(t *testing.T) {
 		}
 		if !strings.Contains(target, "worktrees") {
 			t.Errorf("target should reference worktrees dir, got: %s", target)
+		}
+	})
+}
+
+func TestDoMigrate_p4(t *testing.T) {
+	tmpdir := newTempDir(t)
+	setRepositoryPathTestRoot(t, tmpdir)
+	calls := fakeP4(t, func(sub string, cmd *exec.Cmd) error {
+		if sub == "client -o ws" {
+			fmt.Fprint(cmd.Stdout, p4TestSpec("ws", "/old/root", true, "//depot/proj/main/... //ws/..."))
+		}
+		return nil
+	})
+	newSrc := func(name string) string {
+		src := filepath.Join(tmpdir, "sources", name)
+		os.MkdirAll(src, 0755)
+		if err := writeP4Config(src, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
+			t.Fatal(err)
+		}
+		return src
+	}
+	dest := filepath.Join(tmpdir, "p4.example.com", "depot", "proj", "main")
+
+	t.Run("dry-run", func(t *testing.T) {
+		src := newSrc("dry")
+		out, _, _ := capture(func() {
+			if err := newApp().Run(context.Background(), []string{"ghq", "migrate", "--dry-run", src}); err != nil {
+				t.Fatal(err)
+			}
+		})
+		if !strings.Contains(out, dest) || !strings.Contains(out, "p4 client") {
+			t.Errorf("unexpected output: %s", out)
+		}
+		for _, c := range *calls {
+			if slices.Contains(c.args, "-i") {
+				t.Errorf("dry-run should not modify the client: %v", c.args)
+			}
+		}
+	})
+
+	t.Run("migrate", func(t *testing.T) {
+		*calls = nil
+		src := newSrc("proj")
+		if err := newApp().Run(context.Background(), []string{"ghq", "migrate", "-y", src}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := os.Stat(filepath.Join(dest, p4ConfigName)); err != nil {
+			t.Fatal(err)
+		}
+		last := (*calls)[len(*calls)-1]
+		if !reflect.DeepEqual(last.args, []string{"p4", "-p", "p4.example.com:1666", "-c", "ws", "client", "-i"}) ||
+			!strings.Contains(last.stdin, "\nRoot:\t"+dest+"\n") {
+			t.Errorf("client root should be updated, got %v:\n%s", last.args, last.stdin)
 		}
 	})
 }

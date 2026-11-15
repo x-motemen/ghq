@@ -28,6 +28,7 @@ var (
 			"pijul":    VerboseColor,
 			"bzr":      VerboseColor,
 			"fossil":   VerboseColor,
+			"p4":       VerboseColor,
 			"skip":     VerboseColor,
 			"cd":       VerboseColor,
 			"resolved": VerboseColor,

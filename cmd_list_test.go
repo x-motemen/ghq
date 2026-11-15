@@ -68,6 +68,9 @@ func TestDoList_query(t *testing.T) {
 	svnRepos := []string{
 		"github.com/msh5/svntest",
 	}
+	p4Repos := []string{
+		"p4.example.com/depot/proj/main",
+	}
 	testCases := []struct {
 		name   string
 		args   []string
@@ -113,6 +116,14 @@ func TestDoList_query(t *testing.T) {
 		args:   []string{"--vcs", "svn"},
 		expect: "github.com/msh5/svntest\n",
 	}, {
+		name:   "vcs p4",
+		args:   []string{"--vcs", "p4"},
+		expect: "p4.example.com/depot/proj/main\n",
+	}, {
+		name:   "p4 URL",
+		args:   []string{"p4://p4.example.com:1666/depot/proj/main"},
+		expect: "p4.example.com/depot/proj/main\n",
+	}, {
 		name:   "smartcasing fuzzy",
 		args:   []string{"awesome"},
 		expect: "github.com/test/Awesome\n",
@@ -132,6 +143,12 @@ func TestDoList_query(t *testing.T) {
 		}
 		for _, r := range svnRepos {
 			os.MkdirAll(filepath.Join(tmproot, r, ".svn"), 0755)
+		}
+		for _, r := range p4Repos {
+			os.MkdirAll(filepath.Join(tmproot, r, "src"), 0755)
+			os.WriteFile(filepath.Join(tmproot, r, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+			// a nested .p4config in the workspace is not a separate repository
+			os.WriteFile(filepath.Join(tmproot, r, "src", ".p4config"), []byte("P4PORT=1666\n"), 0644)
 		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {

@@ -1,11 +1,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -14,6 +18,7 @@ import (
 
 var (
 	remoteDummyURL = mustParseURL("https://example.com/git/repo")
+	p4DummyURL     = mustParseURL("p4://alice@p4.example.com:1666/depot/proj/main")
 	dummySvnInfo   = []byte(`Path: trunk
 URL: https://svn.apache.org/repos/asf/subversion/trunk
 Relative URL: ^/subversion/trunk
@@ -42,6 +47,9 @@ func TestVCSBackend(t *testing.T) {
 		}
 		return nil
 	}
+	defer func(orig func() (string, error)) { p4Hostname = orig }(p4Hostname)
+	p4Hostname = func() (string, error) { return "myhost", nil }
+	p4Client := p4ClientName("alice", "myhost", "p4.example.com:1666", "//depot/proj/main", localDir)
 
 	testCases := []struct {
 		name   string
@@ -435,6 +443,30 @@ func TestVCSBackend(t *testing.T) {
 		},
 		expect: []string{"fossil", "update"},
 		dir:    localDir,
+	}, {
+		name: "[p4] clone",
+		f: func() error {
+			defer os.Remove(filepath.Join(localDir, p4ConfigName))
+			return PerforceBackend.Clone(&vcsGetOption{
+				url: p4DummyURL,
+				dir: localDir,
+			})
+		},
+		expect: []string{"p4", "-p", "p4.example.com:1666", "-u", "alice", "-c", p4Client, "sync"},
+		dir:    localDir,
+	}, {
+		name: "[p4] update",
+		f: func() error {
+			if err := writeP4Config(localDir, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
+				return err
+			}
+			defer os.Remove(filepath.Join(localDir, p4ConfigName))
+			return PerforceBackend.Update(&vcsGetOption{
+				dir: localDir,
+			})
+		},
+		expect: []string{"p4", "-p", "p4.example.com:1666", "-c", "ws", "sync"},
+		dir:    localDir,
 	}}
 
 	for _, tc := range testCases {
@@ -605,5 +637,641 @@ func TestBranchOptionIgnoredErrors(t *testing.T) {
 		branch: "hello",
 	}); err == nil {
 		t.Error("error should be occurred, but nil")
+	}
+}
+
+type p4Call struct {
+	args  []string
+	dir   string
+	stdin string
+}
+
+// fakeP4 replaces the command runner with one that records p4 invocations
+// and lets respond write output or fail per subcommand ("client -o NAME",
+// "client -i", "sync", ...).
+func fakeP4(t *testing.T, respond func(sub string, cmd *exec.Cmd) error) *[]p4Call {
+	t.Helper()
+	origRunner, origHostname := cmdutil.CommandRunner, p4Hostname
+	t.Cleanup(func() { cmdutil.CommandRunner, p4Hostname = origRunner, origHostname })
+	p4Hostname = func() (string, error) { return "myhost", nil }
+	t.Setenv("P4USER", "alice")
+
+	calls := &[]p4Call{}
+	cmdutil.CommandRunner = func(cmd *exec.Cmd) error {
+		c := p4Call{args: cmd.Args, dir: cmd.Dir}
+		if cmd.Stdin != nil {
+			b, err := io.ReadAll(cmd.Stdin)
+			if err != nil {
+				return err
+			}
+			c.stdin = string(b)
+		}
+		*calls = append(*calls, c)
+		if cmd.Args[0] != "p4" {
+			t.Errorf("unexpected command: %v", cmd.Args)
+			return errors.New("unexpected command")
+		}
+		args := cmd.Args[1:]
+		for len(args) >= 2 && (args[0] == "-p" || args[0] == "-u" || args[0] == "-c") {
+			args = args[2:]
+		}
+		if respond == nil {
+			return nil
+		}
+		return respond(strings.Join(args, " "), cmd)
+	}
+	return calls
+}
+
+// p4TestSpec returns a client spec as printed by "p4 client -o".
+func p4TestSpec(client, root string, exists bool, view ...string) string {
+	b := &strings.Builder{}
+	fmt.Fprintf(b, "# A Perforce Client Specification.\n#\n#  Root:        The base directory of the client workspace.\n\nClient:\t%s\n\n", client)
+	if exists {
+		b.WriteString("Update:\t2026/01/02 03:04:05\n\nAccess:\t2026/01/02 03:04:05\n\n")
+	}
+	fmt.Fprintf(b, "Owner:\talice\n\nHost:\tmyhost\n\nDescription:\n\tCreated by alice.\n\nRoot:\t%s\n\n", root)
+	b.WriteString("Options:\tnoallwrite noclobber nocompress unlocked nomodtime normdir noaltsync\n\nView:\n")
+	for _, v := range view {
+		fmt.Fprintf(b, "\t%s\n", v)
+	}
+	return b.String()
+}
+
+func readFileString(t *testing.T, name string) string {
+	t.Helper()
+	b, err := os.ReadFile(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
+
+func TestPerforceBackend_Clone(t *testing.T) {
+	const port = "p4.example.com:1666"
+	newDir := func(t *testing.T) string {
+		return filepath.Join(newTempDir(t), "p4.example.com", "depot", "proj", "main")
+	}
+
+	t.Run("new client", func(t *testing.T) {
+		dir := newDir(t)
+		client := p4ClientName("alice", "myhost", port, "//depot/proj/main", dir)
+		calls := fakeP4(t, func(sub string, cmd *exec.Cmd) error {
+			if sub == "client -o "+client {
+				fmt.Fprint(cmd.Stdout, p4TestSpec(client, "/home/alice", false, "//depot/... //"+client+"/..."))
+			}
+			return nil
+		})
+		err := PerforceBackend.Clone(&vcsGetOption{
+			url: mustParseURL("p4://p4.example.com/depot/proj/main/"),
+			dir: dir,
+			// ignored by p4
+			shallow: true, recursive: true, partial: "blobless", silent: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		global := []string{"p4", "-p", port, "-c", client}
+		expect := []p4Call{
+			{args: append(global[:5:5], "client", "-o", client)},
+			{args: append(global[:5:5], "client", "-i")},
+			{args: append(global[:5:5], "sync"), dir: dir},
+		}
+		if len(*calls) != len(expect) {
+			t.Fatalf("got %d commands, expect %d: %+v", len(*calls), len(expect), *calls)
+		}
+		for i, c := range *calls {
+			if !reflect.DeepEqual(c.args, expect[i].args) || c.dir != expect[i].dir {
+				t.Errorf("command %d:\ngot:    %v (dir %q)\nexpect: %v (dir %q)", i, c.args, c.dir, expect[i].args, expect[i].dir)
+			}
+		}
+		spec := (*calls)[1].stdin
+		for _, want := range []string{
+			"\nOwner:\talice\n",
+			"\nRoot:\t" + dir + "\n",
+			"\nView:\n\t\"//depot/proj/main/...\" \"//" + client + "/...\"\n\t\"-//depot/proj/main/.p4config\" \"//" + client + "/.p4config\"\n",
+		} {
+			if !strings.Contains(spec, want) {
+				t.Errorf("client spec should contain %q, but:\n%s", want, spec)
+			}
+		}
+		if strings.Contains(spec, "/home/alice") || strings.Contains(spec, "//depot/... ") {
+			t.Errorf("client spec should not keep the default root and view:\n%s", spec)
+		}
+		if got, expect := readFileString(t, filepath.Join(dir, p4ConfigName)), "P4PORT="+port+"\nP4CLIENT="+client+"\n"; got != expect {
+			t.Errorf(".p4config:\ngot:    %q\nexpect: %q", got, expect)
+		}
+	})
+
+	t.Run("ssl with user", func(t *testing.T) {
+		dir := newDir(t)
+		const sslPort = "ssl:p4.example.com:1667"
+		client := p4ClientName("bob", "myhost", sslPort, "//depot/proj/main", dir)
+		calls := fakeP4(t, nil)
+		err := PerforceBackend.Clone(&vcsGetOption{
+			url: mustParseURL("p4+ssl://bob@p4.example.com:1667/depot/proj/main"),
+			dir: dir,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		expect := []string{"p4", "-p", sslPort, "-u", "bob", "-c", client, "sync"}
+		if got := (*calls)[len(*calls)-1].args; !reflect.DeepEqual(got, expect) {
+			t.Errorf("\ngot:    %v\nexpect: %v", got, expect)
+		}
+		if got, expect := readFileString(t, filepath.Join(dir, p4ConfigName)), "P4PORT="+sslPort+"\nP4USER=bob\nP4CLIENT="+client+"\n"; got != expect {
+			t.Errorf(".p4config:\ngot:    %q\nexpect: %q", got, expect)
+		}
+	})
+
+	t.Run("reuse client left by ghq rm", func(t *testing.T) {
+		dir := newDir(t)
+		client := p4ClientName("alice", "myhost", port, "//depot/proj/main", dir)
+		calls := fakeP4(t, func(sub string, cmd *exec.Cmd) error {
+			if sub == "client -o "+client {
+				fmt.Fprint(cmd.Stdout, p4TestSpec(client, dir, true, "//depot/proj/main/... //"+client+"/..."))
+			}
+			return nil
+		})
+		if err := PerforceBackend.Clone(&vcsGetOption{url: mustParseURL("p4://p4.example.com/depot/proj/main"), dir: dir}); err != nil {
+			t.Fatal(err)
+		}
+		expect := []string{"p4", "-p", port, "-c", client, "sync", "-f"}
+		if got := (*calls)[len(*calls)-1].args; !reflect.DeepEqual(got, expect) {
+			t.Errorf("\ngot:    %v\nexpect: %v", got, expect)
+		}
+	})
+
+	failures := []struct {
+		name    string
+		url     string
+		branch  string
+		bare    bool
+		mkdir   bool
+		respond func(client, dir string) func(sub string, cmd *exec.Cmd) error
+		errStr  string
+		calls   int
+	}{{
+		name: "client of another workspace",
+		url:  "p4://p4.example.com/depot/proj/main",
+		respond: func(client, dir string) func(string, *exec.Cmd) error {
+			return func(sub string, cmd *exec.Cmd) error {
+				if strings.HasPrefix(sub, "client -o") {
+					fmt.Fprint(cmd.Stdout, p4TestSpec(client, "/somewhere/else", true, "//depot/... //"+client+"/..."))
+				}
+				return nil
+			}
+		},
+		errStr: "already exists with root",
+		calls:  1,
+	}, {
+		name: "not logged in",
+		url:  "p4://p4.example.com/depot/proj/main",
+		respond: func(client, dir string) func(string, *exec.Cmd) error {
+			return func(sub string, cmd *exec.Cmd) error {
+				fmt.Fprintln(cmd.Stderr, "Perforce password (P4PASSWD) invalid or unset.")
+				return errors.New("exit status 1")
+			}
+		},
+		errStr: "Perforce password (P4PASSWD) invalid or unset.",
+		calls:  1,
+	}, {
+		name: "client spec rejected",
+		url:  "p4://p4.example.com/nodepot/proj",
+		respond: func(client, dir string) func(string, *exec.Cmd) error {
+			return func(sub string, cmd *exec.Cmd) error {
+				if sub == "client -i" {
+					fmt.Fprintln(cmd.Stderr, "Error in client specification.")
+					return errors.New("exit status 1")
+				}
+				return nil
+			}
+		},
+		errStr: "Error in client specification.",
+		calls:  2,
+	}, {
+		name: "sync fails",
+		url:  "p4://p4.example.com/depot/proj/main",
+		respond: func(client, dir string) func(string, *exec.Cmd) error {
+			return func(sub string, cmd *exec.Cmd) error {
+				if sub == "sync" {
+					return errors.New("exit status 1")
+				}
+				return nil
+			}
+		},
+		errStr: "exit status 1",
+		calls:  3,
+	}, {
+		name:  "sync fails in existing directory",
+		url:   "p4://p4.example.com/depot/proj/main",
+		mkdir: true,
+		respond: func(client, dir string) func(string, *exec.Cmd) error {
+			return func(sub string, cmd *exec.Cmd) error {
+				if sub == "sync" {
+					return errors.New("exit status 1")
+				}
+				return nil
+			}
+		},
+		errStr: "exit status 1",
+		calls:  3,
+	}, {
+		name:   "branch",
+		url:    "p4://p4.example.com/depot/proj/main",
+		branch: "dev",
+		errStr: "--branch option",
+	}, {
+		name:   "bare",
+		url:    "p4://p4.example.com/depot/proj/main",
+		bare:   true,
+		errStr: "bare checkouts are unavailable",
+	}, {
+		name:   "no host",
+		url:    "p4:///depot/proj",
+		errStr: "missing p4 server host",
+	}, {
+		name:   "no depot path",
+		url:    "p4://p4.example.com/",
+		errStr: "missing depot path",
+	}, {
+		name:   "password",
+		url:    "p4://alice:secret@p4.example.com/depot/proj",
+		errStr: "passwords in p4 URLs are not supported",
+	}, {
+		name:   "newline in user",
+		url:    "p4://al%0Aice@p4.example.com/depot/proj",
+		errStr: "invalid p4 user",
+	}, {
+		name:   "wildcard",
+		url:    "p4://p4.example.com/depot/proj/...",
+		errStr: "wildcards and revision specifiers",
+	}, {
+		name:   "asterisk",
+		url:    "p4://p4.example.com/depot/*/main",
+		errStr: "wildcards and revision specifiers",
+	}, {
+		name:   "revision",
+		url:    "p4://p4.example.com/depot/proj%23head",
+		errStr: "wildcards and revision specifiers",
+	}, {
+		name:   "label",
+		url:    "p4://p4.example.com/depot/proj%40label",
+		errStr: "wildcards and revision specifiers",
+	}, {
+		name:   "percent escape",
+		url:    "p4://p4.example.com/depot/proj%2540",
+		errStr: "wildcards and revision specifiers",
+	}, {
+		name:   "quote",
+		url:    "p4://p4.example.com/depot/pr%22oj",
+		errStr: "wildcards and revision specifiers",
+	}, {
+		name:   "spec injection",
+		url:    "p4://p4.example.com/depot/proj%0AOptions:%09allwrite",
+		errStr: "control characters",
+	}, {
+		name:   "empty component",
+		url:    "p4://p4.example.com/depot//proj",
+		errStr: "empty or dot path components",
+	}, {
+		name:   "parent component",
+		url:    "p4://p4.example.com/depot/../proj",
+		errStr: "empty or dot path components",
+	}}
+	for _, tc := range failures {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := newDir(t)
+			if tc.mkdir {
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			u := mustParseURL(tc.url)
+			var respond func(string, *exec.Cmd) error
+			if tc.respond != nil {
+				cfg, depotPath, err := p4ConfigFromURL(u)
+				if err != nil {
+					t.Fatal(err)
+				}
+				respond = tc.respond(p4ClientName("alice", "myhost", cfg.port, depotPath, dir), dir)
+			}
+			calls := fakeP4(t, respond)
+			err := PerforceBackend.Clone(&vcsGetOption{url: u, dir: dir, branch: tc.branch, bare: tc.bare})
+			if err == nil || !strings.Contains(err.Error(), tc.errStr) {
+				t.Errorf("error should contain %q, but: %v", tc.errStr, err)
+			}
+			if len(*calls) != tc.calls {
+				t.Errorf("got %d commands, expect %d: %+v", len(*calls), tc.calls, *calls)
+			}
+			_, statErr := os.Stat(dir)
+			if tc.mkdir {
+				if statErr != nil {
+					t.Errorf("existing directory should be kept: %v", statErr)
+				}
+			} else if !os.IsNotExist(statErr) {
+				t.Errorf("directory should not be left behind: %v", statErr)
+			}
+		})
+	}
+}
+
+func TestPerforceBackend_Update(t *testing.T) {
+	t.Run("with user", func(t *testing.T) {
+		dir := newTempDir(t)
+		config := "# comment=ignored\r\nP4PORT = ssl:p4.example.com:1666\r\nP4USER=bob\r\nP4CLIENT=bob_ws\r\nP4CHARSET=utf8\r\n"
+		if err := os.WriteFile(filepath.Join(dir, p4ConfigName), []byte(config), 0644); err != nil {
+			t.Fatal(err)
+		}
+		calls := fakeP4(t, nil)
+		if err := PerforceBackend.Update(&vcsGetOption{dir: dir, silent: true}); err != nil {
+			t.Fatal(err)
+		}
+		expect := []p4Call{{args: []string{"p4", "-p", "ssl:p4.example.com:1666", "-u", "bob", "-c", "bob_ws", "sync"}, dir: dir}}
+		if !reflect.DeepEqual(*calls, expect) {
+			t.Errorf("\ngot:    %+v\nexpect: %+v", *calls, expect)
+		}
+	})
+
+	for name, config := range map[string]*string{
+		"no .p4config": nil,
+		"no client":    ptr("P4PORT=p4.example.com:1666\n"),
+		"no port":      ptr("P4CLIENT=ws\n"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir := newTempDir(t)
+			if config != nil {
+				if err := os.WriteFile(filepath.Join(dir, p4ConfigName), []byte(*config), 0644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			calls := fakeP4(t, nil)
+			if err := PerforceBackend.Update(&vcsGetOption{dir: dir}); err == nil {
+				t.Error("error should be occurred, but nil")
+			}
+			if len(*calls) != 0 {
+				t.Errorf("p4 should not be run: %+v", *calls)
+			}
+		})
+	}
+}
+
+func ptr[T any](v T) *T { return &v }
+
+func TestPerforceBackend_RemoteURL(t *testing.T) {
+	testCases := []struct {
+		name   string
+		config string
+		spec   func(client string) string
+		expect string
+		errStr string
+	}{{
+		name:   "tcp",
+		config: "P4PORT=p4.example.com:1666\nP4CLIENT=ws\n",
+		spec: func(c string) string {
+			return p4TestSpec(c, "/r", true, "//depot/proj/main/... //ws/...", "-//depot/proj/main/.p4config //ws/.p4config")
+		},
+		expect: "p4://p4.example.com:1666/depot/proj/main",
+	}, {
+		name:   "ssl with user",
+		config: "P4PORT=ssl:p4.example.com:1667\nP4USER=bob\nP4CLIENT=ws\n",
+		spec: func(c string) string {
+			return p4TestSpec(c, "/r", true, "-//depot/x/... //ws/x/...", "//depot/proj/... //ws/...")
+		},
+		expect: "p4+ssl://bob@p4.example.com:1667/depot/proj",
+	}, {
+		name:   "quoted view",
+		config: "P4PORT=1666\nP4CLIENT=ws\n",
+		spec: func(c string) string {
+			return p4TestSpec(c, "/r", true, `"//depot/my proj/..." "//ws/..."`)
+		},
+		expect: "p4://localhost:1666/depot/my%20proj",
+	}, {
+		name:   "client deleted on server",
+		config: "P4PORT=p4.example.com:1666\nP4CLIENT=ws\n",
+		spec: func(c string) string {
+			return p4TestSpec(c, "/r", false, "//depot/... //ws/...")
+		},
+		errStr: "does not exist",
+	}, {
+		name:   "no depot path in view",
+		config: "P4PORT=p4.example.com:1666\nP4CLIENT=ws\n",
+		spec: func(c string) string {
+			return p4TestSpec(c, "/r", true, "//depot/file.txt //ws/file.txt")
+		},
+		errStr: "no depot path found",
+	}}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := newTempDir(t)
+			if err := os.WriteFile(filepath.Join(dir, p4ConfigName), []byte(tc.config), 0644); err != nil {
+				t.Fatal(err)
+			}
+			calls := fakeP4(t, func(sub string, cmd *exec.Cmd) error {
+				if sub == "client -o ws" {
+					fmt.Fprint(cmd.Stdout, tc.spec("ws"))
+				}
+				return nil
+			})
+			got, err := PerforceBackend.RemoteURL(dir)
+			if tc.errStr != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.errStr) {
+					t.Errorf("error should contain %q, but: %v", tc.errStr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tc.expect {
+				t.Errorf("got: %s, expect: %s", got, tc.expect)
+			}
+			if len(*calls) != 1 || !slices.Contains((*calls)[0].args, "-c") {
+				t.Errorf("unexpected commands: %+v", *calls)
+			}
+		})
+	}
+}
+
+func TestP4UpdateClientRoot(t *testing.T) {
+	dir := newTempDir(t)
+	if err := writeP4Config(dir, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
+		t.Fatal(err)
+	}
+	calls := fakeP4(t, func(sub string, cmd *exec.Cmd) error {
+		if sub == "client -o ws" {
+			fmt.Fprint(cmd.Stdout, p4TestSpec("ws", "/old/root", true, "//depot/proj/... //ws/..."))
+		}
+		return nil
+	})
+	if err := p4UpdateClientRoot(dir); err != nil {
+		t.Fatal(err)
+	}
+	if len(*calls) != 2 {
+		t.Fatalf("unexpected commands: %+v", *calls)
+	}
+	spec := (*calls)[1].stdin
+	if !strings.Contains(spec, "\nRoot:\t"+dir+"\n") || strings.Contains(spec, "/old/root") ||
+		!strings.Contains(spec, "\n\t//depot/proj/... //ws/...\n") {
+		t.Errorf("unexpected client spec:\n%s", spec)
+	}
+}
+
+func TestP4ConfigFromURL(t *testing.T) {
+	testCases := []struct {
+		url, port, user, depot string
+	}{
+		{"p4://p4.example.com/depot/proj/main", "p4.example.com:1666", "", "//depot/proj/main"},
+		{"p4://p4.example.com:1777/depot/proj/main/", "p4.example.com:1777", "", "//depot/proj/main"},
+		{"p4://alice@p4.example.com/depot/my%20proj", "p4.example.com:1666", "alice", "//depot/my proj"},
+		{"p4+ssl://p4.example.com/depot", "ssl:p4.example.com:1666", "", "//depot"},
+		{"p4://[::1]:1666/depot/proj", "tcp6:[::1]:1666", "", "//depot/proj"},
+		{"p4+ssl://[::1]/depot/proj", "ssl6:[::1]:1666", "", "//depot/proj"},
+		// ghq.<url>.vcs = p4 or --vcs=p4 without a p4:// URL
+		{"https://p4.example.com/depot/proj", "p4.example.com:1666", "", "//depot/proj"},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.url, func(t *testing.T) {
+			cfg, depot, err := p4ConfigFromURL(mustParseURL(tc.url))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.port != tc.port || cfg.user != tc.user || depot != tc.depot {
+				t.Errorf("got: (%q, %q, %q), expect: (%q, %q, %q)", cfg.port, cfg.user, depot, tc.port, tc.user, tc.depot)
+			}
+			// RemoteURL must rebuild an equivalent URL
+			u, err := p4URLFromConfig(cfg, depot)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cfg2, depot2, err := p4ConfigFromURL(u)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if *cfg2 != *cfg || depot2 != depot {
+				t.Errorf("round trip via %s: got (%+v, %q), expect (%+v, %q)", u, cfg2, depot2, cfg, depot)
+			}
+		})
+	}
+}
+
+func TestP4URLFromConfig(t *testing.T) {
+	testCases := []struct {
+		port, expect string
+	}{
+		{"1666", "p4://localhost:1666/depot/proj"},
+		{"p4.example.com:1666", "p4://p4.example.com:1666/depot/proj"},
+		{"tcp:p4.example.com:1666", "p4://p4.example.com:1666/depot/proj"},
+		{"tcp4:p4.example.com:1666", "p4://p4.example.com:1666/depot/proj"},
+		{"ssl:p4.example.com:1666", "p4+ssl://p4.example.com:1666/depot/proj"},
+		{"ssl:1666", "p4+ssl://localhost:1666/depot/proj"},
+		{"tcp6:[::1]:1666", "p4://[::1]:1666/depot/proj"},
+		{"perforce:1666", "p4://perforce:1666/depot/proj"},
+		{"rsh:p4d -r /p4root -i", ""},
+		{"p4.example.com", ""},
+		{"p4.example.com:", ""},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.port, func(t *testing.T) {
+			u, err := p4URLFromConfig(&p4Config{port: tc.port, client: "ws"}, "//depot/proj")
+			if tc.expect == "" {
+				if err == nil {
+					t.Errorf("error should be occurred, but got %s", u)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if u.String() != tc.expect {
+				t.Errorf("got: %s, expect: %s", u, tc.expect)
+			}
+		})
+	}
+}
+
+func TestP4ClientName(t *testing.T) {
+	const port = "p4.example.com:1666"
+	name := p4ClientName("alice", "my.host", port, "//depot/proj/main", "/ghq/p4.example.com/depot/proj/main")
+	if !regexp.MustCompile(`^alice_my_host_depot_proj_main_[0-9a-f]{8}$`).MatchString(name) {
+		t.Errorf("unexpected client name: %s", name)
+	}
+	if again := p4ClientName("alice", "my.host", port, "//depot/proj/main", "/ghq/p4.example.com/depot/proj/main"); again != name {
+		t.Errorf("client name should be deterministic: %s != %s", again, name)
+	}
+
+	// Names that sanitize to the same slug must still differ.
+	seen := map[string]bool{}
+	for _, in := range [][2]string{
+		{"//depot/a_b", "/ghq/h/depot/a_b"},
+		{"//depot/a/b", "/ghq/h/depot/a/b"},
+		{"//depot/a b", "/ghq/h/depot/a b"},
+		{"//depot/a/b", "/other-root/h/depot/a/b"},
+	} {
+		n := p4ClientName("alice", "my.host", port, in[0], in[1])
+		if seen[n] {
+			t.Errorf("client name collision: %s", n)
+		}
+		seen[n] = true
+	}
+	if p4ClientName("alice", "h", port, "//depot/a", "/r") == p4ClientName("alice", "h", "ssl:"+port, "//depot/a", "/r") {
+		t.Error("client names should differ between servers")
+	}
+
+	valid := regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]*$`)
+	for _, in := range [][3]string{
+		{"-u x", "host;rm -rf", "//depot/..."},
+		{`DOMAIN\user`, "HOST", "//depot/@#%*"},
+		{"ユーザー", "ホスト", "//デポ/パス"},
+		{"", "", "//depot/" + strings.Repeat("long/", 100)},
+	} {
+		n := p4ClientName(in[0], in[1], port, in[2], "/r")
+		if !valid.MatchString(n) || len(n) > 140 {
+			t.Errorf("invalid client name for %q: %q", in, n)
+		}
+	}
+	if n := p4ClientName("ユーザー", "ホスト", port, "//デポ", "/r"); !strings.HasPrefix(n, "ghq_") {
+		t.Errorf("client name without readable parts should start with ghq_: %s", n)
+	}
+}
+
+func TestP4Spec(t *testing.T) {
+	spec := "# Root: comment\r\nClient:\tws\r\n\r\nRoot:\t/old root\r\n\r\nAltRoots:\r\n\t/alt\r\n\r\nView:\r\n\t//depot/a/... //ws/a/...\r\n\t\"//depot/b c/...\" \"//ws/b c/...\"\r\n\r\nLineEnd:\tlocal\r\n"
+	if got := p4SpecField(spec, "Root"); !reflect.DeepEqual(got, []string{"/old root"}) {
+		t.Errorf("Root: got %q", got)
+	}
+	if got := p4SpecField(spec, "View"); !reflect.DeepEqual(got, []string{"//depot/a/... //ws/a/...", `"//depot/b c/..." "//ws/b c/..."`}) {
+		t.Errorf("View: got %q", got)
+	}
+	if got := p4SpecField(spec, "Access"); got != nil {
+		t.Errorf("Access: got %q", got)
+	}
+	if got := p4SpecField("Description:\n\nRoot:\t/r\n", "Description"); got == nil || len(got) != 0 {
+		t.Errorf("empty Description: got %#v", got)
+	}
+
+	edited := p4SetSpecField(spec, "Root", false, "/new root")
+	edited = p4SetSpecField(edited, "View", true, "//depot/x/... //ws/...")
+	edited = p4SetSpecField(edited, "Stream", false, "//stream/main")
+	expect := "# Root: comment\nClient:\tws\n\nRoot:\t/new root\n\nAltRoots:\n\t/alt\n\nView:\n\t//depot/x/... //ws/...\n\nLineEnd:\tlocal\n\n\nStream:\t//stream/main"
+	if edited != expect {
+		t.Errorf("\ngot:    %q\nexpect: %q", edited, expect)
+	}
+
+	for _, tc := range []struct {
+		view   []string
+		expect string
+	}{
+		{[]string{"//depot/a/... //ws/..."}, "//depot/a"},
+		{[]string{`"-//depot/a/x" "//ws/x"`, `"//depot/b c/..." "//ws/..."`}, "//depot/b c"},
+		{[]string{"+//depot/o/... //ws/...", "//depot/c/... //ws/c/..."}, "//depot/c"},
+		{[]string{"//depot/... //ws/..."}, "//depot"},
+		{[]string{"//... //ws/..."}, ""},
+		{nil, ""},
+	} {
+		got, err := p4ViewDepotPath(tc.view)
+		if got != tc.expect || (err == nil) != (tc.expect != "") {
+			t.Errorf("p4ViewDepotPath(%q) = %q, %v; expect %q", tc.view, got, err, tc.expect)
+		}
 	}
 }

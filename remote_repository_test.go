@@ -43,6 +43,14 @@ func TestNewRemoteRepository(t *testing.T) {
 		url:        "svn+ssh://example.com/proj/repo",
 		valid:      true,
 		vcsBackend: SubversionBackend,
+	}, {
+		url:        "p4://p4.example.com:1666/depot/proj/main",
+		valid:      true,
+		vcsBackend: PerforceBackend,
+	}, {
+		url:        "p4+ssl://p4.example.com/depot/proj/main",
+		valid:      true,
+		vcsBackend: PerforceBackend,
 	}}
 
 	for _, tc := range testCases {

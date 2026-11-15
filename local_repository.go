@@ -275,6 +275,7 @@ var vcsContentsMap = map[string]*VCSBackend{
 	".fslckout":      FossilBackend, // file
 	"_FOSSIL_":       FossilBackend, // file
 	"CVS/Repository": cvsDummyBackend,
+	".p4config":      PerforceBackend, // file
 }
 
 var vcsContents = [...]string{
@@ -287,6 +288,7 @@ var vcsContents = [...]string{
 	".fslckout",
 	"._FOSSIL_",
 	"CVS/Repository",
+	".p4config",
 }
 
 func findVCSBackend(fpath, vcs string) *VCSBackend {

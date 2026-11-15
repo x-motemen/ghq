@@ -127,7 +127,8 @@ ghq.<url>.vcs::
     remote repository. The URL is matched against '<url>' using 'git config --get-urlmatch'. +
     Accepted values are "git", "github" (an alias for "git"), "subversion",
     "svn" (an alias for "subversion"), "git-svn", "mercurial", "hg" (an alias for "mercurial"),
-    "darcs", "fossil", "bazaar", and "bzr" (an alias for "bazaar"). +
+    "darcs", "fossil", "bazaar", "bzr" (an alias for "bazaar"), "p4", and "perforce"
+    (an alias for "p4"; see <<perforce,PERFORCE>>). +
     To get this configuration variable effective, you will need Git 1.8.5 or higher.
 
 ghq.<url>.root::
@@ -195,6 +196,26 @@ Local repositories are placed under 'ghq.root' with named github.com/_user_/_rep
         `-- cli/
 ....
 
+
+== [[perforce]]PERFORCE
+
+Perforce depot paths are checked out with `p4://` URLs. The port defaults to 1666; use
+`p4+ssl://` for servers whose P4PORT is `ssl:host:port`.
+
+    $ ghq get p4://p4.example.com:1666/depot/proj/main
+    # Creates a client workspace that maps //depot/proj/main/... to
+    # ~/ghq/p4.example.com/depot/proj/main and runs `p4 sync` in it
+
+The client is named `<user>_<hostname>_<depot path>_<hash>` and its root is the local
+directory. ghq writes the server and the client to `.p4config` in the workspace, which
+`ghq get -u` and `ghq list` use; set `P4CONFIG=.p4config` to let `p4` pick it up as well.
+Log in with `p4 login` beforehand. A user in the URL (`p4://alice@p4.example.com/...`)
+is passed to `p4` with `-u` and recorded in `.p4config`.
+
+`--branch`, `--bare` and `ghq create` are not supported for Perforce, and `--shallow`,
+`--partial` and `--no-recursive` have no effect. `ghq migrate` updates the root of the
+client to the new location. `ghq rm` removes only the local directory; run
+`p4 client -d <client>` to delete the client on the server.
 
 == [[installing]]INSTALLATION
 
