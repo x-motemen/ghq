@@ -721,12 +721,7 @@ func TestDoGet_p4(t *testing.T) {
 	const url = "p4://p4.example.com:1666/depot/proj/main"
 	dir := filepath.Join(root, "p4.example.com", "depot", "proj", "main")
 	client := p4ClientName("alice", "myhost", "p4.example.com:1666", "//depot/proj/main", dir)
-	calls := fakeP4(t, func(sub string, cmd *exec.Cmd) error {
-		if sub == "sync" || sub == "sync -f" {
-			return os.WriteFile(filepath.Join(cmd.Dir, "README"), []byte("hello\n"), 0644)
-		}
-		return nil
-	})
+	calls := fakeP4(t, newP4FakeServer().respond)
 	run := func(args ...string) (string, error) {
 		var err error
 		out, _, _ := captureWithInput([]string{"y"}, func() {
@@ -750,7 +745,10 @@ func TestDoGet_p4(t *testing.T) {
 	if _, err := run("get", "-u", url); err != nil {
 		t.Fatal(err)
 	}
-	expect := []p4Call{{args: []string{"p4", "-p", "p4.example.com:1666", "-c", client, "sync"}, dir: dir}}
+	expect := []p4Call{
+		{args: []string{"p4", "-p", "p4.example.com:1666", "-c", client, "client", "-o", client}},
+		{args: []string{"p4", "-p", "p4.example.com:1666", "-c", client, "sync"}, dir: dir},
+	}
 	if !reflect.DeepEqual(*calls, expect) {
 		t.Errorf("update:\ngot:    %+v\nexpect: %+v", *calls, expect)
 	}
@@ -788,5 +786,26 @@ func TestDoGet_p4(t *testing.T) {
 	}
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
 		t.Errorf("%s should be removed: %v", dir, err)
+	}
+}
+
+func TestDoGet_p4Revision(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	calls := fakeP4(t, newP4FakeServer().respond)
+	for _, u := range []string{"p4://p4.example.com/depot/rev#123", "p4://p4.example.com/depot/rev2%23123", "p4://p4.example.com/depot/rev3@123"} {
+		var err error
+		capture(func() { err = newApp().Run(context.Background(), []string{"ghq", "get", u}) })
+		if err == nil {
+			t.Errorf("%s: error should be occurred, but nil", u)
+		}
+	}
+	if len(*calls) != 0 {
+		t.Errorf("p4 should not be run: %+v", *calls)
+	}
+	for _, name := range []string{"rev", "rev2#123", "rev3"} {
+		if _, err := os.Stat(filepath.Join(root, "p4.example.com", "depot", name)); !os.IsNotExist(err) {
+			t.Errorf("no workspace should be created: %v", err)
+		}
 	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -464,18 +463,15 @@ func TestIsLinkedGitDir(t *testing.T) {
 func TestDoMigrate_p4(t *testing.T) {
 	tmpdir := newTempDir(t)
 	setRepositoryPathTestRoot(t, tmpdir)
-	calls := fakeP4(t, func(sub string, cmd *exec.Cmd) error {
-		if sub == "client -o ws" {
-			fmt.Fprint(cmd.Stdout, p4TestSpec("ws", "/old/root", true, "//depot/proj/main/... //ws/..."))
-		}
-		return nil
-	})
+	srv := newP4FakeServer()
+	calls := fakeP4(t, srv.respond)
 	newSrc := func(name string) string {
 		src := filepath.Join(tmpdir, "sources", name)
 		os.MkdirAll(src, 0755)
 		if err := writeP4Config(src, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
 			t.Fatal(err)
 		}
+		srv.clients["ws"] = p4TestSpec("ws", src, true, "//depot/proj/main/... //ws/...")
 		return src
 	}
 	dest := filepath.Join(tmpdir, "p4.example.com", "depot", "proj", "main")
@@ -510,6 +506,61 @@ func TestDoMigrate_p4(t *testing.T) {
 		if !reflect.DeepEqual(last.args, []string{"p4", "-p", "p4.example.com:1666", "-c", "ws", "client", "-i"}) ||
 			!strings.Contains(last.stdin, "\nRoot:\t"+dest+"\n") {
 			t.Errorf("client root should be updated, got %v:\n%s", last.args, last.stdin)
+		}
+	})
+}
+
+func TestDoMigrate_p4Review1(t *testing.T) {
+	tmpdir := newTempDir(t)
+	setRepositoryPathTestRoot(t, tmpdir)
+	dest := filepath.Join(tmpdir, "p4.example.com", "depot", "proj", "main")
+	newSrc := func(t *testing.T, name string) string {
+		src := filepath.Join(tmpdir, "sources", name)
+		os.MkdirAll(src, 0755)
+		if err := writeP4Config(src, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
+			t.Fatal(err)
+		}
+		return src
+	}
+	saved := func(calls []p4Call) bool {
+		for _, c := range calls {
+			if slices.Contains(c.args, "-i") {
+				return true
+			}
+		}
+		return false
+	}
+
+	t.Run("copy of a workspace rooted elsewhere", func(t *testing.T) {
+		src := newSrc(t, "copy")
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", "/active/workspace", true, "//depot/proj/main/... //ws/...")
+		calls := fakeP4(t, srv.respond)
+		if err := newApp().Run(context.Background(), []string{"ghq", "migrate", "-y", src}); err == nil {
+			t.Error("error should be occurred, but nil")
+		}
+		if _, err := os.Stat(filepath.Join(src, p4ConfigName)); err != nil {
+			t.Errorf("source should stay: %v", err)
+		}
+		if saved(*calls) {
+			t.Errorf("the other workspace's client must not be modified: %+v", *calls)
+		}
+	})
+
+	t.Run("client root update fails", func(t *testing.T) {
+		src := newSrc(t, "fail")
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", src, true, "//depot/proj/main/... //ws/...")
+		srv.fail["client -i"] = "Perforce password (P4PASSWD) invalid or unset."
+		fakeP4(t, srv.respond)
+		if err := newApp().Run(context.Background(), []string{"ghq", "migrate", "-y", src}); err == nil {
+			t.Error("error should be occurred, but nil")
+		}
+		if _, err := os.Stat(filepath.Join(src, p4ConfigName)); err != nil {
+			t.Errorf("workspace should be moved back: %v", err)
+		}
+		if _, err := os.Stat(dest); !os.IsNotExist(err) {
+			t.Errorf("destination should not be left behind: %v", err)
 		}
 	})
 }

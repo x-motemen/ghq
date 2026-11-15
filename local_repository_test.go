@@ -372,15 +372,23 @@ func TestFindVCSBackend(t *testing.T) {
 		name: "p4",
 		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
-			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\nP4CLIENT=ws\n"), 0644)
 			return dir, ""
 		},
 		expect: PerforceBackend,
 	}, {
-		name: "p4 with matched vcs",
+		name: "shared .p4config without client",
 		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+			return dir, ""
+		},
+		expect: nil,
+	}, {
+		name: "p4 with matched vcs",
+		setup: func(t *testing.T) (string, string) {
+			dir := newTempDir(t)
+			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\nP4CLIENT=ws\n"), 0644)
 			return dir, "p4"
 		},
 		expect: PerforceBackend,
@@ -389,7 +397,7 @@ func TestFindVCSBackend(t *testing.T) {
 		setup: func(t *testing.T) (string, string) {
 			dir := newTempDir(t)
 			os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+			os.WriteFile(filepath.Join(dir, ".p4config"), []byte("P4PORT=1666\nP4CLIENT=ws\n"), 0644)
 			return dir, ""
 		},
 		expect: GitBackend,

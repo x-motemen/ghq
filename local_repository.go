@@ -302,7 +302,7 @@ func findVCSBackend(fpath, vcs string) *VCSBackend {
 			return vcsBackend
 		}
 		for _, d := range vcsBackend.Contents {
-			if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
+			if hasVCSContents(fpath, d, vcsBackend) {
 				return vcsBackend
 			}
 		}
@@ -312,11 +312,19 @@ func findVCSBackend(fpath, vcs string) *VCSBackend {
 		return GitBackend
 	}
 	for _, d := range vcsContents {
-		if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
+		if hasVCSContents(fpath, d, vcsContentsMap[d]) {
 			return vcsContentsMap[d]
 		}
 	}
 	return nil
+}
+
+func hasVCSContents(fpath, d string, backend *VCSBackend) bool {
+	if _, err := os.Stat(filepath.Join(fpath, d)); err != nil {
+		return false
+	}
+	// .p4config is also used for settings shared by several workspaces.
+	return backend != PerforceBackend || isP4Workspace(fpath)
 }
 
 func walkAllLocalRepositories(callback func(*LocalRepository)) error {

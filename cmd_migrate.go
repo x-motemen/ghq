@@ -158,10 +158,14 @@ func doMigrate(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	// A p4 client spec records its workspace root on the server.
+	// A p4 client records its root on the server, and the workspace is
+	// unusable until it points at the new location.
 	if vcsBackend == PerforceBackend {
-		if err := p4UpdateClientRoot(destPath); err != nil {
-			logger.Log("warning", fmt.Sprintf("failed to update the root of the p4 client to %s: %v", destPath, err))
+		if err := p4UpdateClientRoot(absDir, destPath); err != nil {
+			if mvErr := moveDir(destPath, absDir); mvErr != nil {
+				return fmt.Errorf("failed to update the root of the p4 client: %w; the workspace is at %s (moving it back failed: %v)", err, destPath, mvErr)
+			}
+			return fmt.Errorf("failed to update the root of the p4 client, moved the workspace back: %w", err)
 		}
 	}
 

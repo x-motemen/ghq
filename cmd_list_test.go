@@ -146,7 +146,7 @@ func TestDoList_query(t *testing.T) {
 		}
 		for _, r := range p4Repos {
 			os.MkdirAll(filepath.Join(tmproot, r, "src"), 0755)
-			os.WriteFile(filepath.Join(tmproot, r, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+			os.WriteFile(filepath.Join(tmproot, r, ".p4config"), []byte("P4PORT=1666\nP4CLIENT=ws\n"), 0644)
 			// a nested .p4config in the workspace is not a separate repository
 			os.WriteFile(filepath.Join(tmproot, r, "src", ".p4config"), []byte("P4PORT=1666\n"), 0644)
 		}
@@ -320,5 +320,22 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 	err := newApp().Run(context.Background(), []string{"ghq", "list"})
 	if err != nil {
 		t.Errorf("error should be nil, but: %v", err)
+	}
+}
+
+func TestDoList_sharedP4config(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	// A shared .p4config (no client) above repositories is not a workspace.
+	os.MkdirAll(filepath.Join(root, "p4.example.com", "team", "app", ".git"), 0755)
+	os.WriteFile(filepath.Join(root, "p4.example.com", ".p4config"), []byte("P4PORT=p4.example.com:1666\n"), 0644)
+	os.WriteFile(filepath.Join(root, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+	out, _, _ := capture(func() {
+		if err := newApp().Run(context.Background(), []string{"ghq", "list"}); err != nil {
+			t.Error(err)
+		}
+	})
+	if out != "p4.example.com/team/app\n" {
+		t.Errorf("got %q", out)
 	}
 }

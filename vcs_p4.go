@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -62,6 +63,9 @@ func hasControlChar(s string) bool {
 // p4:// or p4+ssl:// URL. Other schemes (for example https:// with
 // "ghq.<url>.vcs = p4") are treated as plain TCP.
 func p4ConfigFromURL(u *url.URL) (*p4Config, string, error) {
+	if u.Opaque != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+		return nil, "", fmt.Errorf("invalid p4 URL %q: queries, fragments and revision specifiers are not supported", u.Redacted())
+	}
 	host := u.Hostname()
 	if host == "" {
 		return nil, "", fmt.Errorf("missing p4 server host in URL %q", u)
@@ -86,6 +90,9 @@ func p4ConfigFromURL(u *url.URL) (*p4Config, string, error) {
 	p4port := net.JoinHostPort(host, port)
 	if proto != "" {
 		p4port = proto + ":" + p4port
+	}
+	if _, _, err := p4ParsePort(p4port); err != nil {
+		return nil, "", fmt.Errorf("invalid p4 server in URL %q: %w", u.Redacted(), err)
 	}
 
 	cfg := &p4Config{port: p4port}
@@ -143,11 +150,11 @@ func p4NamePart(s string, maxLen int) string {
 }
 
 // p4ClientName returns a deterministic client name of the form
-// <user>_<hostname>_<depot-path-slug>_<hash>. Sanitizing can map different
-// inputs to the same readable part, so the hash of the server, depot path
-// and local root keeps names unique.
+// <user>_<hostname>_<depot-path-slug>_<hash>. Sanitizing and truncating can
+// map different inputs to the same readable parts, so the hash of all inputs
+// keeps names unique.
 func p4ClientName(user, hostname, port, depotPath, root string) string {
-	sum := sha256.Sum256([]byte(port + "\x00" + depotPath + "\x00" + root))
+	sum := sha256.Sum256([]byte(strings.Join([]string{user, hostname, port, depotPath, root}, "\x00")))
 	var parts []string
 	for _, p := range []string{
 		p4NamePart(user, 32), p4NamePart(hostname, 32), p4NamePart(depotPath, 64),
@@ -271,31 +278,53 @@ func p4ViewDepotPath(view []string) (string, error) {
 	return "", fmt.Errorf("no depot path found in client view %q", view)
 }
 
-// p4URLFromConfig rebuilds the p4:// URL of a workspace.
-func p4URLFromConfig(cfg *p4Config, depotPath string) (*url.URL, error) {
-	port := cfg.port
-	scheme := "p4"
-	if proto, rest, ok := strings.Cut(port, ":"); ok {
+var p4HostReg = regexp.MustCompile(`^[A-Za-z0-9_]([A-Za-z0-9_.-]*[A-Za-z0-9_])?$`)
+
+// p4ParsePort parses the P4PORT forms ghq supports, [tcp*:|ssl*:][host:]port,
+// and returns the URL scheme and host:port. Other transports are rejected:
+// with "rsh:", for instance, p4 runs a local command instead of connecting.
+func p4ParsePort(port string) (scheme, hostport string, err error) {
+	scheme, rest := "p4", port
+	if proto, r, ok := strings.Cut(port, ":"); ok {
 		switch proto {
 		case "tcp", "tcp4", "tcp6", "tcp46", "tcp64":
-			port = rest
+			rest = r
 		case "ssl", "ssl4", "ssl6", "ssl46", "ssl64":
-			port, scheme = rest, "p4+ssl"
+			scheme, rest = "p4+ssl", r
+		case "rsh", "jsh":
+			return "", "", fmt.Errorf("unsupported P4PORT %q", port)
 		}
 	}
-	host, portNum, err := net.SplitHostPort(port)
-	if err != nil {
-		host, portNum = "localhost", port // P4PORT=1666
-	}
-	if portNum == "" || strings.Trim(portNum, "0123456789") != "" {
-		return nil, fmt.Errorf("unsupported P4PORT %q", cfg.port)
+	host, num, splitErr := net.SplitHostPort(rest)
+	if splitErr != nil {
+		host, num = "localhost", rest // P4PORT=1666
 	}
 	if host == "" {
 		host = "localhost"
 	}
+	if n, err := strconv.Atoi(num); err != nil || n < 1 || n > 65535 || strings.Trim(num, "0123456789") != "" ||
+		(net.ParseIP(host) == nil && !p4HostReg.MatchString(host)) {
+		return "", "", fmt.Errorf("unsupported P4PORT %q", port)
+	}
+	return scheme, net.JoinHostPort(host, num), nil
+}
+
+// p4SamePort reports whether two P4PORTs address the same server.
+func p4SamePort(a, b string) bool {
+	schemeA, hostA, errA := p4ParsePort(a)
+	schemeB, hostB, errB := p4ParsePort(b)
+	return errA == nil && errB == nil && schemeA == schemeB && strings.EqualFold(hostA, hostB)
+}
+
+// p4URLFromConfig rebuilds the p4:// URL of a workspace.
+func p4URLFromConfig(cfg *p4Config, depotPath string) (*url.URL, error) {
+	scheme, hostport, err := p4ParsePort(cfg.port)
+	if err != nil {
+		return nil, err
+	}
 	u := &url.URL{
 		Scheme: scheme,
-		Host:   net.JoinHostPort(host, portNum),
+		Host:   hostport,
 		Path:   "/" + strings.TrimLeft(depotPath, "/"),
 	}
 	if cfg.user != "" {
@@ -325,10 +354,26 @@ func readP4Config(dir string) (*p4Config, error) {
 			cfg.client = value
 		}
 	}
+	name := filepath.Join(dir, p4ConfigName)
 	if cfg.port == "" || cfg.client == "" {
-		return nil, fmt.Errorf("%s does not set both P4PORT and P4CLIENT", filepath.Join(dir, p4ConfigName))
+		return nil, fmt.Errorf("%s does not set both P4PORT and P4CLIENT", name)
+	}
+	if _, _, err := p4ParsePort(cfg.port); err != nil {
+		return nil, fmt.Errorf("%s: %w", name, err)
+	}
+	for _, v := range []string{cfg.client, cfg.user} {
+		if strings.HasPrefix(v, "-") || strings.IndexFunc(v, func(r rune) bool { return unicode.IsSpace(r) || unicode.IsControl(r) }) >= 0 {
+			return nil, fmt.Errorf("%s: invalid P4CLIENT or P4USER %q", name, v)
+		}
 	}
 	return cfg, nil
+}
+
+// isP4Workspace reports whether dir has a .p4config naming a client. A
+// .p4config that only sets shared settings such as P4PORT is not a workspace.
+func isP4Workspace(dir string) bool {
+	_, err := readP4Config(dir)
+	return err == nil
 }
 
 func writeP4Config(dir string, cfg *p4Config) error {
@@ -386,19 +431,49 @@ func p4ExistingClient(cfg *p4Config) (string, bool, error) {
 	return spec, p4SpecField(spec, "Access") != nil, nil
 }
 
-// p4UpdateClientRoot points the root of the client recorded in dir/.p4config
-// at dir, e.g. after the workspace has been moved by "ghq migrate".
-func p4UpdateClientRoot(dir string) error {
+func p4SpecRoot(spec string) string {
+	if v := p4SpecField(spec, "Root"); len(v) > 0 {
+		return v[0]
+	}
+	return ""
+}
+
+func p4SameRoot(a, b string) bool {
+	if filepath.Clean(a) == filepath.Clean(b) {
+		return true
+	}
+	fa, errA := os.Stat(a)
+	fb, errB := os.Stat(b)
+	return errA == nil && errB == nil && os.SameFile(fa, fb)
+}
+
+// p4WorkspaceClient returns the spec of cfg.client after checking that the
+// client exists and is rooted at root: "p4 sync" writes to the root recorded
+// on the server, wherever it is run from.
+func p4WorkspaceClient(cfg *p4Config, root string) (string, error) {
+	spec, exists, err := p4ExistingClient(cfg)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		return "", fmt.Errorf("p4 client %q does not exist", cfg.client)
+	}
+	if r := p4SpecRoot(spec); !p4SameRoot(r, root) {
+		return "", fmt.Errorf("the root of p4 client %q is %q, not %q", cfg.client, r, root)
+	}
+	return spec, nil
+}
+
+// p4UpdateClientRoot points the client recorded in dir/.p4config, which
+// must be rooted at oldRoot, at dir after "ghq migrate" moved the workspace.
+func p4UpdateClientRoot(oldRoot, dir string) error {
 	cfg, err := readP4Config(dir)
 	if err != nil {
 		return err
 	}
-	spec, exists, err := p4ExistingClient(cfg)
+	spec, err := p4WorkspaceClient(cfg, oldRoot)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return fmt.Errorf("p4 client %q does not exist", cfg.client)
 	}
 	return p4SaveClient(cfg, p4SetSpecField(spec, "Root", false, dir), true)
 }
@@ -420,6 +495,23 @@ func p4Clone(vg *vcsGetOption) (err error) {
 	hostname, _ := p4Hostname()
 	cfg.client = p4ClientName(p4LocalUser(vg.url), hostname, cfg.port, depotPath, vg.dir)
 
+	// Claim the workspace directory: a concurrent "ghq get" of the same
+	// path fails here, and a failure below removes only what we created.
+	if err := os.MkdirAll(filepath.Dir(vg.dir), 0755); err != nil {
+		return err
+	}
+	if err := os.Mkdir(vg.dir, 0755); err != nil {
+		if os.IsExist(err) {
+			return fmt.Errorf("%s already exists", vg.dir)
+		}
+		return err
+	}
+	defer func() {
+		if err != nil {
+			os.RemoveAll(vg.dir)
+		}
+	}()
+
 	spec, exists, err := p4ExistingClient(cfg)
 	if err != nil {
 		return err
@@ -427,29 +519,13 @@ func p4Clone(vg *vcsGetOption) (err error) {
 	if exists {
 		// A leftover client of the same workspace, e.g. after "ghq rm".
 		// Anything else is not ours to modify.
-		root := ""
-		if v := p4SpecField(spec, "Root"); len(v) > 0 {
-			root = v[0]
-		}
-		if filepath.Clean(root) != filepath.Clean(vg.dir) {
+		if root := p4SpecRoot(spec); !p4SameRoot(root, vg.dir) {
 			return fmt.Errorf("p4 client %q already exists with root %q", cfg.client, root)
 		}
 	}
 	spec = p4SetSpecField(spec, "Root", false, vg.dir)
 	spec = p4SetSpecField(spec, "View", true, p4View(depotPath, cfg.client)...)
 	if err := p4SaveClient(cfg, spec, vg.silent); err != nil {
-		return err
-	}
-
-	if _, statErr := os.Stat(vg.dir); os.IsNotExist(statErr) {
-		// Do not leave a half-made workspace that later "ghq get" would skip.
-		defer func() {
-			if err != nil {
-				os.RemoveAll(vg.dir)
-			}
-		}()
-	}
-	if err := os.MkdirAll(vg.dir, 0755); err != nil {
 		return err
 	}
 	if err := writeP4Config(vg.dir, cfg); err != nil {
@@ -479,6 +555,20 @@ var PerforceBackend = &VCSBackend{
 		if err != nil {
 			return err
 		}
+		// ghq paths omit the port, so p4:// URLs of different servers can
+		// resolve to this workspace. (Other schemes come from "ghq list".)
+		if vg.url != nil && (vg.url.Scheme == "p4" || vg.url.Scheme == "p4+ssl") {
+			want, _, err := p4ConfigFromURL(vg.url)
+			if err != nil {
+				return err
+			}
+			if !p4SamePort(want.port, cfg.port) || (want.user != "" && want.user != cfg.user) {
+				return fmt.Errorf("%s is a workspace of P4PORT=%s P4USER=%s, not of %s", vg.dir, cfg.port, cfg.user, vg.url.Redacted())
+			}
+		}
+		if _, err := p4WorkspaceClient(cfg, vg.dir); err != nil {
+			return err
+		}
 		return runInDir(vg.silent)(vg.dir, "p4", cfg.args("sync")...)
 	},
 	// Init is unsupported: depot paths are created by submitting files.
@@ -488,12 +578,9 @@ var PerforceBackend = &VCSBackend{
 		if err != nil {
 			return "", err
 		}
-		spec, exists, err := p4ExistingClient(cfg)
+		spec, err := p4WorkspaceClient(cfg, dir)
 		if err != nil {
 			return "", err
-		}
-		if !exists {
-			return "", fmt.Errorf("p4 client %q does not exist", cfg.client)
 		}
 		depotPath, err := p4ViewDepotPath(p4SpecField(spec, "View"))
 		if err != nil {
