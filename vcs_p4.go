@@ -71,6 +71,9 @@ func p4ConfigFromURL(u *url.URL) (*p4Config, string, error) {
 	if u.Opaque != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
 		return nil, "", fmt.Errorf("invalid p4 URL %q: queries, fragments and revision specifiers are not supported", u.Redacted())
 	}
+	if strings.HasPrefix(u.Scheme, "p4+") && u.Scheme != "p4+ssl" {
+		return nil, "", fmt.Errorf("unsupported scheme %q: use p4:// or p4+ssl://", u.Scheme)
+	}
 	host := u.Hostname()
 	if host == "" {
 		return nil, "", fmt.Errorf("missing p4 server host in URL %q", u)
@@ -494,10 +497,14 @@ func p4PrepareRootMove(dir string) (*p4RootMove, error) {
 func (m *p4RootMove) apply(newRoot string) error {
 	spec, exists, err := p4ExistingClient(m.cfg)
 	if err != nil {
+		// Nothing was sent, and the root was m.root when checked before the move.
 		return fmt.Errorf("%w: %w", errP4RootUnchanged, err)
 	}
-	if !exists || p4SpecRoot(spec) != m.root {
-		return fmt.Errorf("%w: p4 client %q was changed or deleted meanwhile", errP4RootUnchanged, m.cfg.client)
+	switch root := p4SpecRoot(spec); {
+	case exists && root == newRoot:
+		return nil
+	case !exists || root != m.root:
+		return fmt.Errorf("p4 client %q was changed or deleted meanwhile (root %q)", m.cfg.client, root)
 	}
 	saveErr := p4SaveClient(m.cfg, p4SetSpecField(spec, "Root", false, newRoot), true)
 	if saveErr == nil {
@@ -573,13 +580,16 @@ func p4Clone(vg *vcsGetOption) (err error) {
 	if err := writeP4Config(vg.dir, cfg); err != nil {
 		return err
 	}
-	syncArgs := []string{"sync"}
 	if exists {
 		// The have list of a reused client describes files that are gone.
-		syncArgs = append(syncArgs, "-f")
+		// Clear it (without touching files) rather than "sync -f", so that a
+		// sync interrupted below can be resumed by a plain "p4 sync".
+		if err := runInDir(vg.silent)(vg.dir, "p4", cfg.args("sync", "-k", "//"+cfg.client+"/...#none")...); err != nil {
+			return err
+		}
 	}
 	syncing = true
-	if err := runInDir(vg.silent)(vg.dir, "p4", cfg.args(syncArgs...)...); err != nil {
+	if err := runInDir(vg.silent)(vg.dir, "p4", cfg.args("sync")...); err != nil {
 		// Keep what was synced; the client and .p4config are in place.
 		return fmt.Errorf("%w; run 'ghq get -u' to resume syncing %s", err, vg.dir)
 	}
@@ -602,17 +612,19 @@ var PerforceBackend = &VCSBackend{
 		if err != nil {
 			return err
 		}
-		// ghq paths omit the port and a trailing ".git", so p4:// URLs of
-		// other servers or depot paths can resolve to this workspace.
-		// (Other schemes come from "ghq list" and carry no p4 identity.)
+		// ghq paths omit the port, the user and a trailing ".git", so URLs
+		// of other servers, users or depot paths can resolve to this
+		// workspace. The server is named by p4:// URLs and explicit ports;
+		// "ghq list | ghq get -u" passes https://<host>/<path>.
 		var depotPath string
-		if vg.url != nil && (vg.url.Scheme == "p4" || vg.url.Scheme == "p4+ssl") {
+		if vg.url != nil {
 			var want *p4Config
 			want, depotPath, err = p4ConfigFromURL(vg.url)
 			if err != nil {
 				return err
 			}
-			if !p4SamePort(want.port, cfg.port) || (want.user != "" && want.user != cfg.user) {
+			namesPort := vg.url.Scheme == "p4" || vg.url.Scheme == "p4+ssl" || vg.url.Port() != ""
+			if (namesPort && !p4SamePort(want.port, cfg.port)) || (want.user != "" && want.user != cfg.user) {
 				return fmt.Errorf("%s is a workspace of P4PORT=%s P4USER=%s, not of %s", vg.dir, cfg.port, cfg.user, vg.url.Redacted())
 			}
 		}
@@ -621,7 +633,8 @@ var PerforceBackend = &VCSBackend{
 			return err
 		}
 		if depotPath != "" {
-			if got, _ := p4ViewDepotPath(p4SpecField(spec, "View")); got != depotPath {
+			// The URL may also name a directory inside the workspace.
+			if got, _ := p4ViewDepotPath(p4SpecField(spec, "View")); got == "" || (depotPath != got && !strings.HasPrefix(depotPath, got+"/")) {
 				return fmt.Errorf("p4 client %q of %s maps %q, not %q", cfg.client, vg.dir, got, depotPath)
 			}
 		}

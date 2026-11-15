@@ -330,12 +330,16 @@ func TestDoList_sharedP4config(t *testing.T) {
 	os.MkdirAll(filepath.Join(root, "p4.example.com", "team", "app", ".git"), 0755)
 	os.WriteFile(filepath.Join(root, "p4.example.com", ".p4config"), []byte("P4PORT=p4.example.com:1666\n"), 0644)
 	os.WriteFile(filepath.Join(root, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+	// Neither are .p4config files naming a client above the <host>/<depot>
+	// level, where ghq never creates workspaces.
+	os.MkdirAll(filepath.Join(root, "p4.other.example.com", "team", "lib", ".git"), 0755)
+	os.WriteFile(filepath.Join(root, "p4.other.example.com", ".p4config"), []byte("P4PORT=p4.other.example.com:1666\nP4CLIENT=ws\n"), 0644)
 	out, _, _ := capture(func() {
 		if err := newApp().Run(context.Background(), []string{"ghq", "list"}); err != nil {
 			t.Error(err)
 		}
 	})
-	if out != "p4.example.com/team/app\n" {
+	if out != "p4.example.com/team/app\np4.other.example.com/team/lib\n" {
 		t.Errorf("got %q", out)
 	}
 }

@@ -807,9 +807,14 @@ func TestPerforceBackend_Clone(t *testing.T) {
 		if err := PerforceBackend.Clone(&vcsGetOption{url: mustParseURL("p4://p4.example.com/depot/proj/main"), dir: dir}); err != nil {
 			t.Fatal(err)
 		}
-		expect := []string{"p4", "-p", port, "-c", client, "sync", "-f"}
-		if got := (*calls)[len(*calls)-1].args; !reflect.DeepEqual(got, expect) {
-			t.Errorf("\ngot:    %v\nexpect: %v", got, expect)
+		n := len(*calls)
+		for i, expect := range [][]string{
+			{"p4", "-p", port, "-c", client, "sync", "-k", "//" + client + "/...#none"},
+			{"p4", "-p", port, "-c", client, "sync"},
+		} {
+			if got := (*calls)[n-2+i]; !reflect.DeepEqual(got.args, expect) || got.dir != dir {
+				t.Errorf("\ngot:    %v (dir %q)\nexpect: %v", got.args, got.dir, expect)
+			}
 		}
 	})
 
@@ -1123,13 +1128,18 @@ func TestP4RootMove(t *testing.T) {
 		t.Errorf("unexpected client spec:\n%s", spec)
 	}
 
-	// changed on the server between prepare and apply
+	// already moved on the server between prepare and apply
+	if err := m.apply("/new/root"); err != nil {
+		t.Errorf("a client already rooted at the destination should be accepted: %v", err)
+	}
+	// changed to something else between prepare and apply: moving back
+	// would be as wrong as staying, so it must not be reported as unchanged
 	srv.clients["ws"] = p4TestSpec("ws", "/someone/else", true, "//depot/proj/... //ws/...")
-	if err := m.apply("/new/root"); !errors.Is(err, errP4RootUnchanged) {
-		t.Errorf("error should wrap errP4RootUnchanged, but: %v", err)
+	if err := m.apply("/new/root"); err == nil || errors.Is(err, errP4RootUnchanged) {
+		t.Errorf("error should not wrap errP4RootUnchanged, but: %v", err)
 	}
 	// rejected save
-	srv.clients["ws"] = p4TestSpec("ws", "/new/root", true, "//depot/proj/... //ws/...")
+	srv.clients["ws"] = p4TestSpec("ws", dir, true, "//depot/proj/... //ws/...")
 	srv.fail["client -i"] = "Locked client"
 	if err := m.apply("/newer/root"); !errors.Is(err, errP4RootUnchanged) {
 		t.Errorf("error should wrap errP4RootUnchanged, but: %v", err)
@@ -1307,10 +1317,42 @@ type p4FakeServer struct {
 	lostReply, offlineAfterSave, offline bool
 	// onClientO runs before "client -o" replies, e.g. to race with it.
 	onClientO func()
+	// files are the depot files that "sync" writes and haves the have list
+	// per client; syncFailAfter makes the next sync fail after that many files.
+	files         []string
+	haves         map[string]map[string]bool
+	syncFailAfter int
 }
 
 func newP4FakeServer() *p4FakeServer {
-	return &p4FakeServer{clients: map[string]string{}, fail: map[string]string{}}
+	return &p4FakeServer{
+		clients: map[string]string{}, fail: map[string]string{},
+		files: []string{"README"}, haves: map[string]map[string]bool{},
+	}
+}
+
+func (s *p4FakeServer) sync(client, dir string, force bool) error {
+	have := s.haves[client]
+	if have == nil {
+		have = map[string]bool{}
+		s.haves[client] = have
+	}
+	written := 0
+	for _, f := range s.files {
+		if have[f] && !force {
+			continue
+		}
+		if s.syncFailAfter > 0 && written == s.syncFailAfter {
+			s.syncFailAfter = 0
+			return errors.New("exit status 1")
+		}
+		if err := os.WriteFile(filepath.Join(dir, f), []byte(f+"\n"), 0644); err != nil {
+			return err
+		}
+		have[f] = true
+		written++
+	}
+	return nil
 }
 
 func (s *p4FakeServer) respond(sub string, cmd *exec.Cmd) error {
@@ -1353,9 +1395,18 @@ func (s *p4FakeServer) respond(sub string, cmd *exec.Cmd) error {
 			return errors.New("exit status 1")
 		}
 	case sub == "sync" || sub == "sync -f":
-		return os.WriteFile(filepath.Join(cmd.Dir, "README"), []byte("hello\n"), 0644)
+		return s.sync(p4ArgValue(cmd.Args, "-c"), cmd.Dir, sub == "sync -f")
+	case strings.HasPrefix(sub, "sync -k ") && strings.HasSuffix(sub, "/...#none"):
+		delete(s.haves, p4ArgValue(cmd.Args, "-c"))
 	}
 	return nil
+}
+
+func p4ArgValue(args []string, opt string) string {
+	if i := slices.Index(args, opt); i >= 0 && i+1 < len(args) {
+		return args[i+1]
+	}
+	return ""
 }
 
 // Regression tests for the first adversarial review round.
@@ -1559,6 +1610,71 @@ func TestPerforceBackend_Review2(t *testing.T) {
 		}
 		if len(*calls) != 0 {
 			t.Errorf("p4 should not be run: %+v", *calls)
+		}
+	})
+}
+
+// Regression tests for the third adversarial review round.
+func TestPerforceBackend_Review3(t *testing.T) {
+	const port = "p4.example.com:1666"
+
+	t.Run("retrying a failed re-clone restores every file", func(t *testing.T) {
+		dir := filepath.Join(newTempDir(t), "p4.example.com", "depot", "proj")
+		client := p4ClientName("alice", "myhost", port, "//depot/proj", dir)
+		srv := newP4FakeServer()
+		srv.files = []string{"a", "b", "c"}
+		// left over by "ghq rm": the server thinks every file is synced
+		srv.clients[client] = p4TestSpec(client, dir, true, "//depot/proj/... //"+client+"/...")
+		srv.haves[client] = map[string]bool{"a": true, "b": true, "c": true}
+		srv.syncFailAfter = 1
+		fakeP4(t, srv.respond)
+		u := mustParseURL("p4://p4.example.com/depot/proj")
+		if err := PerforceBackend.Clone(&vcsGetOption{url: u, dir: dir}); err == nil {
+			t.Fatal("the first sync should fail")
+		}
+		if err := PerforceBackend.Update(&vcsGetOption{url: u, dir: dir}); err != nil {
+			t.Fatal(err)
+		}
+		for _, f := range srv.files {
+			if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
+				t.Errorf("%s should be synced after get -u: %v", f, err)
+			}
+		}
+	})
+
+	t.Run("unknown p4+ transports", func(t *testing.T) {
+		for _, u := range []string{"p4+ssl4://p4.example.com/depot/proj", "p4+tls://p4.example.com/depot/proj", "p4+sll://p4.example.com/depot/proj"} {
+			dir := filepath.Join(newTempDir(t), "p4.example.com", "depot", "proj")
+			calls := fakeP4(t, newP4FakeServer().respond)
+			if err := PerforceBackend.Clone(&vcsGetOption{url: mustParseURL(u), dir: dir}); err == nil {
+				t.Errorf("%s: error should be occurred, but nil", u)
+			}
+			if len(*calls) != 0 {
+				t.Errorf("%s: p4 should not be run: %+v", u, *calls)
+			}
+		}
+	})
+
+	t.Run("get -u with explicit https URLs", func(t *testing.T) {
+		dir := newTempDir(t)
+		writeP4Config(dir, &p4Config{port: "p4.example.com:1777", user: "alice", client: "ws"})
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", dir, true, "//depot/app/... //ws/...")
+		fakeP4(t, srv.respond)
+		for u, ok := range map[string]bool{
+			"https://bob@p4.example.com:1666/depot/app.git": false,
+			"https://p4.example.com:1666/depot/app":         false,
+			"https://bob@p4.example.com/depot/app":          false,
+			"https://p4.example.com/depot/app.git":          false,
+			"https://p4.example.com/depot/app?x=1":          false,
+			"https://p4.example.com/depot/app":              true, // ghq list | ghq get -u
+			"https://p4.example.com:1777/depot/app":         true,
+			"https://alice@p4.example.com/depot/app/sub":    true, // a directory inside
+		} {
+			err := PerforceBackend.Update(&vcsGetOption{dir: dir, url: mustParseURL(u)})
+			if (err == nil) != ok {
+				t.Errorf("%s: got %v, expect success=%t", u, err, ok)
+			}
 		}
 	})
 }

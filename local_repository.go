@@ -362,6 +362,11 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 		if err != nil || repo == nil {
 			return nil
 		}
+		// A .p4config in a root or <host> directory configures several
+		// workspaces; ghq creates p4 workspaces at <host>/<depot>/... only.
+		if vcsBackend == PerforceBackend && (repo.RelPath == "." || len(repo.PathParts) < 2) {
+			return nil
+		}
 		callback(repo)
 
 		if isSymlink {
