@@ -21,7 +21,7 @@ function _ghq () {
                         '-p[Clone with SSH]' \
                         '--shallow[Do a shallow clone]' \
                         '(-l --look)'{-l,--look}'[Look after get]' \
-                        '--vcs[Specify vcs backend for cloning]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar)' \
+                        '--vcs[Specify vcs backend for cloning]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar p4 perforce)' \
                         '(-s --silent)'{-s,--silent}'[Clone or update silently]' \
                         '--no-recursive[Prevent recursive fetching]' \
                         '--bare[Do a bare clone]' \
@@ -37,7 +37,7 @@ function _ghq () {
                 (list)
                     _arguments -C \
                         '(-e --exact)'{-e,--exact}'[Perform an exact match]' \
-                        '--vcs[Specify vcs backend for matching]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar)' \
+                        '--vcs[Specify vcs backend for matching]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar p4 perforce)' \
                         '(-p --full-path)'{-p,--full-path}'[Print full paths]' \
                         '--unique[Print unique subpaths]' \
                         '--bare[Query bare repositories]' \
@@ -52,7 +52,7 @@ function _ghq () {
                     ;;
                 (create)
                     _arguments -C \
-                        '--vcs[Specify vcs backend explicitly]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar)' \
+                        '--vcs[Specify vcs backend explicitly]: :(git github codecommit svn subversion git-svn hg mercurial darcs pijul fossil bzr bazaar p4 perforce)' \
                         '--bare[Create a bare repository]' \
                         '(-)*:: :->null_state' \
                         && ret=0

@@ -714,3 +714,125 @@ func TestDoGet_parallelLook(t *testing.T) {
 		})
 	}
 }
+
+func TestDoGet_p4(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	const url = "p4://p4.example.com:1666/depot/proj/main"
+	dir := filepath.Join(root, "p4.example.com", "depot", "proj", "main")
+	client := p4ClientName("alice", "myhost", "p4.example.com:1666", "//depot/proj/main", dir)
+	calls := fakeP4(t, newP4FakeServer().respond)
+	run := func(args ...string) (string, error) {
+		var err error
+		out, _, _ := captureWithInput([]string{"y"}, func() {
+			err = newApp().Run(context.Background(), append([]string{"ghq"}, args...))
+		})
+		return out, err
+	}
+
+	if _, err := run("get", url); err != nil {
+		t.Fatal(err)
+	}
+	if got, expect := readFileString(t, filepath.Join(dir, p4ConfigName)), "P4PORT=p4.example.com:1666\nP4CLIENT="+client+"\n"; got != expect {
+		t.Errorf(".p4config:\ngot:    %q\nexpect: %q", got, expect)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "README")); err != nil {
+		t.Error(err)
+	}
+
+	*calls = nil
+	seen.Delete(dir) // each path is fetched once per process
+	if _, err := run("get", "-u", url); err != nil {
+		t.Fatal(err)
+	}
+	expect := []p4Call{
+		{args: []string{"p4", "-p", "p4.example.com:1666", "-c", client, "client", "-o", client}},
+		{args: []string{"p4", "-p", "p4.example.com:1666", "-c", client, "sync"}, dir: dir},
+	}
+	if !reflect.DeepEqual(*calls, expect) {
+		t.Errorf("update:\ngot:    %+v\nexpect: %+v", *calls, expect)
+	}
+
+	for _, args := range [][]string{{"list"}, {"list", "--vcs", "p4"}, {"list", "-p"}} {
+		out, err := run(args...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := "p4.example.com/depot/proj/main"
+		if slices.Contains(args, "-p") {
+			want = dir
+		}
+		if strings.TrimSpace(out) != filepath.FromSlash(want) && strings.TrimSpace(out) != want {
+			t.Errorf("%v: got %q, expect %q", args, out, want)
+		}
+	}
+
+	*calls = nil
+	for _, args := range [][]string{
+		{"get", "p4://p4.example.com:1666/depot/proj/label@label"},
+		{"get", "--branch", "dev", "p4://p4.example.com/depot/proj/dev"},
+		{"get", "--bare", "p4://p4.example.com/depot/proj/bare"},
+	} {
+		if _, err := run(args...); err == nil {
+			t.Errorf("%v: error should be occurred, but nil", args)
+		}
+	}
+	if len(*calls) != 0 {
+		t.Errorf("p4 should not be run for rejected options: %+v", *calls)
+	}
+
+	if _, err := run("rm", url); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Errorf("%s should be removed: %v", dir, err)
+	}
+}
+
+func TestDoGet_p4Revision(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	calls := fakeP4(t, newP4FakeServer().respond)
+	for _, u := range []string{"p4://p4.example.com/depot/rev#123", "p4://p4.example.com/depot/rev2%23123", "p4://p4.example.com/depot/rev3@123"} {
+		var err error
+		capture(func() { err = newApp().Run(context.Background(), []string{"ghq", "get", u}) })
+		if err == nil {
+			t.Errorf("%s: error should be occurred, but nil", u)
+		}
+	}
+	if len(*calls) != 0 {
+		t.Errorf("p4 should not be run: %+v", *calls)
+	}
+	for _, name := range []string{"rev", "rev2#123", "rev3"} {
+		if _, err := os.Stat(filepath.Join(root, "p4.example.com", "depot", name)); !os.IsNotExist(err) {
+			t.Errorf("no workspace should be created: %v", err)
+		}
+	}
+}
+
+func TestDoGet_p4UpdateRevision(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	calls := fakeP4(t, newP4FakeServer().respond)
+	dir := filepath.Join(root, "p4.example.com", "depot", "proj")
+	run := func(args ...string) error {
+		var err error
+		capture(func() { err = newApp().Run(context.Background(), append([]string{"ghq"}, args...)) })
+		return err
+	}
+	if err := run("get", "p4://p4.example.com/depot/proj"); err != nil {
+		t.Fatal(err)
+	}
+	for _, u := range []string{"p4://p4.example.com/depot/proj@123", "p4://p4.example.com/depot/proj%40123"} {
+		*calls = nil
+		seen.Delete(dir)
+		if err := run("get", "-u", u); err == nil {
+			t.Errorf("%s: error should be occurred, but nil", u)
+		}
+		for _, c := range *calls {
+			if slices.Contains(c.args, "sync") {
+				t.Errorf("%s: should not sync: %v", u, c.args)
+			}
+		}
+	}
+}

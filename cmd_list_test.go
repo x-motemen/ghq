@@ -68,6 +68,9 @@ func TestDoList_query(t *testing.T) {
 	svnRepos := []string{
 		"github.com/msh5/svntest",
 	}
+	p4Repos := []string{
+		"p4.example.com/depot/proj/main",
+	}
 	testCases := []struct {
 		name   string
 		args   []string
@@ -113,6 +116,14 @@ func TestDoList_query(t *testing.T) {
 		args:   []string{"--vcs", "svn"},
 		expect: "github.com/msh5/svntest\n",
 	}, {
+		name:   "vcs p4",
+		args:   []string{"--vcs", "p4"},
+		expect: "p4.example.com/depot/proj/main\n",
+	}, {
+		name:   "p4 URL",
+		args:   []string{"p4://p4.example.com:1666/depot/proj/main"},
+		expect: "p4.example.com/depot/proj/main\n",
+	}, {
 		name:   "smartcasing fuzzy",
 		args:   []string{"awesome"},
 		expect: "github.com/test/Awesome\n",
@@ -132,6 +143,12 @@ func TestDoList_query(t *testing.T) {
 		}
 		for _, r := range svnRepos {
 			os.MkdirAll(filepath.Join(tmproot, r, ".svn"), 0755)
+		}
+		for _, r := range p4Repos {
+			os.MkdirAll(filepath.Join(tmproot, r, "src"), 0755)
+			os.WriteFile(filepath.Join(tmproot, r, ".p4config"), []byte("P4PORT=1666\nP4CLIENT=ws\n"), 0644)
+			// a nested .p4config in the workspace is not a separate repository
+			os.WriteFile(filepath.Join(tmproot, r, "src", ".p4config"), []byte("P4PORT=1666\n"), 0644)
 		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
@@ -303,5 +320,26 @@ func TestDoList_withSystemHiddenDir(t *testing.T) {
 	err := newApp().Run(context.Background(), []string{"ghq", "list"})
 	if err != nil {
 		t.Errorf("error should be nil, but: %v", err)
+	}
+}
+
+func TestDoList_sharedP4config(t *testing.T) {
+	root := newTempDir(t)
+	setRepositoryPathTestRoot(t, root)
+	// A shared .p4config (no client) above repositories is not a workspace.
+	os.MkdirAll(filepath.Join(root, "p4.example.com", "team", "app", ".git"), 0755)
+	os.WriteFile(filepath.Join(root, "p4.example.com", ".p4config"), []byte("P4PORT=p4.example.com:1666\n"), 0644)
+	os.WriteFile(filepath.Join(root, ".p4config"), []byte("P4PORT=1666\n"), 0644)
+	// Neither are .p4config files naming a client above the <host>/<depot>
+	// level, where ghq never creates workspaces.
+	os.MkdirAll(filepath.Join(root, "p4.other.example.com", "team", "lib", ".git"), 0755)
+	os.WriteFile(filepath.Join(root, "p4.other.example.com", ".p4config"), []byte("P4PORT=p4.other.example.com:1666\nP4CLIENT=ws\n"), 0644)
+	out, _, _ := capture(func() {
+		if err := newApp().Run(context.Background(), []string{"ghq", "list"}); err != nil {
+			t.Error(err)
+		}
+	})
+	if out != "p4.example.com/team/app\np4.other.example.com/team/lib\n" {
+		t.Errorf("got %q", out)
 	}
 }

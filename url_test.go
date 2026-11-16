@@ -75,6 +75,16 @@ defaultHost = gitlab.com`))
 		url:    "gnuwget/wget2",
 		expect: "https://gitlab.com/gnuwget/wget2",
 		host:   "gitlab.com",
+	}, {
+		name:   "p4",
+		url:    "p4://p4.example.com:1666/depot/proj/main",
+		expect: "p4://p4.example.com:1666/depot/proj/main",
+		host:   "p4.example.com:1666",
+	}, {
+		name:   "p4+ssl",
+		url:    "p4+ssl://alice@p4.example.com/depot/proj/main",
+		expect: "p4+ssl://alice@p4.example.com/depot/proj/main",
+		host:   "p4.example.com",
 	}}
 
 	for _, tc := range testCases {

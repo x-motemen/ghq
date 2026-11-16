@@ -275,6 +275,7 @@ var vcsContentsMap = map[string]*VCSBackend{
 	".fslckout":      FossilBackend, // file
 	"_FOSSIL_":       FossilBackend, // file
 	"CVS/Repository": cvsDummyBackend,
+	".p4config":      PerforceBackend, // file
 }
 
 var vcsContents = [...]string{
@@ -287,6 +288,7 @@ var vcsContents = [...]string{
 	".fslckout",
 	"._FOSSIL_",
 	"CVS/Repository",
+	".p4config",
 }
 
 func findVCSBackend(fpath, vcs string) *VCSBackend {
@@ -300,7 +302,7 @@ func findVCSBackend(fpath, vcs string) *VCSBackend {
 			return vcsBackend
 		}
 		for _, d := range vcsBackend.Contents {
-			if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
+			if hasVCSContents(fpath, d, vcsBackend) {
 				return vcsBackend
 			}
 		}
@@ -310,11 +312,19 @@ func findVCSBackend(fpath, vcs string) *VCSBackend {
 		return GitBackend
 	}
 	for _, d := range vcsContents {
-		if _, err := os.Stat(filepath.Join(fpath, d)); err == nil {
+		if hasVCSContents(fpath, d, vcsContentsMap[d]) {
 			return vcsContentsMap[d]
 		}
 	}
 	return nil
+}
+
+func hasVCSContents(fpath, d string, backend *VCSBackend) bool {
+	if _, err := os.Stat(filepath.Join(fpath, d)); err != nil {
+		return false
+	}
+	// .p4config is also used for settings shared by several workspaces.
+	return backend != PerforceBackend || isP4Workspace(fpath)
 }
 
 func walkAllLocalRepositories(callback func(*LocalRepository)) error {
@@ -350,6 +360,11 @@ func walkLocalRepositories(vcs string, callback func(*LocalRepository)) error {
 
 		repo, err := LocalRepositoryFromFullPath(fpath, vcsBackend)
 		if err != nil || repo == nil {
+			return nil
+		}
+		// A .p4config in a root or <host> directory configures several
+		// workspaces; ghq creates p4 workspaces at <host>/<depot>/... only.
+		if vcsBackend == PerforceBackend && (repo.RelPath == "." || len(repo.PathParts) < 2) {
 			return nil
 		}
 		callback(repo)

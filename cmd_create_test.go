@@ -93,6 +93,10 @@ func TestDoCreate(t *testing.T) {
 		input:  []string{"create", "--vcs=svn", "motemen/ghq-svn"},
 		errStr: "unsupported VCS",
 	}, {
+		name:   "Perforce",
+		input:  []string{"create", "--vcs=p4", "motemen/ghq-p4"},
+		errStr: "unsupported VCS",
+	}, {
 		name:  "not permitted",
 		input: []string{"create", "motemen/ghq-notpermitted"},
 		setup: func(t *testing.T) {

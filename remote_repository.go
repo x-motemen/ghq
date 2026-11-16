@@ -173,12 +173,13 @@ func (repo *OtherRepository) IsValid() bool {
 }
 
 var (
-	vcsSchemeReg = regexp.MustCompile(`^(git|svn|bzr|codecommit)(?:\+|$)`)
+	vcsSchemeReg = regexp.MustCompile(`^(git|svn|bzr|codecommit|p4)(?:\+|$)`)
 	scheme2vcs   = map[string]*VCSBackend{
 		"git":        GitBackend,
 		"codecommit": GitBackend,
 		"svn":        SubversionBackend,
 		"bzr":        BazaarBackend,
+		"p4":         PerforceBackend,
 	}
 )
 

@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -454,6 +456,180 @@ func TestIsLinkedGitDir(t *testing.T) {
 		}
 		if !strings.Contains(target, "worktrees") {
 			t.Errorf("target should reference worktrees dir, got: %s", target)
+		}
+	})
+}
+
+func TestDoMigrate_p4(t *testing.T) {
+	tmpdir := newTempDir(t)
+	setRepositoryPathTestRoot(t, tmpdir)
+	srv := newP4FakeServer()
+	calls := fakeP4(t, srv.respond)
+	newSrc := func(name string) string {
+		src := filepath.Join(tmpdir, "sources", name)
+		os.MkdirAll(src, 0755)
+		if err := writeP4Config(src, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
+			t.Fatal(err)
+		}
+		srv.clients["ws"] = p4TestSpec("ws", src, true, "//depot/proj/main/... //ws/...")
+		return src
+	}
+	dest := filepath.Join(tmpdir, "p4.example.com", "depot", "proj", "main")
+
+	t.Run("dry-run", func(t *testing.T) {
+		src := newSrc("dry")
+		out, _, _ := capture(func() {
+			if err := newApp().Run(context.Background(), []string{"ghq", "migrate", "--dry-run", src}); err != nil {
+				t.Fatal(err)
+			}
+		})
+		if !strings.Contains(out, dest) || !strings.Contains(out, "p4 client") {
+			t.Errorf("unexpected output: %s", out)
+		}
+		for _, c := range *calls {
+			if slices.Contains(c.args, "-i") {
+				t.Errorf("dry-run should not modify the client: %v", c.args)
+			}
+		}
+	})
+
+	t.Run("migrate", func(t *testing.T) {
+		*calls = nil
+		src := newSrc("proj")
+		if err := newApp().Run(context.Background(), []string{"ghq", "migrate", "-y", src}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := os.Stat(filepath.Join(dest, p4ConfigName)); err != nil {
+			t.Fatal(err)
+		}
+		last := (*calls)[len(*calls)-1]
+		if !reflect.DeepEqual(last.args, []string{"p4", "-p", "p4.example.com:1666", "-c", "ws", "client", "-i"}) ||
+			!strings.Contains(last.stdin, "\nRoot:\t"+dest+"\n") {
+			t.Errorf("client root should be updated, got %v:\n%s", last.args, last.stdin)
+		}
+	})
+}
+
+func TestDoMigrate_p4Review1(t *testing.T) {
+	tmpdir := newTempDir(t)
+	setRepositoryPathTestRoot(t, tmpdir)
+	dest := filepath.Join(tmpdir, "p4.example.com", "depot", "proj", "main")
+	newSrc := func(t *testing.T, name string) string {
+		src := filepath.Join(tmpdir, "sources", name)
+		os.MkdirAll(src, 0755)
+		if err := writeP4Config(src, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
+			t.Fatal(err)
+		}
+		return src
+	}
+	saved := func(calls []p4Call) bool {
+		for _, c := range calls {
+			if slices.Contains(c.args, "-i") {
+				return true
+			}
+		}
+		return false
+	}
+
+	t.Run("copy of a workspace rooted elsewhere", func(t *testing.T) {
+		src := newSrc(t, "copy")
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", "/active/workspace", true, "//depot/proj/main/... //ws/...")
+		calls := fakeP4(t, srv.respond)
+		if err := newApp().Run(context.Background(), []string{"ghq", "migrate", "-y", src}); err == nil {
+			t.Error("error should be occurred, but nil")
+		}
+		if _, err := os.Stat(filepath.Join(src, p4ConfigName)); err != nil {
+			t.Errorf("source should stay: %v", err)
+		}
+		if saved(*calls) {
+			t.Errorf("the other workspace's client must not be modified: %+v", *calls)
+		}
+	})
+
+	t.Run("client root update fails", func(t *testing.T) {
+		src := newSrc(t, "fail")
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", src, true, "//depot/proj/main/... //ws/...")
+		srv.fail["client -i"] = "Perforce password (P4PASSWD) invalid or unset."
+		fakeP4(t, srv.respond)
+		if err := newApp().Run(context.Background(), []string{"ghq", "migrate", "-y", src}); err == nil {
+			t.Error("error should be occurred, but nil")
+		}
+		if _, err := os.Stat(filepath.Join(src, p4ConfigName)); err != nil {
+			t.Errorf("workspace should be moved back: %v", err)
+		}
+		if _, err := os.Stat(dest); !os.IsNotExist(err) {
+			t.Errorf("destination should not be left behind: %v", err)
+		}
+	})
+}
+
+func TestDoMigrate_p4Review2(t *testing.T) {
+	tmpdir := newTempDir(t)
+	setRepositoryPathTestRoot(t, tmpdir)
+	dest := filepath.Join(tmpdir, "p4.example.com", "depot", "proj", "main")
+	newSrc := func(t *testing.T, parent string) string {
+		src := filepath.Join(parent, "proj")
+		os.MkdirAll(src, 0755)
+		if err := writeP4Config(src, &p4Config{port: "p4.example.com:1666", client: "ws"}); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { os.RemoveAll(dest); os.RemoveAll(src) })
+		return src
+	}
+	migrate := func(src string) error {
+		var err error
+		capture(func() { err = newApp().Run(context.Background(), []string{"ghq", "migrate", "-y", src}) })
+		return err
+	}
+
+	t.Run("save applied but reply lost", func(t *testing.T) {
+		src := newSrc(t, filepath.Join(tmpdir, "lost"))
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", src, true, "//depot/proj/main/... //ws/...")
+		srv.lostReply = true
+		fakeP4(t, srv.respond)
+		if err := migrate(src); err != nil {
+			t.Errorf("migration should succeed when the new root was saved: %v", err)
+		}
+		if _, err := os.Stat(filepath.Join(dest, p4ConfigName)); err != nil {
+			t.Errorf("workspace should be at the destination recorded on the server: %v", err)
+		}
+	})
+
+	t.Run("outcome unknown", func(t *testing.T) {
+		src := newSrc(t, filepath.Join(tmpdir, "unknown"))
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", src, true, "//depot/proj/main/... //ws/...")
+		srv.offlineAfterSave = true
+		fakeP4(t, srv.respond)
+		err := migrate(src)
+		if err == nil || !strings.Contains(err.Error(), dest) {
+			t.Errorf("error should tell where the workspace is, but: %v", err)
+		}
+		if _, err := os.Stat(filepath.Join(dest, p4ConfigName)); err != nil {
+			t.Errorf("workspace should not be moved back blindly: %v", err)
+		}
+	})
+
+	t.Run("source reached through a symlink", func(t *testing.T) {
+		real := filepath.Join(tmpdir, "real")
+		os.MkdirAll(real, 0755)
+		link := filepath.Join(tmpdir, "link")
+		if err := os.Symlink(real, link); err != nil {
+			t.Skip(err)
+		}
+		newSrc(t, real)
+		src := filepath.Join(link, "proj")
+		srv := newP4FakeServer()
+		srv.clients["ws"] = p4TestSpec("ws", filepath.Join(real, "proj"), true, "//depot/proj/main/... //ws/...")
+		fakeP4(t, srv.respond)
+		if err := migrate(src); err != nil {
+			t.Errorf("migration through an alias of the client root should succeed: %v", err)
+		}
+		if got := p4SpecRoot(srv.clients["ws"]); got != dest {
+			t.Errorf("client root: got %q, expect %q", got, dest)
 		}
 	})
 }

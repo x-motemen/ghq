@@ -573,4 +573,6 @@ var vcsRegistry = map[string]*VCSBackend{
 	"fossil":     FossilBackend,
 	"bzr":        BazaarBackend,
 	"bazaar":     BazaarBackend,
+	"p4":         PerforceBackend,
+	"perforce":   PerforceBackend,
 }

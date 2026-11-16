@@ -72,3 +72,4 @@ complete -c ghq -n '__fish_seen_subcommand_from get clone list create' -n '__fis
 complete -c ghq -n '__fish_seen_subcommand_from get clone list create' -n '__fish_seen_argument --vcs' -l vcs -x -a pijul -d pijul
 complete -c ghq -n '__fish_seen_subcommand_from get clone list create' -n '__fish_seen_argument --vcs' -l vcs -x -a fossil -d fossil
 complete -c ghq -n '__fish_seen_subcommand_from get clone list create' -n '__fish_seen_argument --vcs' -l vcs -x -a 'bzr bazaar' -d bazaar
+complete -c ghq -n '__fish_seen_subcommand_from get clone list create' -n '__fish_seen_argument --vcs' -l vcs -x -a 'p4 perforce' -d perforce
