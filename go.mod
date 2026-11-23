@@ -11,8 +11,8 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/saracen/walker v0.1.4
 	github.com/urfave/cli/v3 v3.14.0
-	golang.org/x/net v0.62.0
-	golang.org/x/sync v0.24.0
+	golang.org/x/net v0.63.0
+	golang.org/x/sync v0.25.0
 )
 
 require (
@@ -25,7 +25,7 @@ require (
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
-	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/text v0.43.0
+	golang.org/x/sys v0.50.0 // indirect
+	golang.org/x/text v0.44.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
